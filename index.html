@@ -671,13 +671,17 @@ async function confirmPdfImport(){if(!pendingCatalog)return;const linked={};stoc
 let imageBlobs={};
 function technicalModelKey(name){
  let key=norm(name).replace(/\bsamsung\s*galaxy\b/g,'samsung galaxy');
- const colors=['black olive','stellar black','twilight black','midnight black','space black','cloud white','cosmic orange','deep blue','jet black','sky blue','light gold','night sky','mist blue','black titanium','natural titanium','white titanium','graphite','midnight','starlight','natural','titanium','beige','cream','lavender','mint','orange','teal','burgundy','corsair','olive','sage','black','white','blue','green','red','purple','pink','yellow','silver','gold','gray','grey'];
- const colorPattern=new RegExp('\\\\s+(?:'+colors.sort((a,b)=>b.length-a.length).map(x=>x.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\function technicalModelKey(name){
- return norm(name)
-  .replace(/\b\d+\s?(gb|tb)\b/g,' ')
-  .replace(/\b(black|white|blue|green|red|purple|pink|yellow|silver|gold|gray|grey|graphite|midnight|starlight|natural|titanium|beige|cream|lavender|mint|orange|teal)\b/g,' ')
-  .replace(/\s+/g,' ').trim();
-}')).join('|')+')\\\\s*
+ const colors=['black titanium','natural titanium','white titanium','black olive','stellar black','twilight black','midnight black','space black','cloud white','cosmic orange','deep blue','jet black','sky blue','light gold','night sky','mist blue','graphite','midnight','starlight','natural','titanium','beige','cream','lavender','mint','orange','teal','burgundy','corsair','olive','sage','black','white','blue','green','red','purple','pink','yellow','silver','gold','gray','grey'].sort((a,b)=>b.length-a.length);
+ let changed=true;
+ while(changed){
+  changed=false;
+  for(const color of colors){
+   if(key.endsWith(' '+color)){key=key.slice(0,-color.length-1).trim();changed=true;break;}
+  }
+ }
+ key=key.replace(/\s+(?:\d+\s*\+\s*)?\d{1,4}\s*(?:gb|tb)?\s*$/i,'').trim();
+ return key.replace(/\s+/g,' ').trim();
+}
 function modelDocumentId(name){return technicalModelKey(name).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,120);}
 function modelVariants(){
  const index=Number(document.getElementById('editDevice').value),p=catalog[index];
