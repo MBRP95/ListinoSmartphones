@@ -350,7 +350,7 @@ function setupShopFilter(){
  else sel.value='__all__';
  selectedShopFilter=sel.value;
 }
-function renderStock(){const rows=stock;document.getElementById('stockCount').textContent=rows.length;document.getElementById('pieceCount').textContent=rows.reduce((a,s)=>a+available(s),0);let matched=rows.filter(s=>mapped(s)>=0).length;document.getElementById('matchedCount').textContent=matched+'/'+rows.length;document.getElementById('stockRows').innerHTML=rows.map(s=>{let i=mapped(s);return `<tr><td>${esc(s.sku)}</td><td>${esc(s.description)}</td><td>${s.stock}</td><td>${s.reserved}</td><td class="status ${available(s)>0?'ok':'bad'}">${available(s)}</td><td><select onchange="mappings['${esc(s.sku)}']=Number(this.value);renderStock();renderCatalog()"><option value="-1">— Non associato —</option>${catalog.map((p,j)=>`<option value="${j}" ${i===j?'selected':''}>${esc(p.name)}</option>`).join('')}</select></td><td class="status ${i>=0?'ok':'bad'}">${i>=0?'Associato':'Da associare'}</td></tr>`}).join('')}
+function renderStock(){const rows=stock;const count=document.getElementById('stockCount');if(count)count.textContent=rows.length;const pieces=document.getElementById('pieceCount');if(pieces)pieces.textContent=rows.reduce((a,s)=>a+available(s),0);let matched=rows.filter(s=>mapped(s)>=0).length;const matchedEl=document.getElementById('matchedCount');if(matchedEl)matchedEl.textContent=matched+'/'+rows.length;const body=document.getElementById('stockRows');if(!body)return;body.innerHTML=rows.map(s=>{let i=mapped(s);return `<tr><td>${esc(s.sku)}</td><td>${esc(s.description)}</td><td>${s.stock}</td><td>${s.reserved}</td><td class="status ${available(s)>0?'ok':'bad'}">${available(s)}</td><td><select onchange="mappings['${esc(s.sku)}']=Number(this.value);renderStock();renderCatalog()"><option value="-1">— Non associato —</option>${catalog.map((p,j)=>`<option value="${j}" ${i===j?'selected':''}>${esc(p.name)}</option>`).join('')}</select></td><td class="status ${i>=0?'ok':'bad'}">${i>=0?'Associato':'Da associare'}</td></tr>`}).join('')}
 function storeAvailabilityFor(index){
  const totals=new Map();
  stock.filter(s=>mapped(s)===index&&String(s.warehouse||'').toLowerCase()==='vendibile'&&available(s)>0).forEach(s=>{
@@ -382,7 +382,7 @@ function showDetail(index){
  document.getElementById('detailPanel').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function closeDetail(){document.getElementById('detailPanel').classList.add('hidden');document.getElementById('detailBox').innerHTML=''}
-function renderAll(){document.getElementById('catalogCount').textContent=catalog.length;setupShopFilter();let brands=[...new Set(catalog.map(p=>brandOf(p.name)).filter(Boolean))].sort();let sel=document.getElementById('brandFilter');let old=sel.value;sel.innerHTML='<option value="">Tutte</option>'+brands.map(b=>`<option value="${b}">${b[0].toUpperCase()+b.slice(1)}</option>`).join('');sel.value=old;renderStock();renderCatalog()}
+function renderAll(){const count=document.getElementById('catalogCount');if(count)count.textContent=catalog.length;setupShopFilter();let brands=[...new Set(catalog.map(p=>brandOf(p.name)).filter(Boolean))].sort();let sel=document.getElementById('brandFilter');if(sel){let old=sel.value;sel.innerHTML='<option value="">Tutte</option>'+brands.map(b=>`<option value="${b}">${b[0].toUpperCase()+b.slice(1)}</option>`).join('');sel.value=old;}renderStock();renderCatalog()}
 
 async function importGlobalStock(){
  const file=document.getElementById('globalStockFile').files[0],msg=document.getElementById('globalStockMsg');
