@@ -312,10 +312,10 @@ function setupShopFilter(){
  const sel=document.getElementById('shopFilter');if(!sel)return;
  const shops=new Map();stock.forEach(s=>{if(s.shopId)shops.set(s.shopId,s.shop||s.shopId)});
  const preferred=selectedShopFilter||(currentUserProfile?.role==='seller'?currentUserProfile.shopId:currentShopId);
- sel.innerHTML=[...shops].sort((a,b)=>a[1].localeCompare(b[1],'it')).map(([id,name])=>'<option value="'+id+'">'+esc(name)+' ('+id+')</option>').join('');
+ sel.innerHTML='<option value="__all__">Tutti i negozi</option>'+[...shops].sort((a,b)=>a[1].localeCompare(b[1],'it')).map(([id,name])=>'<option value="'+id+'">'+esc(name)+' ('+id+')</option>').join('');
  if(preferred&&shops.has(preferred))sel.value=preferred;
- else if(shops.size)sel.selectedIndex=0;
- selectedShopFilter=sel.value||preferred||'';
+ else sel.value='__all__';
+ selectedShopFilter=sel.value;
 }
 function renderStock(){const rows=stock;document.getElementById('stockCount').textContent=rows.length;document.getElementById('pieceCount').textContent=rows.reduce((a,s)=>a+available(s),0);let matched=rows.filter(s=>mapped(s)>=0).length;document.getElementById('matchedCount').textContent=matched+'/'+rows.length;document.getElementById('stockRows').innerHTML=rows.map(s=>{let i=mapped(s);return `<tr><td>${esc(s.sku)}</td><td>${esc(s.description)}</td><td>${s.stock}</td><td>${s.reserved}</td><td class="status ${available(s)>0?'ok':'bad'}">${available(s)}</td><td><select onchange="mappings['${esc(s.sku)}']=Number(this.value);renderStock();renderCatalog()"><option value="-1">— Non associato —</option>${catalog.map((p,j)=>`<option value="${j}" ${i===j?'selected':''}>${esc(p.name)}</option>`).join('')}</select></td><td class="status ${i>=0?'ok':'bad'}">${i>=0?'Associato':'Da associare'}</td></tr>`}).join('')}
 function storeAvailabilityFor(index){
@@ -332,9 +332,10 @@ function storeAvailabilityFor(index){
 function renderCatalog(){
  const q=norm(document.getElementById('catalogSearch').value),b=document.getElementById('brandFilter').value;
  const rows=catalog.map((p,i)=>({p,i,stores:storeAvailabilityFor(i)}))
-  .filter(({p,stores})=>(!q||norm(p.name).includes(q))&&(!b||brandOf(p.name)===b)&&stores.length>0);
+  .filter(({p,stores})=>(!q||norm(p.name).includes(q))&&(!b||brandOf(p.name)===b)&&stores.length>0&&(selectedShopFilter==='__all__'||stores.some(s=>s.id===selectedShopFilter)));
  document.getElementById('catalogRows').innerHTML=rows.map(({p,i,stores})=>{
-  const availability=stores.map(s=>(s.id===selectedShopFilter?'★ ':'')+esc(s.name)+': '+s.qty).join(' · ');
+  const shownStores=selectedShopFilter==='__all__'?stores:stores.filter(s=>s.id===selectedShopFilter);
+  const availability=shownStores.map(s=>(s.id===selectedShopFilter?'★ ':'')+esc(s.name)+': '+s.qty).join(' · ');
   return `<tr><td>${esc(p.name)}</td><td>${esc(p.band||'—')}</td><td>${money(p.vendorPrice)}</td><td>${(p.offers||[]).length}</td><td>${availability}</td><td><button class="rowbtn" onclick="showDetail(${i})">Dettaglio</button></td></tr>`;
  }).join('');
 }
