@@ -1,6 +1,6 @@
 <!-- Device Proposer: dati caricati da devices.json e stock.json nella stessa directory. -->
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-05-admin-publish1">
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-05-single-login1">
 <title>Device Proposer</title>
 <style>
 :root{--ink:#172033;--muted:#667085;--line:#e5e9f0;--bg:#f4f6fa;--blue:#2457d6;--green:#087b57;--amber:#8a5b08}
@@ -21,9 +21,9 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav><button id="homeBtn" onclick="goHome()" style="display:none">Indietro</button></nav></header>
 <main>
 <section id="sellerAuthView" class="hidden">
-<div class="hero"><div class="eyebrow">Accesso riservato</div><h1>Area Seller</h1><p class="sub">Inserisci la password per accedere alla gestione del catalogo e del magazzino.</p></div>
+<div class="hero"><div class="eyebrow">Accesso riservato</div><h1>Area riservata</h1><p class="sub">Inserisci la password per accedere. Il profilo viene riconosciuto automaticamente.</p></div>
 <div class="panel" style="max-width:460px">
-<div class="field"><label for="sellerPassword">Password Seller</label><input id="sellerPassword" type="password" autocomplete="current-password" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter')verifySellerPassword()"></div>
+<div class="field"><label for="sellerPassword">Password</label><input id="sellerPassword" type="password" autocomplete="current-password" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter')verifySellerPassword()"></div>
 <div id="sellerAuthMsg" class="muted" style="margin-bottom:12px"></div>
 <div class="actions"><button class="secondary" onclick="goHome()">Indietro</button><button class="primary" onclick="verifySellerPassword()">Accedi</button></div>
 </div></section>
@@ -32,7 +32,7 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <div class="hero"><div class="eyebrow">Benvenuto</div><h1>Device Proposer</h1><p class="sub">Scegli come vuoi utilizzare lo strumento.</p></div>
 <div class="grid">
 <button class="choice" style="min-height:150px" onclick="enterClient()"><b>Modalità Cliente</b><small>Consulenza guidata per trovare lo smartphone più adatto.</small></button>
-<button class="choice" style="min-height:150px" onclick="requestSellerAccess()"><b>Modalità Seller</b><small>Catalogo e magazzino.</small></button><button class="choice" style="min-height:150px" onclick="requestAdminAccess()"><b>Amministratore</b><small>Aggiornamento e pubblicazione del listino retail.</small></button>
+<button class="choice" style="min-height:150px" onclick="requestSellerAccess()"><b>Area riservata</b><small>Accesso a catalogo, magazzino o amministrazione tramite password.</small></button>
 </div></section>
 <section id="clientView" class="hidden">
 <div class="hero"><div class="eyebrow">Consulenza guidata</div><h1>Troviamo lo smartphone giusto.</h1><p class="sub">Il cliente sceglie le proprie priorità; il sistema propone esclusivamente le varianti effettivamente disponibili nel negozio selezionato.</p></div>
@@ -86,7 +86,7 @@ const questions=[
 ];
 let answers={},step=0;
 const SELLER_PASSWORD='Listini26';
-const ADMIN_PASSWORD='CAMBIA_QUESTA_PASSWORD';
+const ADMIN_PASSWORD_HASH='6a47007caefd39b97aab42a5263872938c32da9005211c58fdd0aeadfc0884d1';
 function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/iphone\s*promax/g,'iphone pro max').replace(/samsung\s+galaxy/g,'galaxy').replace(/[^a-z0-9]+/g,' ').trim()}
 function brandOf(s){let n=norm(s);return ['apple','samsung','motorola','honor','oppo','realme','xiaomi','google'].find(b=>n.includes(b))||''}
 function available(s){return Math.max(0,(Number(s.stock)||0)-(Number(s.reserved)||0))}
@@ -111,7 +111,7 @@ function requestSellerAccess(){document.getElementById('homeView').classList.add
 function requestAdminAccess(){['homeView','sellerAuthView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('adminAuthView').classList.remove('hidden');document.getElementById('adminPassword').value='';document.getElementById('adminAuthMsg').textContent='';document.getElementById('adminPassword').focus()}
 function verifyAdminPassword(){const p=document.getElementById('adminPassword').value;if(p!==ADMIN_PASSWORD||p==='CAMBIA_QUESTA_PASSWORD'){document.getElementById('adminAuthMsg').textContent='Password errata o non configurata.';return}document.getElementById('adminAuthView').classList.add('hidden');document.getElementById('adminView').classList.remove('hidden');document.getElementById('homeBtn').style.display='inline-block';document.getElementById('adminPassword').value=''}
 async function publishCatalogToGitHub(){if(!catalog.length){document.getElementById('publishMsg').textContent='Catalogo vuoto.';return}const token=prompt('Inserisci il Fine-grained Personal Access Token GitHub:');if(!token)return;const msg=document.getElementById('publishMsg');msg.textContent='Pubblicazione in corso…';const url='https://api.github.com/repos/MBRP95/ListinoSmartphones/contents/devices.json';try{const headers={Authorization:'Bearer '+token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};const current=await fetch(url,{headers});if(!current.ok)throw Error('Lettura file fallita ('+current.status+'). Controlla token e permessi.');const file=await current.json();const content=JSON.stringify(catalog,null,2);const encoded=btoa(unescape(encodeURIComponent(content)));const res=await fetch(url,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({message:'Aggiornamento listino retail da Device Proposer',content:encoded,sha:file.sha})});const data=await res.json();if(!res.ok)throw Error(data.message||'Errore GitHub '+res.status);msg.textContent='Pubblicato. Commit '+data.commit.sha.slice(0,7)+'. Attendi il deploy di GitHub Pages.'}catch(e){msg.textContent='Pubblicazione fallita: '+e.message}}
-function verifySellerPassword(){const pw=document.getElementById('sellerPassword').value;if(pw!==SELLER_PASSWORD){document.getElementById('sellerAuthMsg').textContent='Password non corretta. Riprova.';document.getElementById('sellerPassword').focus();return}document.getElementById('sellerAuthView').classList.add('hidden');document.getElementById('storeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='inline-block';document.getElementById('sellerPassword').value='';renderAll()}
+async function verifySellerPassword(){const pw=document.getElementById('sellerPassword').value;const msg=document.getElementById('sellerAuthMsg');if(pw===SELLER_PASSWORD){document.getElementById('sellerAuthView').classList.add('hidden');document.getElementById('storeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='inline-block';document.getElementById('sellerPassword').value='';renderAll();return}try{const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw));const hash=[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');if(hash===ADMIN_PASSWORD_HASH){document.getElementById('sellerAuthView').classList.add('hidden');document.getElementById('adminView').classList.remove('hidden');document.getElementById('homeBtn').style.display='inline-block';document.getElementById('sellerPassword').value='';return}}catch(e){msg.textContent='Verifica password non disponibile in questo browser.';return}msg.textContent='Password non corretta. Riprova.';document.getElementById('sellerPassword').focus()}
 function currentAvailable(){return stock.filter(x=>available(x)>0&&String(x.warehouse).toLowerCase()==='vendibile').map(x=>({s:x,p:catalog[mapped(x)]})).filter(x=>x.p&&Number.isFinite(priceFor(x.p)))}
 function withinBudget(p){const b=answers.budget;if(!b)return true;const price=priceFor(p);return b==='over800'?price>800:price<=Number(b)}
 function storageGb(p){const n=String(p.name||'');const tb=n.match(/\b(1|2)\s*tb\b/i);if(tb)return Number(tb[1])*1024;const gb=n.match(/\b(128|256|512|1024|2048)\s*gb\b/i);return gb?Number(gb[1]):null}
