@@ -213,44 +213,4 @@ stock.forEach(s=>{let exact=s.catalogName||manualMatches[s.sku];let i=exact?cata
  }
 }
 init();
-</script></body></htmllet imageBlobs={};
-function loadEditor(){let i=Number(document.getElementById('editDevice').value),p=catalog[i];if(!p)return;let fields={Ram:'ram',Storage:'storage',Display:'display',Camera:'camera',Cpu:'cpu',Battery:'battery',Os:'os',Description:'description'};Object.entries(fields).forEach(([id,k])=>document.getElementById('f'+id).value=p[k]??'');document.getElementById('fImage').value='';let im=document.getElementById('imagePreview');im.style.display=p.image?'block':'none';im.src=p.image||'';document.getElementById('imagePath').textContent=p.image||'';document.getElementById('editorMsg').textContent=''}
-function clearEditor(){loadEditor()}
-function previewDeviceImage(){let f=document.getElementById('fImage').files[0];if(!f)return;if(!f.type.startsWith('image/')){alert('Seleziona un file immagine.');return}let u=URL.createObjectURL(f),im=document.getElementById('imagePreview');im.src=u;im.style.display='block';document.getElementById('imagePath').textContent='Nuova immagine: '+f.name}
-async function saveEditor(){let i=Number(document.getElementById('editDevice').value),p=catalog[i];if(!p)return;let fields={ram:'Ram',storage:'Storage',display:'Display',camera:'Camera',cpu:'Cpu',battery:'Battery',os:'Os',description:'Description'};Object.entries(fields).forEach(([k,id])=>p[k]=document.getElementById('f'+id).value.trim());let f=document.getElementById('fImage').files[0];if(f){let ext=(f.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');let safe=('device-'+i+'-'+norm(p.name).replace(/\s+/g,'-')).slice(0,75);let path='images/'+safe+'.'+ext;p.image=path;imageBlobs[path]=await f.arrayBuffer()}document.getElementById('editorMsg').textContent='Scheda salvata in memoria. Esporta il pacchetto per conservarla su GitHub.';renderCatalog();renderDetail()}
-function setupEditor(){document.getElementById('editDevice').innerHTML=catalog.map((p,i)=>`<option value="${i}">${esc(p.name)}</option>`).join('');loadEditor()}
-async function exportBundle(){if(!window.JSZip){alert('Libreria ZIP non caricata. Verifica la connessione internet.');return}let zip=new JSZip();zip.file('devices.json',JSON.stringify(catalog,null,2));zip.file('stock.json',JSON.stringify(stock,null,2));Object.entries(imageBlobs).forEach(([path,data])=>zip.file(path,data));zip.file('README-GITHUB.txt','Carica devices.json e stock.json nella root del repository e la cartella images/.\\nNon sovrascrivere index.html con questi file.\\nDopo il caricamento GitHub Pages pubblicherà gli aggiornamenti.');let blob=await zip.generateAsync({type:'blob'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='device-proposer-data.zip';a.click();URL.revokeObjectURL(a.href);document.getElementById('exportMsg').textContent='Pacchetto generato. Estrai lo ZIP e carica i file nel repository GitHub.'}
-async function importCatalogJson(){let f=document.getElementById('catalogJson').files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d)||!d.every(x=>x.name))throw new Error('Formato catalogo non valido');catalog=d;imageBlobs={};setupEditor();renderAll();document.getElementById('exportMsg').textContent='Catalogo JSON caricato.'}catch(e){alert('Errore catalogo: '+e.message)}}
-async function importStockJson(){let f=document.getElementById('stockJson').files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d)||!d.every(x=>x.sku))throw new Error('Formato magazzino non valido');stock=d;d.forEach(s=>{if(mappings[s.sku]===undefined)mappings[s.sku]=autoMatch(s)});renderAll();document.getElementById('exportMsg').textContent='Magazzino JSON caricato.'}catch(e){alert('Errore magazzino: '+e.message)}}
-async function init(){
- try{
-  const [cr,sr]=await Promise.all([fetch('./devices.json'),fetch('./stock.json')]);
-  if(!cr.ok||!sr.ok)throw new Error('devices.json o stock.json non trovato nella root del sito');
-  catalog=await cr.json();stock=await sr.json();
-  if(!Array.isArray(catalog)||!Array.isArray(stock))throw new Error('Formato JSON non valido');
-  const manualMatches={
- "6210042":"Honor 600 Smart 5G 128GB Black",
- "6213241":"Apple iPhone 16e 128GB Black",
- "6213277":"Apple iPhone 17 Pro Max 512GB Deep Blue",
- "6213329":"Apple iPhone 18 Pro 256GB Black",
- "6222003":"Motorola edge 60 8+256GB Blue",
- "6222008":"Motorola moto G77 + moto buds 256GB Black Olive",
- "6250158":"Samsung Galaxy A56 5G 256GB Graphite",
- "6250163":"Samsung Galaxy S25 Edge 512GB",
- "6250169":"SamsungGalaxy ZFold 7 512GB",
- "6250180":"Samsung A17 5G 128GB Black",
- "6250187":"Samsung Galaxy S26 Plus 5G 256 Black",
- "6250191":"Samsung Galaxy S26 Ultra 5G 256 Black",
- "6250193":"Samsung Galaxy S26 Ultra 5G 512 Black",
- "6250200":"Galaxy A37 5G 128GB Grey"
-};
-stock.forEach(s=>{let exact=manualMatches[s.sku];let i=exact?catalog.findIndex(p=>p.name===exact):autoMatch(s);if(i>=0)mappings[s.sku]=i});
-  renderAll();setupEditor();
- }catch(e){
-  document.getElementById('clientView').innerHTML='<div class="panel"><h2>Impossibile caricare i dati</h2><p class="hint">'+esc(e.message)+'</p><p>Verifica che devices.json e stock.json siano nella stessa cartella di index.html su GitHub.</p></div>';
-  document.getElementById('storeView').classList.remove('hidden');
-  document.getElementById('storeView').insertAdjacentHTML('afterbegin','<div class="notice">Errore di caricamento dati: '+esc(e.message)+'</div>');
- }
-}
-init();
 </script></body></html>
