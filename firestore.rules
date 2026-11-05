@@ -41,6 +41,10 @@ service cloud.firestore {
       allow read: if canReadAppData();
       allow write: if isAdmin();
     }
+    match /deviceModels/{modelId} {
+      allow read: if canReadAppData();
+      allow write: if isAdmin();
+    }
     match /stock/{stockId} {
       allow read: if canReadAppData();
       allow create, update, delete: if isAdmin();
