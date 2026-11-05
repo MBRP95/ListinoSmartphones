@@ -908,7 +908,7 @@ async function saveEditor(){
 function setupEditor(){
  const groups=new Map();
  catalog.forEach((p,i)=>{const key=technicalModelKey(p.name);if(!groups.has(key))groups.set(key,{p,i});});
- document.getElementById('editDevice').innerHTML=[...groups.values()].map(({p,i})=>'<option value="'+i+'">'+esc(p.name.replace(/\b\d+\s?(GB|TB)\b/ig,'').trim())+'</option>').join('');
+ document.getElementById('editDevice').innerHTML=[...groups.values()].map(({p,i})=>'<option value="'+i+'">'+esc(technicalModelLabel(p.name))+'</option>').join('');
  loadEditor();
 }
 async function exportBundle(){if(!window.JSZip){alert('Libreria ZIP non caricata. Verifica la connessione internet.');return}let zip=new JSZip();zip.file('devices.json',JSON.stringify(catalog,null,2));zip.file('stock.json',JSON.stringify(stock,null,2));Object.entries(imageBlobs).forEach(([path,data])=>zip.file(path,data));zip.file('README-GITHUB.txt','Carica devices.json e stock.json nella root del repository e la cartella images/.\\nNon sovrascrivere index.html con questi file.\\nDopo il caricamento GitHub Pages pubblicherà gli aggiornamenti.');let blob=await zip.generateAsync({type:'blob'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='device-proposer-data.zip';a.click();URL.revokeObjectURL(a.href);document.getElementById('exportMsg').textContent='Pacchetto generato. Estrai lo ZIP e carica i file nel repository GitHub.'}
