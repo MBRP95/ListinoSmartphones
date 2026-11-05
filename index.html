@@ -18,9 +18,15 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head><body>
-<header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav><button id="clientTab" class="active" onclick="showView('client')">Cliente</button><button id="storeTab" onclick="showView('store')">Store</button></nav></header>
+<header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav><button id="homeBtn" onclick="goHome()" style="display:none">Home</button></nav></header>
 <main>
-<section id="clientView">
+<section id="homeView">
+<div class="hero"><div class="eyebrow">Benvenuto</div><h1>Device Proposer</h1><p class="sub">Scegli come vuoi utilizzare lo strumento.</p></div>
+<div class="grid">
+<button class="choice" style="min-height:150px" onclick="enterClient()"><b>Modalità Cliente</b><small>Consulenza guidata per trovare lo smartphone più adatto.</small></button>
+<button class="choice" style="min-height:150px" onclick="requestSellerAccess()"><b>Modalità Seller</b><small>Catalogo, listino, magazzino e gestione schede dispositivo.</small></button>
+</div></section>
+<section id="clientView" class="hidden">
 <div class="hero"><div class="eyebrow">Consulenza guidata</div><h1>Troviamo lo smartphone giusto.</h1><p class="sub">Il cliente sceglie le proprie priorità; il sistema propone esclusivamente le varianti effettivamente disponibili nel negozio selezionato.</p></div>
 <div class="panel"><div class="stephead"><span id="stepLabel">PASSAGGIO 1 DI 3</span><span id="stepName">Budget</span></div><div class="progress"><span id="bar"></span></div><div id="wizard"></div><div class="actions"><button class="secondary" id="back" onclick="move(-1)" disabled>Indietro</button><button class="primary" id="next" onclick="move(1)">Continua</button></div></div>
 <div id="results" class="panel hidden"><div class="eyebrow">Proposta</div><h2>Smartphone disponibili e compatibili</h2><div id="resultSummary" class="chips"></div><div id="cards" class="cards"></div></div>
@@ -70,6 +76,7 @@ const questions=[
  {key:'storage',name:'Memoria',title:'Quanta memoria interna ti serve?',opts:[['128','Almeno 128 GB'],['256','Almeno 256 GB'],['512','Almeno 512 GB'],['1024','Almeno 1 TB'],['any','Non lo so / indifferente']]}
 ];
 let answers={},step=0;
+const SELLER_PASSWORD='Listini26';
 function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/iphone\s*promax/g,'iphone pro max').replace(/samsung\s+galaxy/g,'galaxy').replace(/[^a-z0-9]+/g,' ').trim()}
 function brandOf(s){let n=norm(s);return ['apple','samsung','motorola','honor','oppo','realme','xiaomi','google'].find(b=>n.includes(b))||''}
 function available(s){return Math.max(0,(Number(s.stock)||0)-(Number(s.reserved)||0))}
@@ -88,9 +95,14 @@ function matchScore(a,b){
 }
 function autoMatch(s){let ranked=catalog.map((p,i)=>({i,score:matchScore(s.description,p.name)})).sort((a,b)=>b.score-a.score);return ranked[0]?.score>=.48?ranked[0].i:-1}
 function autoMatchAll(){stock.forEach(s=>{if(mapped(s)<0)mappings[s.sku]=autoMatch(s)});renderAll();alert('Abbinamento automatico completato. Verifica manualmente ogni SKU: non è una conferma di corrispondenza.')}
-function showView(v){document.getElementById('clientView').classList.toggle('hidden',v!=='client');document.getElementById('storeView').classList.toggle('hidden',v!=='store');document.getElementById('clientTab').classList.toggle('active',v==='client');document.getElementById('storeTab').classList.toggle('active',v==='store');if(v==='store')renderAll()}
-function renderStep(){let q=questions[step];document.getElementById('stepLabel').textContent=`PASSAGGIO ${step+1} DI ${questions.length}`;document.getElementById('stepName').textContent=q.name;document.getElementById('bar').style.width=((step+1)/questions.length*100)+'%';document.getElementById('wizard').innerHTML=`<h2>${q.title}</h2><p class="hint">Puoi modificare la risposta tornando indietro.</p><div class="grid">${q.opts.map(([v,t])=>`<button class="choice ${answers[q.key]===v?'selected':''}" onclick="choose('${q.key}','${v}')"><b>${t}</b><small>${q.name}</small></button>`).join('')}</div>`;document.getElementById('back').disabled=step===0;document.getElementById('next').textContent=step===questions.length-1?'Mostra risultati':'Continua';document.getElementById('next').disabled=!answers[q.key]}
-function choose(k,v){answers[k]=v;renderStep()}
+function goHome(){document.getElementById('homeView').classList.remove('hidden');document.getElementById('clientView').classList.add('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('homeBtn').style.display='none'}
+function enterClient(){document.getElementById('homeView').classList.add('hidden');document.getElementById('clientView').classList.remove('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('homeBtn').style.display='inline-block';step=0;answers={};document.getElementById('results').classList.add('hidden');renderStep()}
+function requestSellerAccess(){const pw=prompt('Inserisci la password Seller');if(pw===null)return;if(pw!==SELLER_PASSWORD){alert('Password non corretta');return}document.getElementById('homeView').classList.add('hidden');document.getElementById('clientView').classList.add('hidden');document.getElementById('storeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='inline-block';renderAll()}
+function currentAvailable(){return stock.filter(x=>available(x)>0&&String(x.warehouse).toLowerCase()==='vendibile').map(x=>({s:x,p:catalog[mapped(x)]})).filter(x=>x.p)}
+function filteredBefore(stepIndex){return currentAvailable().filter(({p})=>{if(stepIndex>0&&answers.budget&&answers.budget!=='any'&&priceFor(p)>Number(answers.budget))return false;if(stepIndex>1&&answers.brand&&answers.brand!=='any'&&brandOf(p.name)!==answers.brand.toLowerCase())return false;return true})}
+function optionsFor(q){if(q.key==='budget')return q.opts;if(q.key==='brand'){let brands=[...new Set(filteredBefore(1).map(x=>brandOf(x.p.name)).filter(Boolean))].sort();return [['any','Nessuna preferenza'],...brands.map(b=>[b,b.charAt(0).toUpperCase()+b.slice(1)])]}if(q.key==='storage'){let caps=[...new Set(filteredBefore(2).map(x=>Number((x.p.name.match(/\\b(128|256|512|1024)\\s*gb\\b/i)||[])[1])).filter(Boolean))].sort((a,b)=>a-b);return [['any','Non lo so / indifferente'],...caps.map(n=>[String(n),'Almeno '+n+' GB'])]}return q.opts}
+function renderStep(){let q=questions[step],opts=optionsFor(q);if(answers[q.key]&&!opts.some(x=>x[0]===answers[q.key]))delete answers[q.key];document.getElementById('stepLabel').textContent=`PASSAGGIO ${step+1} DI ${questions.length}`;document.getElementById('stepName').textContent=q.name;document.getElementById('bar').style.width=((step+1)/questions.length*100)+'%';document.getElementById('wizard').innerHTML=`<h2>${q.title}</h2><p class="hint">Le opzioni si aggiornano in base alle risposte precedenti e ai dispositivi disponibili.</p><div class="grid">${opts.map(([v,t])=>`<button class="choice ${answers[q.key]===v?'selected':''}" onclick="choose('${q.key}','${v}')"><b>${t}</b><small>${q.name}</small></button>`).join('')}</div>`;document.getElementById('back').disabled=step===0;document.getElementById('next').textContent=step===questions.length-1?'Mostra risultati':'Continua';document.getElementById('next').disabled=!answers[q.key]}
+function choose(k,v){answers[k]=v;if(k==='budget'){delete answers.brand;delete answers.storage}else if(k==='brand'){delete answers.storage}renderStep()}
 function move(d){if(d<0){step=Math.max(0,step-1);renderStep();return}if(!answers[questions[step].key])return;if(step<questions.length-1){step++;renderStep()}else showResults()}
 function offersFor(p){return p.offers||[]}
 function priceFor(p){let o=offersFor(p).find(x=>x.method==='one shot');return o?.amounts?.[0]??p.vendorPrice}
@@ -126,7 +138,7 @@ async function init(){
   catalog=await cr.json();stock=await sr.json();
   if(!Array.isArray(catalog)||!Array.isArray(stock))throw new Error('Formato JSON non valido');
   stock.forEach(s=>{let i=autoMatch(s);if(i>=0)mappings[s.sku]=i});
-  renderAll();setupEditor();renderStep();
+  renderAll();setupEditor();
  }catch(e){
   document.getElementById('clientView').innerHTML='<div class="panel"><h2>Impossibile caricare i dati</h2><p class="hint">'+esc(e.message)+'</p><p>Verifica che devices.json e stock.json siano nella stessa cartella di index.html su GitHub.</p></div>';
   document.getElementById('storeView').classList.remove('hidden');
