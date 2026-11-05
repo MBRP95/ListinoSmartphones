@@ -133,7 +133,7 @@ async function importStock(){let f=document.getElementById('stockFile').files[0]
 
 let pendingCatalog=null;
 function euroValue(s){const m=String(s).match(/€\s*([\d.]+(?:,\d{2})?)/);return m?Number(m[1].replace(',','.')):null}
-function productLine(s){return /^(Apple|Samsung|SamsungGalaxy|Galaxy|Motorola|HONOR|Honor|Xiaomi|Redmi|TCL|OPPO|Oppo|Realme|Google|OnePlus|Strong|ZTE|Nokia|Doro|Alcatel)\b/i.test(s)}
+function productLine(s){return /(Apple|Samsung|SamsungGalaxy|Galaxy|Motorola|HONOR|Honor|Xiaomi|Redmi|TCL|OPPO|Oppo|Realme|Google|OnePlus|Strong|ZTE|Nokia|Doro|Alcatel)\b/i.test(s)}
 function parseRetailText(raw){
  const lines=raw.split(/\r?\n/).map(x=>x.replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim()).filter(Boolean),out=[];
  const parseMoney=t=>{let v=String(t).replace(/€|\s/g,'');if(v.includes(',')&&v.includes('.'))v=v.replace(/,/g,'');else if(v.includes(','))v=v.replace(',','.');return Number(v)};
