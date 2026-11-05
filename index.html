@@ -214,7 +214,43 @@ function requestSellerAccess(){
 }
 
 function catalogDocId(p){return norm(p.name).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,140)}
-async function exportCatalogJSON(){const msg=document.getElementById("publishMsg");const btn=document.querySelector('button[onclick="exportCatalogJSON()"]');if(btn)btn.disabled=true;try{msg.textContent="Lettura diretta di Firebase…";const [devicesSnap,modelsSnap]=await Promise.all([api.getDocs(api.collection(api.db,"devices")),api.getDocs(api.collection(api.db,"deviceModels"))]);const payload={exportedAt:new Date().toISOString(),source:"Firestore",devices:devicesSnap.docs.map(d=>({id:d.id,...d.data()})),deviceModels:modelsSnap.docs.map(d=>({id:d.id,...d.data()}))};const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="device-proposer-catalogo.json";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);msg.textContent="Esportate "+payload.devices.length+" varianti e "+payload.deviceModels.length+" schede modello."}catch(e){msg.textContent="Errore esportazione: "+e.message;alert("Errore esportazione: "+e.message)}finally{if(btn)btn.disabled=false}}
+async function exportCatalogJSON(){
+ const msg=document.getElementById("publishMsg");
+ const btn=document.querySelector('button[onclick="exportCatalogJSON()"]');
+ const api=window.firebaseApi;
+ if(btn)btn.disabled=true;
+ try{
+  if(!api||!api.db)throw new Error("Firebase non è inizializzato. Ricarica la pagina e accedi di nuovo.");
+  const user=api.auth?.currentUser;
+  if(!user)throw new Error("Sessione non valida. Accedi nuovamente come amministratore.");
+  msg.textContent="Lettura diretta di Firestore…";
+  const [devicesSnap,modelsSnap]=await Promise.all([
+   api.getDocs(api.collection(api.db,"devices")),
+   api.getDocs(api.collection(api.db,"deviceModels"))
+  ]);
+  const payload={
+   exportedAt:new Date().toISOString(),
+   source:"Firestore",
+   project:"deviceproposer",
+   devices:devicesSnap.docs.map(d=>({id:d.id,...d.data()})),
+   deviceModels:modelsSnap.docs.map(d=>({id:d.id,...d.data()}))
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="device-proposer-firestore-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  msg.textContent="Esportazione Firestore completata: "+payload.devices.length+" varianti e "+payload.deviceModels.length+" schede modello.";
+ }catch(e){
+  console.error("Export Firestore error:",e);
+  msg.textContent="Errore esportazione: "+e.message;
+  alert("Errore esportazione: "+e.message);
+ }finally{if(btn)btn.disabled=false}
+}
 async function publishCatalogToFirestore(){
  const msg=document.getElementById('publishMsg');
  if(!catalog.length){msg.textContent='Catalogo vuoto.';return}
