@@ -670,9 +670,9 @@ async function confirmPdfImport(){if(!pendingCatalog)return;const linked={};stoc
 
 let imageBlobs={};
 function technicalModelKey(name){
- let key=String(name||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
- key=key.replace(/\\bsamsunggalaxy\\b/g,'samsung galaxy').replace(/\\bsamsung\\s+galaxy\\b/g,'samsung galaxy');
- key=key.replace(/\\bpro\\s*max\\b/g,'pro max').replace(/\\bz\\s*flip\\b/g,'z flip').replace(/\\bz\\s*fold\\b/g,'z fold');
+ let key=String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+ key=key.replace(/\bsamsunggalaxy\b/g,'samsung galaxy').replace(/\bsamsung\s+galaxy\b/g,'samsung galaxy');
+ key=key.replace(/\bpro\s*max\b/g,'pro max').replace(/\bz\s*flip\b/g,'z flip').replace(/\bz\s*fold\b/g,'z fold');
  const colors=['black titanium','natural titanium','white titanium','black olive','stellar black','twilight black','midnight black','space black','cloud white','cosmic orange','deep blue','jet black','sky blue','light gold','night sky','mist blue','graphite','midnight','starlight','natural','titanium','beige','cream','lavender','mint','orange','teal','burgundy','corsair','olive','sage','black','white','blue','green','red','purple','pink','yellow','silver','gold','gray','grey'].sort((a,b)=>b.length-a.length);
  let changed=true;
  while(changed){
@@ -681,8 +681,8 @@ function technicalModelKey(name){
    if(key.endsWith(' '+color)){key=key.slice(0,-color.length-1).trim();changed=true;break;}
   }
  }
- key=key.replace(/\\s+(?:\\d+\\s*\\+\\s*)?(?:\\d{1,4}\\s*(?:gb|tb)|\\d{3,4})\\s*$/i,'').trim();
- return key.replace(/\\s+/g,' ').trim();
+ key=key.replace(/\s+(?:\d+\s*\+\s*)?(?:\d{1,4}\s*(?:gb|tb)|\d{3,4})\s*$/i,'').trim();
+ return key.replace(/\s+/g,' ').trim();
 }
 function modelDocumentId(name){return technicalModelKey(name).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,120);}
 function modelVariants(){
