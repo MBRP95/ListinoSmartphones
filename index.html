@@ -669,10 +669,19 @@ function cancelPdfImport(){pendingCatalog=null;document.getElementById('pdfPrevi
 async function confirmPdfImport(){if(!pendingCatalog)return;const linked={};stock.forEach(s=>{const i=mapped(s);if(i>=0&&catalog[i])linked[s.sku]=catalog[i].name});catalog=pendingCatalog;pendingCatalog=null;mappings={};stock.forEach(s=>{const n=linked[s.sku],i=n?catalog.findIndex(p=>norm(p.name)===norm(n)):-1;if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}});renderAll();setupEditor();document.getElementById('pdfPreview').classList.add('hidden');document.getElementById('retailPdf').value='';await publishCatalogToFirestore();document.getElementById('pdfMsg').textContent='Catalogo aggiornato su Firebase. Magazzino invariato.'}
 
 let imageBlobs={};
+function isTechnicalSmartphone(name){
+ return !/\brouter\b|\bmifi\b/i.test(String(name||''));
+}
 function technicalModelKey(name){
- let key=String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
- key=key.replace(/\bsamsunggalaxy\b/g,'samsung galaxy').replace(/\bsamsung\s+galaxy\b/g,'samsung galaxy');
- key=key.replace(/\bpro\s*max\b/g,'pro max').replace(/\bz\s*flip\b/g,'z flip').replace(/\bz\s*fold\b/g,'z fold');
+ let key=String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9+]+/g,' ').trim();
+ key=key.replace(/\s*\+\s*moto\s+buds\b.*$/i,'').trim();
+ key=key.replace(/\b\d{1,2}\s*\+\s*\d{2,4}\s*gb\b/ig,' ').trim();
+ key=key.replace(/\bsamsung\s*galaxy\b/g,'samsung galaxy').replace(/\bsamsunggalaxy\b/g,'samsung galaxy');
+ key=key.replace(/^galaxy\s+/,'samsung galaxy ').replace(/^samsung\s+(?!galaxy\b)/,'samsung galaxy ');
+ key=key.replace(/\bpro\s*max\b/g,'pro max').replace(/\bpromax\b/g,'pro max');
+ key=key.replace(/\bz\s*flip\b/g,'z flip').replace(/\bzflip\b/g,'z flip');
+ key=key.replace(/\bz\s*fold\b/g,'z fold').replace(/\bzfold\b/g,'z fold');
+ key=key.replace(/\bs25 fe(?:\s+5g)?\b/g,'s25 fe 5g');
  const colors=['black titanium','natural titanium','white titanium','black olive','stellar black','twilight black','midnight black','space black','cloud white','cosmic orange','deep blue','jet black','sky blue','light gold','night sky','mist blue','graphite','midnight','starlight','natural','titanium','beige','cream','lavender','mint','orange','teal','burgundy','corsair','olive','sage','black','white','blue','green','red','purple','pink','yellow','silver','gold','gray','grey'].sort((a,b)=>b.length-a.length);
  let changed=true;
  while(changed){
@@ -681,7 +690,7 @@ function technicalModelKey(name){
    if(key.endsWith(' '+color)){key=key.slice(0,-color.length-1).trim();changed=true;break;}
   }
  }
- key=key.replace(/\s+(?:\d+\s*\+\s*)?(?:\d{1,4}\s*(?:gb|tb)|\d{3,4})\s*$/i,'').trim();
+ key=key.replace(/\s+(?:\d{1,4}\s*(?:gb|tb)|\d{3,4})\s*$/i,'').trim();
  return key.replace(/\s+/g,' ').trim();
 }
 function modelDocumentId(name){return technicalModelKey(name).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,120);}
@@ -844,16 +853,16 @@ async function saveEditor(){
  finally{saveButton.disabled=false;}
 }
 function technicalModelLabel(name){
- let label=String(name||'').replace(/\bpro\s*max\b/ig,'Pro Max').replace(/\bz\s*flip\b/ig,'Z Flip').replace(/\bz\s*fold\b/ig,'Z Fold').trim();
+ let label=String(name||'').replace(/\s*\+\s*moto\s+buds\b.*$/i,'').replace(/\b\d{1,2}\s*\+\s*\d{2,4}\s*GB\b/i,'').replace(/\bpro\s*max\b/ig,'Pro Max').replace(/\bpromax\b/ig,'Pro Max').replace(/\bz\s*flip\b/ig,'Z Flip').replace(/\bzflip\b/ig,'Z Flip').replace(/\bz\s*fold\b/ig,'Z Fold').replace(/\bzfold\b/ig,'Z Fold').trim();
  const colors=['black titanium','natural titanium','white titanium','black olive','stellar black','twilight black','midnight black','space black','cloud white','cosmic orange','deep blue','jet black','sky blue','light gold','night sky','mist blue','graphite','midnight','starlight','natural','titanium','beige','cream','lavender','mint','orange','teal','burgundy','corsair','olive','sage','black','white','blue','green','red','purple','pink','yellow','silver','gold','gray','grey'].sort((a,b)=>b.length-a.length);
  let lower=label.toLowerCase();
  for(const color of colors){const suffix=' '+color;if(lower.endsWith(suffix)){label=label.slice(0,-suffix.length).trim();lower=label.toLowerCase();break;}}
- label=label.replace(/\s+\b\d+\s?(?:GB|TB)\b/ig,'').trim();
+ label=label.replace(/\s+\b\d+\s?(?:GB|TB)\b/ig,'').replace(/\s+\b(?:64|128|256|512|1024|2048)\b$/,'').trim();
  return label;
 }
 function setupEditor(){
  const groups=new Map();
- catalog.forEach((p,i)=>{const key=technicalModelKey(p.name);if(!groups.has(key))groups.set(key,{p,i});});
+ catalog.forEach((p,i)=>{if(!isTechnicalSmartphone(p.name))return;const key=technicalModelKey(p.name);if(key&&!groups.has(key))groups.set(key,{p,i});});
  document.getElementById('editDevice').innerHTML=[...groups.values()].map(({p,i})=>'<option value="'+i+'">'+esc(technicalModelLabel(p.name))+'</option>').join('');
  loadEditor();
 }
