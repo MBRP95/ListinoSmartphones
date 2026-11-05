@@ -698,12 +698,7 @@ function technicalModelKey(name){
  key=key.replace(/\s+(?:\d{1,4}\s*(?:gb|tb)|\d{3,4})\s*$/i,'').trim();
  return key.replace(/\s+/g,' ').trim();
 }
-function modelDocumentId(name){
- const key=technicalModelKey(name);
- if(key==='oppo a6 pro')return 'oppo-a6-pro-5g';
- if(key==='oppo reno 15f')return 'oppo-reno15-f';
- return key.replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,120);
-}
+function modelDocumentId(name){return technicalModelKey(name).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,120);}
 function modelVariants(){
  const index=Number(document.getElementById('editDevice').value),p=catalog[index];
  if(!p)return[];
