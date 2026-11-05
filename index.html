@@ -40,6 +40,10 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <div class="panel"><div class="stephead"><span id="stepLabel">PASSAGGIO 1 DI 3</span><span id="stepName">Budget</span></div><div class="progress"><span id="bar"></span></div><div id="wizard"></div><div class="actions"><button class="secondary" id="back" onclick="move(-1)" disabled>Indietro</button><button class="primary" id="next" onclick="move(1)">Continua</button></div></div>
 <div id="results" class="panel hidden"><div class="eyebrow">Proposta</div><h2>Smartphone disponibili e compatibili</h2><div id="resultSummary" class="chips"></div><div id="cards" class="cards"></div><div id="selectedDevicePanel" class="panel hidden" style="margin-top:18px"><div id="selectedDeviceContent"></div></div></div>
 </section>
+<section id="sellerShopView" class="hidden">
+<div class="hero"><div class="eyebrow">Accesso dipendenti</div><h1>Seleziona il negozio</h1><p class="sub">Scegli il punto vendita su cui lavorare. Potrai cambiare negozio anche dal gestionale.</p></div>
+<div class="panel" style="max-width:560px"><div class="field"><label for="sellerShopSelect">Negozio</label><select id="sellerShopSelect"></select></div><div id="sellerShopMsg" class="muted"></div><div class="actions"><button class="secondary" onclick="goHome()">Esci</button><button class="primary" onclick="confirmSellerShop()">Entra nel gestionale</button></div></div>
+</section>
 <section id="adminView" class="hidden"><div class="hero"><div class="eyebrow">Area amministratore</div><h1>Gestisci catalogo e magazzino.</h1><p class="sub">Catalogo e giacenze vengono salvati direttamente su Firebase.</p></div><div class="panel"><h2>Importazione magazzino globale</h2><p class="hint">Carica l’esportazione completa Excel di tutti i negozi. Le nuove giacenze saranno pubblicate solo dopo il caricamento completo.</p><div class="toolbar"><div class="field"><label>Excel magazzino completo (.xlsx)</label><input id="globalStockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importGlobalStock()">Controlla e pubblica magazzino</button></div><div id="globalStockMsg" class="muted" style="margin-top:10px"></div></div><div class="panel"><h2>Aggiorna listino da PDF</h2><p class="hint">Carica il nuovo PDF retail. Il catalogo non cambia finché non controlli l'anteprima e confermi.</p><div class="toolbar"><div class="field"><label>Nuovo listino retail (.pdf)</label><input id="retailPdf" type="file" accept="application/pdf,.pdf"></div><button class="primary" onclick="previewRetailPdf()">Analizza PDF</button></div><div id="pdfMsg" class="muted" style="margin-top:9px"></div><div id="pdfPreview" class="hidden" style="margin-top:14px"><div class="stats"><div class="stat"><b id="pdfCount">0</b><span>varianti lette</span></div><div class="stat"><b id="pdfNew">0</b><span>nuove varianti</span></div><div class="stat"><b id="pdfChanged">0</b><span>prezzi modificati</span></div><div class="stat"><b id="pdfWarnings">0</b><span>anomalie</span></div></div><div class="notice">Schede tecniche, fotografie e abbinamenti SKU sono mantenuti quando la variante è riconosciuta. Il magazzino non viene modificato.</div><div class="tablewrap"><table><thead><tr><th>Variante</th><th>Prezzo attuale</th><th>Nuovo prezzo</th><th>Esito</th></tr></thead><tbody id="pdfRows"></tbody></table></div><div class="actions"><button class="secondary" onclick="cancelPdfImport()">Annulla</button><button class="primary" onclick="confirmPdfImport()">Conferma aggiornamento</button></div></div></div><div class="panel"><h2>Catalogo su Firebase</h2><p class="hint">Primo caricamento: trasferisce su Firestore il catalogo attualmente caricato. Le successive modifiche al PDF saranno salvate direttamente su Firebase.</p><button class="primary" onclick="publishCatalogToFirestore()">Pubblica catalogo su Firebase</button><div id="publishMsg" class="muted" style="margin-top:10px"></div></div><div class="notice">Questa password protegge soltanto l'interfaccia: in un sito statico è leggibile nel codice pubblico. Anche il token è esposto al browser durante l'operazione.</div></section>
 <section id="storeView" class="hidden">
 <div class="hero"><div class="eyebrow">Area negozio</div><h1>Catalogo, listino e magazzino.</h1><p class="sub">Il catalogo retail si aggiorna caricando il PDF. Importa il file Excel aggiornato per riallineare disponibilità e quantità del negozio.</p></div>
@@ -129,11 +133,12 @@ function matchScore(a,b){
 }
 function autoMatch(s){let ranked=catalog.map((p,i)=>({i,score:matchScore(s.description,p.name)})).sort((a,b)=>b.score-a.score);return ranked[0]?.score>=.48?ranked[0].i:-1}
 function autoMatchAll(){stock.forEach(s=>{if(mapped(s)<0){const i=autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}}});renderAll();alert('Abbinamento automatico completato. Verifica manualmente ogni SKU: non è una conferma di corrispondenza.')}
-async function goHome(){if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}currentUserProfile=null;['sellerAuthView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';}
+async function goHome(){if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}currentUserProfile=null;['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';}
 function enterClient(){
  requestedAccessRole='client';
  document.getElementById('homeView').classList.add('hidden');
  document.getElementById('clientView').classList.add('hidden');
+ document.getElementById('sellerShopView').classList.add('hidden');
  document.getElementById('storeView').classList.add('hidden');
  document.getElementById('adminView').classList.add('hidden');
  document.getElementById('sellerAuthView').classList.remove('hidden');
@@ -142,6 +147,23 @@ function enterClient(){
  document.getElementById('sellerPassword').value='';
  document.getElementById('sellerAuthMsg').textContent='Accesso cliente: inserisci le credenziali abilitate per il tablet.';
  document.getElementById('sellerUsername').focus();
+}
+async function startSellerMode(){
+ const sel=document.getElementById('sellerShopSelect'),msg=document.getElementById('sellerShopMsg');
+ sel.innerHTML='<option value="">Caricamento negozi...</option>';msg.textContent='';
+ const api=window.firebaseApi;
+ const snap=await api.getDocs(api.collection(api.db,'shops'));
+ const shops=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'it'));
+ sel.innerHTML=shops.length?'<option value="">Seleziona un negozio...</option>'+shops.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+' ('+esc(x.id)+')</option>').join(''):'<option value="">Nessun negozio disponibile</option>';
+ if(currentUserProfile?.shopId&&shops.some(x=>x.id===currentUserProfile.shopId))sel.value=currentUserProfile.shopId;
+}
+function confirmSellerShop(){
+ const id=document.getElementById('sellerShopSelect').value;
+ if(!id){document.getElementById('sellerShopMsg').textContent='Seleziona un negozio prima di continuare.';return}
+ selectedShopFilter=id;currentShopId=id;
+ document.getElementById('sellerShopView').classList.add('hidden');
+ document.getElementById('storeView').classList.remove('hidden');
+ renderAll();
 }
 async function startClientMode(){
  document.getElementById('sellerAuthView').classList.add('hidden');
@@ -168,6 +190,7 @@ function requestSellerAccess(){
  requestedAccessRole='staff';
  document.getElementById('homeView').classList.add('hidden');
  document.getElementById('clientView').classList.add('hidden');
+ document.getElementById('sellerShopView').classList.add('hidden');
  document.getElementById('storeView').classList.add('hidden');
  document.getElementById('adminView').classList.add('hidden');
  document.getElementById('sellerAuthView').classList.remove('hidden');
@@ -229,9 +252,10 @@ async function verifySellerPassword(){
    document.getElementById('adminView').classList.remove('hidden');
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.remove('hidden'));
   }else if(profile.role==='seller'){
-   document.getElementById('storeView').classList.remove('hidden');
+   document.getElementById('sellerShopView').classList.remove('hidden');
+   document.getElementById('storeView').classList.add('hidden');
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
-   renderAll();
+   await startSellerMode();
   }else{
    await startClientMode();
   }
