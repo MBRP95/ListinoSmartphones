@@ -214,13 +214,13 @@ async function importGlobalStock(){
   if(!all.length)throw new Error('Nessuna riga valida: verifica intestazioni e foglio Magazzino.');
   all.forEach(x=>shops.set(x.shopId,x.shop));
   const dup=new Set();for(const x of all){const k=x.shopId+'|'+x.sku+'|'+x.warehouse;if(dup.has(k))throw new Error('Riga duplicata per SKU/negozio/magazzino: '+k);dup.add(k)}
-  const activeShops=await window.firebaseApi.getDocs(window.firebaseApi.collection(window.firebaseApi.db,'shops'));
-  const known=new Set(activeShops.docs.map(d=>d.id));
-  const unknown=[...shops.keys()].filter(id=>!known.has(id));
-  if(unknown.length)throw new Error('Negozi non configurati in Firestore: '+unknown.join(', ')+'. Importazione annullata.');
   if(shops.size<2)throw new Error('Il file sembra incompleto: sono stati riconosciuti meno di 2 negozi.');
   const version='v'+Date.now();
   const db=window.firebaseApi.db,writeBatch=window.firebaseApi.writeBatch,doc=window.firebaseApi.doc;
+  // Sincronizza l'anagrafica negozi dal file completo caricato dall'admin.
+  let shopBatch=writeBatch(db),shopCount=0;
+  for(const [id,name] of shops){shopBatch.set(doc(db,'shops',id),{name,active:true},{merge:true});shopCount++;if(shopCount%450===0){await shopBatch.commit();shopBatch=writeBatch(db)}}
+  if(shopCount%450!==0)await shopBatch.commit();
   let batch=writeBatch(db),count=0,batches=0;
   for(const x of all){
    const id=encodeURIComponent(x.shopId+'_'+x.sku+'_'+x.warehouse).replace(/%/g,'_');
