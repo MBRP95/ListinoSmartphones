@@ -18,8 +18,15 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head><body>
-<header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav><button id="homeBtn" onclick="goHome()" style="display:none">Home</button></nav></header>
+<header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav><button id="homeBtn" onclick="goHome()" style="display:none">Indietro</button></nav></header>
 <main>
+<section id="sellerAuthView" class="hidden">
+<div class="hero"><div class="eyebrow">Accesso riservato</div><h1>Area Seller</h1><p class="sub">Inserisci la password per accedere alla gestione del catalogo e del magazzino.</p></div>
+<div class="panel" style="max-width:460px">
+<div class="field"><label for="sellerPassword">Password Seller</label><input id="sellerPassword" type="password" autocomplete="current-password" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter')verifySellerPassword()"></div>
+<div id="sellerAuthMsg" class="muted" style="margin-bottom:12px"></div>
+<div class="actions"><button class="secondary" onclick="goHome()">Indietro</button><button class="primary" onclick="verifySellerPassword()">Accedi</button></div>
+</div></section>
 <section id="homeView">
 <div class="hero"><div class="eyebrow">Benvenuto</div><h1>Device Proposer</h1><p class="sub">Scegli come vuoi utilizzare lo strumento.</p></div>
 <div class="grid">
@@ -95,9 +102,10 @@ function matchScore(a,b){
 }
 function autoMatch(s){let ranked=catalog.map((p,i)=>({i,score:matchScore(s.description,p.name)})).sort((a,b)=>b.score-a.score);return ranked[0]?.score>=.48?ranked[0].i:-1}
 function autoMatchAll(){stock.forEach(s=>{if(mapped(s)<0)mappings[s.sku]=autoMatch(s)});renderAll();alert('Abbinamento automatico completato. Verifica manualmente ogni SKU: non è una conferma di corrispondenza.')}
-function goHome(){document.getElementById('homeView').classList.remove('hidden');document.getElementById('clientView').classList.add('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('homeBtn').style.display='none'}
-function enterClient(){document.getElementById('homeView').classList.add('hidden');document.getElementById('clientView').classList.remove('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('homeBtn').style.display='inline-block';step=0;answers={};document.getElementById('results').classList.add('hidden');renderStep()}
-function requestSellerAccess(){const pw=prompt('Inserisci la password Seller');if(pw===null)return;if(pw!==SELLER_PASSWORD){alert('Password non corretta');return}document.getElementById('homeView').classList.add('hidden');document.getElementById('clientView').classList.add('hidden');document.getElementById('storeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='inline-block';renderAll()}
+function goHome(){document.getElementById('homeView').classList.remove('hidden');document.getElementById('sellerAuthView').classList.add('hidden');document.getElementById('clientView').classList.add('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerAuthMsg').textContent=''}
+function enterClient(){document.getElementById('homeView').classList.add('hidden');document.getElementById('sellerAuthView').classList.add('hidden');document.getElementById('clientView').classList.remove('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('homeBtn').style.display='inline-block';step=0;answers={};document.getElementById('results').classList.add('hidden');renderStep()}
+function requestSellerAccess(){document.getElementById('homeView').classList.add('hidden');document.getElementById('clientView').classList.add('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('sellerAuthView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerAuthMsg').textContent='';document.getElementById('sellerPassword').focus()}
+function verifySellerPassword(){const pw=document.getElementById('sellerPassword').value;if(pw!==SELLER_PASSWORD){document.getElementById('sellerAuthMsg').textContent='Password non corretta. Riprova.';document.getElementById('sellerPassword').focus();return}document.getElementById('sellerAuthView').classList.add('hidden');document.getElementById('storeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='inline-block';document.getElementById('sellerPassword').value='';renderAll()}
 function currentAvailable(){return stock.filter(x=>available(x)>0&&String(x.warehouse).toLowerCase()==='vendibile').map(x=>({s:x,p:catalog[mapped(x)]})).filter(x=>x.p)}
 function filteredBefore(stepIndex){return currentAvailable().filter(({p})=>{if(stepIndex>0&&answers.budget&&answers.budget!=='any'&&priceFor(p)>Number(answers.budget))return false;if(stepIndex>1&&answers.brand&&answers.brand!=='any'&&brandOf(p.name)!==answers.brand.toLowerCase())return false;return true})}
 function optionsFor(q){if(q.key==='budget')return q.opts;if(q.key==='brand'){let brands=[...new Set(filteredBefore(1).map(x=>brandOf(x.p.name)).filter(Boolean))].sort();return [['any','Nessuna preferenza'],...brands.map(b=>[b,b.charAt(0).toUpperCase()+b.slice(1)])]}if(q.key==='storage'){let caps=[...new Set(filteredBefore(2).map(x=>Number((x.p.name.match(/\\b(128|256|512|1024)\\s*gb\\b/i)||[])[1])).filter(Boolean))].sort((a,b)=>a-b);return [['any','Non lo so / indifferente'],...caps.map(n=>[String(n),'Almeno '+n+' GB'])]}return q.opts}
@@ -105,7 +113,7 @@ function renderStep(){let q=questions[step],opts=optionsFor(q);if(answers[q.key]
 function choose(k,v){answers[k]=v;if(k==='budget'){delete answers.brand;delete answers.storage}else if(k==='brand'){delete answers.storage}renderStep()}
 function move(d){if(d<0){step=Math.max(0,step-1);renderStep();return}if(!answers[questions[step].key])return;if(step<questions.length-1){step++;renderStep()}else showResults()}
 function offersFor(p){return p.offers||[]}
-function priceFor(p){let o=offersFor(p).find(x=>x.method==='one shot');return o?.amounts?.[0]??p.vendorPrice}
+function priceFor(p){let valid=[Number(p.vendorPrice),...offersFor(p).filter(x=>x.method==='one shot').flatMap(x=>x.amounts||[]).map(Number)].filter(v=>Number.isFinite(v)&&v>1);return valid.length?Math.min(...valid):Number.POSITIVE_INFINITY}
 function showResults(){
  let candidates=stock.filter(s=>available(s)>0&&s.warehouse.toLowerCase()==='vendibile').map(s=>({s,p:catalog[mapped(s)]})).filter(x=>x.p);
  candidates=candidates.filter(({p})=>{let price=priceFor(p);if(answers.budget!=='any'&&price>Number(answers.budget))return false;if(answers.brand!=='any'&&brandOf(p.name)!==answers.brand.toLowerCase())return false;let cap=(p.name.match(/\b(128|256|512|1024)\s*gb\b/i)||[])[1];if(answers.storage!=='any'&&(!cap||Number(cap)<Number(answers.storage)))return false;return true});
