@@ -231,18 +231,18 @@ async function testUsersEndpoint(){
  const user=window.firebaseApi?.auth?.currentUser;
  if(currentUserProfile?.role!=='admin'){msg.textContent='Operazione consentita soltanto all’amministratore.';return}
  if(!user){msg.textContent='Sessione non valida. Accedi nuovamente.';return}
- btn.disabled=true;msg.textContent='Verifica in corso…';resultBox.classList.add('hidden');resultBox.textContent='';
+ btn.disabled=true;msg.textContent='Verifica autenticazione e permessi in corso…';resultBox.classList.add('hidden');resultBox.textContent='';
  try{
-  const token=await user.getIdToken();
-  const response=await fetch('https://device-proposer-admin.mariab-ragucci.workers.dev/users/list',{
+  const token=await user.getIdToken(true);
+  const response=await fetch('https://device-proposer-admin.mariab-ragucci.workers.dev/verify-admin',{
    method:'POST',
    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
    body:JSON.stringify({})
   });
   const data=await response.json().catch(()=>({}));
   if(!response.ok||!data.success)throw new Error(data.error||('Errore HTTP '+response.status));
-  msg.textContent='Collegamento riuscito. Utenze trovate: '+(data.users?.length||0);
-  resultBox.textContent=JSON.stringify(data.users||[],null,2);
+  msg.textContent='Verifica completata: autenticazione amministratore e lettura Firestore funzionanti.';
+  resultBox.textContent='Account amministratore verificato. UID e dati personali non vengono mostrati.';
   resultBox.classList.remove('hidden');
  }catch(e){msg.textContent='Verifica non riuscita: '+e.message}
  finally{btn.disabled=false}
