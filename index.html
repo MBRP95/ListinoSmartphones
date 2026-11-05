@@ -397,9 +397,12 @@ async function init(){
 stock.forEach(s=>{let exact=s.catalogName||manualMatches[s.sku];let i=exact?catalog.findIndex(p=>norm(p.name)===norm(exact)):autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}});
   renderAll();setupEditor();
  }catch(e){
-  document.getElementById('clientView').innerHTML='<div class="panel"><h2>Impossibile caricare i dati</h2><p class="hint">'+esc(e.message)+'</p><p>Verifica che devices.json e stock.json siano nella stessa cartella di index.html su GitHub.</p></div>';
-  document.getElementById('storeView').classList.remove('hidden');
-  document.getElementById('storeView').insertAdjacentHTML('afterbegin','<div class="notice">Errore di caricamento dati: '+esc(e.message)+'</div>');
+  ['clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  const home=document.getElementById('homeView');
+  let notice=document.getElementById('startupError');
+  if(!notice){notice=document.createElement('div');notice.id='startupError';notice.className='notice';home.insertBefore(notice,home.firstChild)}
+  notice.textContent='Impossibile caricare i dati. Riprova più tardi o contatta l’amministratore.';
+  console.error('Device Proposer startup error:',e);
  }
 }
 init();
