@@ -738,7 +738,7 @@ async function previewModelImport(){
  try{
   let data;
   if(file){data=JSON.parse(await file.text());}
-  else{const response=await fetch('./deviceModels-batch01.json? v=1'.replace(' ?','?'),{cache:'no-store'});if(!response.ok)throw new Error('Lotto non raggiungibile su GitHub Pages.');data=await response.json();}
+  else{const response=await fetch('./deviceModels-batch01-draft.json?'+Date.now(),{cache:'no-store'});if(!response.ok)throw new Error('Lotto non raggiungibile su GitHub Pages.');data=await response.json();}
   if(data.project!=='deviceproposer'||data.collection!=='deviceModels'||!Array.isArray(data.models))throw new Error('Formato o progetto non riconosciuto.');
   const ids=new Set();
   for(const m of data.models){
