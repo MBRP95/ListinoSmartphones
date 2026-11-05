@@ -641,7 +641,8 @@ function loadEditor(){
  const variants=modelVariants(),p=variants[0];if(!p)return;
  const modelId=p.modelId||modelDocumentId(p.name);
  const shared=window.currentModelSpecs?.[modelId]||p.modelSpecs||{};
- Object.entries(sharedEditorFields).forEach(([key,id])=>document.getElementById(id).value=shared[key]??'');
+ const legacy={displayTech:p.display||'',cameraMain:p.camera||'',cpu:p.cpu||'',battery:p.battery||'',os:p.os||'',description:p.description||''};
+ Object.entries(sharedEditorFields).forEach(([key,id])=>document.getElementById(id).value=shared[key]??legacy[key]??'');
  document.getElementById('fRam').value=p.ram??'';
  document.getElementById('fStorage').value=p.storage??'';
  document.getElementById('variantRows').innerHTML=variants.map(v=>'<tr><td>'+esc(v.name)+'</td><td>'+esc(v.ram||'—')+'</td><td>'+esc(v.storage||'—')+'</td></tr>').join('');
