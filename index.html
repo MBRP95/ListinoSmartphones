@@ -145,7 +145,23 @@ async function init(){
   if(!cr.ok||!sr.ok)throw new Error('devices.json o stock.json non trovato nella root del sito');
   catalog=await cr.json();stock=await sr.json();
   if(!Array.isArray(catalog)||!Array.isArray(stock))throw new Error('Formato JSON non valido');
-  stock.forEach(s=>{let i=autoMatch(s);if(i>=0)mappings[s.sku]=i});
+  const manualMatches={
+ "6210042":"Honor 600 Smart 5G 128GB Black",
+ "6213241":"Apple iPhone 16e 128GB Black",
+ "6213277":"Apple iPhone 17 Pro Max 512GB Deep Blue",
+ "6213329":"Apple iPhone 18 Pro 256GB Black",
+ "6222003":"Motorola edge 60 8+256GB Blue",
+ "6222008":"Motorola moto G77 + moto buds 256GB Black Olive",
+ "6250158":"Samsung Galaxy A56 5G 256GB Graphite",
+ "6250163":"Samsung Galaxy S25 Edge 512GB",
+ "6250169":"SamsungGalaxy ZFold 7 512GB",
+ "6250180":"Samsung A17 5G 128GB Black",
+ "6250187":"Samsung Galaxy S26 Plus 5G 256 Black",
+ "6250191":"Samsung Galaxy S26 Ultra 5G 256 Black",
+ "6250193":"Samsung Galaxy S26 Ultra 5G 512 Black",
+ "6250200":"Galaxy A37 5G 128GB Grey"
+};
+stock.forEach(s=>{let exact=manualMatches[s.sku];let i=exact?catalog.findIndex(p=>p.name===exact):autoMatch(s);if(i>=0)mappings[s.sku]=i});
   renderAll();setupEditor();
  }catch(e){
   document.getElementById('clientView').innerHTML='<div class="panel"><h2>Impossibile caricare i dati</h2><p class="hint">'+esc(e.message)+'</p><p>Verifica che devices.json e stock.json siano nella stessa cartella di index.html su GitHub.</p></div>';
