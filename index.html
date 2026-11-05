@@ -222,7 +222,7 @@ function changeShopFilter(){selectedShopFilter=document.getElementById('shopFilt
 function setupShopFilter(){
  const sel=document.getElementById('shopFilter');if(!sel)return;
  const shops=new Map();stock.forEach(s=>{if(s.shopId)shops.set(s.shopId,s.shop||s.shopId)});
- const preferred=currentUserProfile?.role==='seller'?currentUserProfile.shopId:(selectedShopFilter||currentShopId);
+ const preferred=selectedShopFilter||(currentUserProfile?.role==='seller'?currentUserProfile.shopId:currentShopId);
  sel.innerHTML=[...shops].sort((a,b)=>a[1].localeCompare(b[1],'it')).map(([id,name])=>'<option value="'+id+'">'+esc(name)+' ('+id+')</option>').join('');
  if(preferred&&shops.has(preferred))sel.value=preferred;
  else if(shops.size)sel.selectedIndex=0;
