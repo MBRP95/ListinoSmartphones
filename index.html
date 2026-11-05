@@ -1,6 +1,6 @@
 <!-- Device Proposer: dati caricati da devices.json e stock.json nella stessa directory. -->
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-05-single-login2">
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-05-single-login3">
 <title>Device Proposer</title>
 <style>
 :root{--ink:#172033;--muted:#667085;--line:#e5e9f0;--bg:#f4f6fa;--blue:#2457d6;--green:#087b57;--amber:#8a5b08}
@@ -64,8 +64,7 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <div class="field"><img id="imagePreview" style="display:none;max-width:180px;max-height:140px;object-fit:contain;border:1px solid var(--line);border-radius:10px;padding:5px"><div id="imagePath" class="muted"></div></div>
 </div><div class="actions"><button class="secondary" onclick="clearEditor()">Annulla modifiche</button><button class="primary" onclick="saveEditor()">Salva scheda</button></div><div id="editorMsg" class="muted" style="margin-top:8px"></div>
 </div>
-<div class="panel"><h2>Pubblica aggiornamenti su GitHub</h2><p class="hint">Esporta un pacchetto ZIP con catalogo, magazzino e fotografie. Estrai il contenuto e carica i file nel repository: <b>devices.json</b>, <b>stock.json</b> e cartella <b>images/</b>. Il codice dell'app resta separato.</p>
-<div class="toolbar"><button class="primary" onclick="exportBundle()">Esporta pacchetto per GitHub (.zip)</button><div class="muted">Il pacchetto non contiene il listino PDF originale, solo i dati strutturati utilizzati dall'app.</div></div>
+
 <div class="field" style="margin-top:15px"><label>Carica catalogo JSON aggiornato</label><input type="file" id="catalogJson" accept=".json,application/json" onchange="importCatalogJson()"></div>
 <div class="field"><label>Carica magazzino JSON aggiornato</label><input type="file" id="stockJson" accept=".json,application/json" onchange="importStockJson()"></div>
 <div id="exportMsg" class="muted"></div></div>
