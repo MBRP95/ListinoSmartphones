@@ -461,8 +461,10 @@ function getDeviceSpecs(p){
  const modelId=p?.modelId||(p?.name?modelDocumentId(p.name):'');
  const m=p?.modelSpecs||window.currentModelSpecs?.[modelId]||{};
  const variant=typeof variantSpecsFromName==='function'?variantSpecsFromName(p||{}):{};
+ const variantRam=variant.ram&&variant.ram!=='—'?variant.ram:'';
+ const variantStorage=variant.storage&&variant.storage!=='—'?variant.storage:'';
  return [
-  ['RAM',p?.ram||variant.ram],['Memoria interna',p?.storage||variant.storage],
+  ['RAM',p?.ram||variantRam],['Memoria interna',p?.storage||variantStorage],
   ['Tecnologia display',m.displayTech||p?.display],
   ['Dimensione display',m.displaySize],['Risoluzione',m.resolution],
   ['Frequenza aggiornamento',m.refreshRate],
