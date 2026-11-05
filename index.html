@@ -39,7 +39,7 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <div class="panel"><div class="stephead"><span id="stepLabel">PASSAGGIO 1 DI 3</span><span id="stepName">Budget</span></div><div class="progress"><span id="bar"></span></div><div id="wizard"></div><div class="actions"><button class="secondary" id="back" onclick="move(-1)" disabled>Indietro</button><button class="primary" id="next" onclick="move(1)">Continua</button></div></div>
 <div id="results" class="panel hidden"><div class="eyebrow">Proposta</div><h2>Smartphone disponibili e compatibili</h2><div id="resultSummary" class="chips"></div><div id="cards" class="cards"></div><div id="selectedDevicePanel" class="panel hidden" style="margin-top:18px"><div id="selectedDeviceContent"></div></div></div>
 </section>
-<section id="adminView" class="hidden"><div class="hero"><div class="eyebrow">Area amministratore</div><h1>Aggiorna e pubblica il listino.</h1><p class="sub">Carica il PDF, controlla i dati e pubblica il catalogo.</p></div><div class="panel"><h2>Importazione magazzino globale</h2><p class="hint">Carica l’esportazione completa Excel di tutti i negozi. Le nuove giacenze saranno pubblicate solo dopo il caricamento completo.</p><div class="toolbar"><div class="field"><label>Excel magazzino completo (.xlsx)</label><input id="globalStockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importGlobalStock()">Controlla e pubblica magazzino</button></div><div id="globalStockMsg" class="muted" style="margin-top:10px"></div></div><div class="panel"><h2>Aggiorna listino da PDF</h2><p class="hint">Carica il nuovo PDF retail. Il catalogo non cambia finché non controlli l'anteprima e confermi.</p><div class="toolbar"><div class="field"><label>Nuovo listino retail (.pdf)</label><input id="retailPdf" type="file" accept="application/pdf,.pdf"></div><button class="primary" onclick="previewRetailPdf()">Analizza PDF</button></div><div id="pdfMsg" class="muted" style="margin-top:9px"></div><div id="pdfPreview" class="hidden" style="margin-top:14px"><div class="stats"><div class="stat"><b id="pdfCount">0</b><span>varianti lette</span></div><div class="stat"><b id="pdfNew">0</b><span>nuove varianti</span></div><div class="stat"><b id="pdfChanged">0</b><span>prezzi modificati</span></div><div class="stat"><b id="pdfWarnings">0</b><span>anomalie</span></div></div><div class="notice">Schede tecniche, fotografie e abbinamenti SKU sono mantenuti quando la variante è riconosciuta. Il magazzino non viene modificato.</div><div class="tablewrap"><table><thead><tr><th>Variante</th><th>Prezzo attuale</th><th>Nuovo prezzo</th><th>Esito</th></tr></thead><tbody id="pdfRows"></tbody></table></div><div class="actions"><button class="secondary" onclick="cancelPdfImport()">Annulla</button><button class="primary" onclick="confirmPdfImport()">Conferma aggiornamento</button></div></div></div><div class="panel"><h2>Pubblica catalogo su GitHub</h2><p class="hint">Il token viene richiesto a ogni pubblicazione e non viene salvato nel sito.</p><button class="primary" onclick="publishCatalogToGitHub()">Pubblica catalogo confermato</button><div id="publishMsg" class="muted" style="margin-top:10px"></div></div><div class="notice">Questa password protegge soltanto l'interfaccia: in un sito statico è leggibile nel codice pubblico. Anche il token è esposto al browser durante l'operazione.</div></section>
+<section id="adminView" class="hidden"><div class="hero"><div class="eyebrow">Area amministratore</div><h1>Gestisci catalogo e magazzino.</h1><p class="sub">Catalogo e giacenze vengono salvati direttamente su Firebase.</p></div><div class="panel"><h2>Importazione magazzino globale</h2><p class="hint">Carica l’esportazione completa Excel di tutti i negozi. Le nuove giacenze saranno pubblicate solo dopo il caricamento completo.</p><div class="toolbar"><div class="field"><label>Excel magazzino completo (.xlsx)</label><input id="globalStockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importGlobalStock()">Controlla e pubblica magazzino</button></div><div id="globalStockMsg" class="muted" style="margin-top:10px"></div></div><div class="panel"><h2>Aggiorna listino da PDF</h2><p class="hint">Carica il nuovo PDF retail. Il catalogo non cambia finché non controlli l'anteprima e confermi.</p><div class="toolbar"><div class="field"><label>Nuovo listino retail (.pdf)</label><input id="retailPdf" type="file" accept="application/pdf,.pdf"></div><button class="primary" onclick="previewRetailPdf()">Analizza PDF</button></div><div id="pdfMsg" class="muted" style="margin-top:9px"></div><div id="pdfPreview" class="hidden" style="margin-top:14px"><div class="stats"><div class="stat"><b id="pdfCount">0</b><span>varianti lette</span></div><div class="stat"><b id="pdfNew">0</b><span>nuove varianti</span></div><div class="stat"><b id="pdfChanged">0</b><span>prezzi modificati</span></div><div class="stat"><b id="pdfWarnings">0</b><span>anomalie</span></div></div><div class="notice">Schede tecniche, fotografie e abbinamenti SKU sono mantenuti quando la variante è riconosciuta. Il magazzino non viene modificato.</div><div class="tablewrap"><table><thead><tr><th>Variante</th><th>Prezzo attuale</th><th>Nuovo prezzo</th><th>Esito</th></tr></thead><tbody id="pdfRows"></tbody></table></div><div class="actions"><button class="secondary" onclick="cancelPdfImport()">Annulla</button><button class="primary" onclick="confirmPdfImport()">Conferma aggiornamento</button></div></div></div><div class="panel"><h2>Catalogo su Firebase</h2><p class="hint">Primo caricamento: trasferisce su Firestore il catalogo attualmente caricato. Le successive modifiche al PDF saranno salvate direttamente su Firebase.</p><button class="primary" onclick="publishCatalogToFirestore()">Pubblica catalogo su Firebase</button><div id="publishMsg" class="muted" style="margin-top:10px"></div></div><div class="notice">Questa password protegge soltanto l'interfaccia: in un sito statico è leggibile nel codice pubblico. Anche il token è esposto al browser durante l'operazione.</div></section>
 <section id="storeView" class="hidden">
 <div class="hero"><div class="eyebrow">Area negozio</div><h1>Catalogo, listino e magazzino.</h1><p class="sub">Il catalogo retail si aggiorna caricando il PDF. Importa il file Excel aggiornato per riallineare disponibilità e quantità del negozio.</p></div>
 <div class="stats"><div class="stat"><b id="catalogCount">106</b><span>varianti nel listino</span></div><div class="stat"><b id="stockCount">14</b><span>varianti smartphone in Excel</span></div><div class="stat"><b id="pieceCount">19</b><span>pezzi a stock iniziale</span></div><div class="stat"><b id="matchedCount">—</b><span>varianti abbinate al listino</span></div></div>
@@ -78,7 +78,7 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, getDocs, writeBatch, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, getDocs, writeBatch, serverTimestamp, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyA-FeADcnW89AOSuAZ-i3xnF7reReOcg2",
   authDomain: "deviceproposer.firebaseapp.com",
@@ -91,7 +91,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-window.firebaseApi = { auth, db, signInWithEmailAndPassword, signOut, doc, getDoc, collection, getDocs, writeBatch, serverTimestamp, setDoc };
+window.firebaseApi = { auth, db, signInWithEmailAndPassword, signOut, doc, getDoc, collection, getDocs, writeBatch, serverTimestamp, setDoc, deleteDoc };
 window.firebaseReady = true;
 window.dispatchEvent(new Event("firebase-ready"));
 </script>
@@ -129,7 +129,30 @@ function autoMatchAll(){stock.forEach(s=>{if(mapped(s)<0){const i=autoMatch(s);i
 async function goHome(){if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}currentUserProfile=null;['sellerAuthView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';}
 function enterClient(){if(!currentShopId){alert('Questo tablet non è associato a un negozio. Usa il link configurato dall’amministratore.');return}document.getElementById('homeView').classList.add('hidden');document.getElementById('sellerAuthView').classList.add('hidden');document.getElementById('clientView').classList.remove('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('homeBtn').style.display='inline-block';step=0;answers={};document.getElementById('results').classList.add('hidden');renderStep()}
 function requestSellerAccess(){document.getElementById('homeView').classList.add('hidden');document.getElementById('clientView').classList.add('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('sellerAuthView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';document.getElementById('sellerUsername').focus()}
-async function publishCatalogToGitHub(){if(!catalog.length){document.getElementById('publishMsg').textContent='Catalogo vuoto.';return}const token=prompt('Inserisci il Fine-grained Personal Access Token GitHub:');if(!token)return;const msg=document.getElementById('publishMsg');msg.textContent='Pubblicazione in corso…';const url='https://api.github.com/repos/MBRP95/ListinoSmartphones/contents/devices.json';try{const headers={Authorization:'Bearer '+token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};const current=await fetch(url,{headers});if(!current.ok)throw Error('Lettura file fallita ('+current.status+'). Controlla token e permessi.');const file=await current.json();const content=JSON.stringify(catalog,null,2);const encoded=btoa(unescape(encodeURIComponent(content)));const res=await fetch(url,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({message:'Aggiornamento listino retail da Device Proposer',content:encoded,sha:file.sha})});const data=await res.json();if(!res.ok)throw Error(data.message||'Errore GitHub '+res.status);msg.textContent='Pubblicato. Commit '+data.commit.sha.slice(0,7)+'. Attendi il deploy di GitHub Pages.'}catch(e){msg.textContent='Pubblicazione fallita: '+e.message}}
+
+function catalogDocId(p){return norm(p.name).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,140)}
+async function publishCatalogToFirestore(){
+ const msg=document.getElementById('publishMsg');
+ if(!catalog.length){msg.textContent='Catalogo vuoto.';return}
+ if(currentUserProfile?.role!=='admin'){msg.textContent='Operazione consentita soltanto all’amministratore.';return}
+ const btn=document.querySelector('button[onclick="publishCatalogToFirestore()"]');btn.disabled=true;msg.textContent='Pubblicazione catalogo su Firebase…';
+ try{
+  const api=window.firebaseApi,db=api.db;
+  const desired=new Map();
+  catalog.forEach(p=>{const id=catalogDocId(p);if(!id)throw new Error('Variante senza nome.');if(desired.has(id))throw new Error('Due varianti generano lo stesso identificativo: '+p.name);desired.set(id,p)});
+  const existing=await api.getDocs(api.collection(db,'devices'));
+  let batch=api.writeBatch(db),ops=0;
+  for(const [id,p] of desired){
+   batch.set(api.doc(db,'devices',id),p);ops++;
+   if(ops===450){await batch.commit();batch=api.writeBatch(db);ops=0}
+  }
+  for(const d of existing.docs){if(!desired.has(d.id)){batch.delete(d.ref);ops++;if(ops===450){await batch.commit();batch=api.writeBatch(db);ops=0}}}
+  if(ops)await batch.commit();
+  msg.textContent='Catalogo pubblicato su Firebase: '+desired.size+' varianti. Nessun token GitHub necessario.';
+ }catch(e){msg.textContent='Pubblicazione non completata: '+e.message}
+ finally{btn.disabled=false}
+}
+
 async function verifySellerPassword(){
  const username=document.getElementById('sellerUsername').value.trim().toLowerCase();
  const pw=document.getElementById('sellerPassword').value;
@@ -236,6 +259,17 @@ async function importGlobalStock(){
  }catch(e){msg.textContent='Importazione non pubblicata: '+e.message}
  finally{btn.disabled=false}
 }
+
+async function loadCatalogFromFirestore(){
+ const api=window.firebaseApi;
+ const snap=await api.getDocs(api.collection(api.db,'devices'));
+ if(!snap.empty){
+  catalog=snap.docs.map(d=>d.data()).sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+  return true;
+ }
+ return false;
+}
+
 async function loadStockFromFirestore(){
  const api=window.firebaseApi,db=api.db;
  const setting=await api.getDoc(api.doc(db,'settings','stock'));
@@ -318,7 +352,7 @@ async function previewRetailPdf(){
  finally{b.disabled=false}
 }
 function cancelPdfImport(){pendingCatalog=null;document.getElementById('pdfPreview').classList.add('hidden');document.getElementById('retailPdf').value='';document.getElementById('pdfMsg').textContent='Annullata: catalogo invariato.'}
-function confirmPdfImport(){if(!pendingCatalog)return;const linked={};stock.forEach(s=>{const i=mapped(s);if(i>=0&&catalog[i])linked[s.sku]=catalog[i].name});catalog=pendingCatalog;pendingCatalog=null;mappings={};stock.forEach(s=>{const n=linked[s.sku],i=n?catalog.findIndex(p=>norm(p.name)===norm(n)):-1;if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}});renderAll();setupEditor();document.getElementById('pdfPreview').classList.add('hidden');document.getElementById('retailPdf').value='';document.getElementById('pdfMsg').textContent='Catalogo aggiornato in memoria. Ora puoi pubblicarlo dalla sezione Amministratore. Magazzino invariato.'}
+async function confirmPdfImport(){if(!pendingCatalog)return;const linked={};stock.forEach(s=>{const i=mapped(s);if(i>=0&&catalog[i])linked[s.sku]=catalog[i].name});catalog=pendingCatalog;pendingCatalog=null;mappings={};stock.forEach(s=>{const n=linked[s.sku],i=n?catalog.findIndex(p=>norm(p.name)===norm(n)):-1;if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}});renderAll();setupEditor();document.getElementById('pdfPreview').classList.add('hidden');document.getElementById('retailPdf').value='';await publishCatalogToFirestore();document.getElementById('pdfMsg').textContent='Catalogo aggiornato su Firebase. Magazzino invariato.'}
 
 let imageBlobs={};
 function technicalModelKey(name){return norm(name).replace(/\b\d+\s?(gb|tb)\b/g,' ').replace(/\b(black|white|blue|green|red|purple|pink|yellow|silver|gold|gray|grey|graphite|midnight|starlight|natural|titanium|beige|cream|lavender|mint|orange|teal)\b/g,' ').replace(/\s+/g,' ').trim()}
@@ -333,11 +367,17 @@ async function importStockJson(){let f=document.getElementById('stockJson').file
 async function init(){
  try{
   while(!window.firebaseApi){await new Promise(resolve=>window.addEventListener('firebase-ready',resolve,{once:true}))}
-   const [cr,sr]=await Promise.all([fetch('./devices.json'),fetch('./stock.json')]);
-  if(!cr.ok||!sr.ok)throw new Error('devices.json o stock.json non trovato nella root del sito');
-  catalog=await cr.json();stock=await sr.json();
-  if(!Array.isArray(catalog)||!Array.isArray(stock))throw new Error('Formato JSON non valido');
-   await loadStockFromFirestore();
+   const [loadedCatalog,sr]=await Promise.all([loadCatalogFromFirestore(),fetch('./stock.json')]);
+  if(!loadedCatalog){
+   const cr=await fetch('./devices.json');
+   if(!cr.ok)throw new Error('Catalogo non trovato su Firebase né nel file iniziale devices.json');
+   catalog=await cr.json();
+  }
+  if(!sr.ok)throw new Error('stock.json iniziale non trovato');
+  if(!Array.isArray(catalog))throw new Error('Formato catalogo non valido');
+  stock=await sr.json();
+  if(!Array.isArray(stock))throw new Error('Formato magazzino iniziale non valido');
+  await loadStockFromFirestore();
   const manualMatches={
  "6210042":"Honor 600 Smart 5G 128GB Black",
  "6213241":"Apple iPhone 16e 128GB Black",
