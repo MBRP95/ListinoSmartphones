@@ -107,6 +107,7 @@ const questions=[
 ];
 let answers={},step=0;
 let currentUserProfile=null;
+let requestedAccessRole='staff';
 let currentShopId=new URLSearchParams(location.search).get('shop')||'';
 let selectedShopFilter='';
 let activeStockVersion='';
@@ -129,10 +130,53 @@ function matchScore(a,b){
 function autoMatch(s){let ranked=catalog.map((p,i)=>({i,score:matchScore(s.description,p.name)})).sort((a,b)=>b.score-a.score);return ranked[0]?.score>=.48?ranked[0].i:-1}
 function autoMatchAll(){stock.forEach(s=>{if(mapped(s)<0){const i=autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}}});renderAll();alert('Abbinamento automatico completato. Verifica manualmente ogni SKU: non è una conferma di corrispondenza.')}
 async function goHome(){if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}currentUserProfile=null;['sellerAuthView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';}
-async function enterClient(){document.getElementById('homeView').classList.add('hidden');document.getElementById('sellerAuthView').classList.add('hidden');document.getElementById('clientView').classList.remove('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('homeBtn').style.display='inline-block';step=0;answers={};document.getElementById('results').classList.add('hidden');if(!currentShopId){const panel=document.getElementById('clientShopPanel'),sel=document.getElementById('clientShopSelect');sel.innerHTML='<option value="">Caricamento negozi...</option>';panel.classList.remove('hidden');document.querySelector('#clientView .hero').classList.add('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel)').classList.add('hidden');try{const api=window.firebaseApi;const snap=await api.getDocs(api.collection(api.db,'shops'));const shops=new Map();snap.docs.forEach(d=>{const x=d.data();if(x.active!==false)shops.set(d.id,x.name||d.id)});if(!shops.size)stock.forEach(x=>{if(x.shopId)shops.set(x.shopId,x.shop||x.shopId)});sel.innerHTML=shops.size?[...shops].sort((a,b)=>a[1].localeCompare(b[1],'it')).map(([id,name])=>'<option value="'+id+'">'+esc(name)+' ('+id+')</option>').join(''):'<option value="">Nessun negozio trovato: verifica importazione globale</option>';}catch(e){sel.innerHTML='<option value="">Errore caricamento negozi: '+esc(e.message)+'</option>';console.error('Errore lettura negozi',e)}return}startClientWizard()}
+function enterClient(){
+ requestedAccessRole='client';
+ document.getElementById('homeView').classList.add('hidden');
+ document.getElementById('clientView').classList.add('hidden');
+ document.getElementById('storeView').classList.add('hidden');
+ document.getElementById('adminView').classList.add('hidden');
+ document.getElementById('sellerAuthView').classList.remove('hidden');
+ document.getElementById('homeBtn').style.display='none';
+ document.getElementById('sellerUsername').value='';
+ document.getElementById('sellerPassword').value='';
+ document.getElementById('sellerAuthMsg').textContent='Accesso cliente: inserisci le credenziali abilitate per il tablet.';
+ document.getElementById('sellerUsername').focus();
+}
+async function startClientMode(){
+ document.getElementById('sellerAuthView').classList.add('hidden');
+ document.getElementById('clientView').classList.remove('hidden');
+ document.getElementById('storeView').classList.add('hidden');
+ document.getElementById('homeBtn').style.display='inline-block';
+ step=0;answers={};document.getElementById('results').classList.add('hidden');
+ currentShopId='';
+ const panel=document.getElementById('clientShopPanel'),sel=document.getElementById('clientShopSelect');
+ sel.innerHTML='<option value="">Caricamento negozi...</option>';
+ panel.classList.remove('hidden');
+ document.querySelector('#clientView .hero').classList.add('hidden');
+ document.querySelector('#clientView > .panel:not(#clientShopPanel)').classList.add('hidden');
+ const api=window.firebaseApi;
+ const snap=await api.getDocs(api.collection(api.db,'shops'));
+ const shops=new Map();
+ snap.docs.forEach(d=>{const x=d.data();if(x.active!==false)shops.set(d.id,x.name||d.id)});
+ if(!shops.size)stock.forEach(x=>{if(x.shopId)shops.set(x.shopId,x.shop||x.shopId)});
+ sel.innerHTML=shops.size?[...shops].sort((a,b)=>a[1].localeCompare(b[1],'it')).map(([id,name])=>'<option value="'+id+'">'+esc(name)+' ('+id+')</option>').join(''):'<option value="">Nessun negozio trovato: verifica importazione globale</option>';
+}
 function confirmClientShop(){const id=document.getElementById('clientShopSelect').value;if(!id){alert('Seleziona un negozio.');return}currentShopId=id;document.getElementById('clientShopPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.remove('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel)').classList.remove('hidden');startClientWizard()}
 function startClientWizard(){step=0;answers={};document.getElementById('results').classList.add('hidden');renderStep()}
-function requestSellerAccess(){document.getElementById('homeView').classList.add('hidden');document.getElementById('clientView').classList.add('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('sellerAuthView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';document.getElementById('sellerUsername').focus()}
+function requestSellerAccess(){
+ requestedAccessRole='staff';
+ document.getElementById('homeView').classList.add('hidden');
+ document.getElementById('clientView').classList.add('hidden');
+ document.getElementById('storeView').classList.add('hidden');
+ document.getElementById('adminView').classList.add('hidden');
+ document.getElementById('sellerAuthView').classList.remove('hidden');
+ document.getElementById('homeBtn').style.display='none';
+ document.getElementById('sellerPassword').value='';
+ document.getElementById('sellerUsername').value='';
+ document.getElementById('sellerAuthMsg').textContent='Accesso dipendenti o amministratore.';
+ document.getElementById('sellerUsername').focus();
+}
 
 function catalogDocId(p){return norm(p.name).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,140)}
 async function publishCatalogToFirestore(){
@@ -163,17 +207,20 @@ async function verifySellerPassword(){
  const msg=document.getElementById('sellerAuthMsg');
  if(!username||!pw){msg.textContent='Inserisci username e password.';return}
  try{
-  if(!window.firebaseApi)throw new Error('Firebase non è ancora pronto. Riprova tra qualche secondo.');
+  if(!window.firebaseApi)throw new Error('Firebase non è ancora pronto. Riprova.');
   const email=username.includes('@')?username:username+'@deviceproposer.invalid';
-  const {auth,signInWithEmailAndPassword,doc,getDoc,db}=window.firebaseApi;
+  const {auth,signInWithEmailAndPassword,doc,getDoc}=window.firebaseApi;
   const credential=await signInWithEmailAndPassword(auth,email,pw);
-  const profileSnap=await getDoc(doc(db,'users',credential.user.uid));
+  const profileSnap=await getDoc(doc(window.firebaseApi.db,'users',credential.user.uid));
   if(!profileSnap.exists())throw new Error('Profilo utente non configurato in Firestore.');
   const profile=profileSnap.data();
   if(profile.active!==true)throw new Error('Account disattivato. Contatta l’amministratore.');
-  if(!['admin','seller'].includes(profile.role))throw new Error('Ruolo utente non valido.');
+  if(!['admin','seller','client'].includes(profile.role))throw new Error('Ruolo utente non valido.');
+  if(requestedAccessRole==='client'&&profile.role!=='client')throw new Error('Queste credenziali non sono abilitate alla modalità Cliente.');
+  if(requestedAccessRole==='staff'&&profile.role==='client')throw new Error('Usa le credenziali dipendenti per accedere all’area negozio.');
   currentUserProfile={...profile,uid:credential.user.uid};
-  selectedShopFilter=profile.role==='seller'?(profile.shopId||''):'';
+  selectedShopFilter=profile.role==='seller'?'':'';
+  await loadAuthenticatedData();
   document.getElementById('sellerAuthView').classList.add('hidden');
   document.getElementById('sellerPassword').value='';
   document.getElementById('sellerUsername').value='';
@@ -181,18 +228,33 @@ async function verifySellerPassword(){
   if(profile.role==='admin'){
    document.getElementById('adminView').classList.remove('hidden');
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.remove('hidden'));
-  }else{
-   if(!profile.shopId)throw new Error('Il profilo seller non è associato a un negozio.');
+  }else if(profile.role==='seller'){
    document.getElementById('storeView').classList.remove('hidden');
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
    renderAll();
+  }else{
+   await startClientMode();
   }
  }catch(e){
   msg.textContent=e.code==='auth/invalid-credential'?'Username o password non corretti.':e.message;
+  currentUserProfile=null;
   try{if(window.firebaseApi)await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(_){}
  }
 }
-function currentAvailable(){const shopId=currentUserProfile?.role==='seller'?currentUserProfile.shopId:currentShopId;return stock.filter(x=>(!shopId||x.shopId===shopId||(!x.shopId&&String(x.shop||'').startsWith(shopId)))&&available(x)>0&&String(x.warehouse).toLowerCase()==='vendibile').map(x=>({s:x,p:catalog[mapped(x)]})).filter(x=>x.p&&Number.isFinite(priceFor(x.p)))}
+async function loadAuthenticatedData(){
+ const loaded=await loadCatalogFromFirestore();
+ if(!loaded)throw new Error('Catalogo non pubblicato su Firebase.');
+ const hasStock=await loadStockFromFirestore();
+ if(!hasStock)throw new Error('Magazzino globale non pubblicato su Firebase.');
+ mappings={};
+ const manualMatches={
+ "6210042":"Honor 600 Smart 5G 128GB Black","6213241":"Apple iPhone 16e 128GB Black","6213277":"Apple iPhone 17 Pro Max 512GB Deep Blue","6213329":"Apple iPhone 18 Pro 256GB Black","6222003":"Motorola edge 60 8+256GB Blue","6222008":"Motorola moto G77 + moto buds 256GB Black Olive","6250158":"Samsung Galaxy A56 5G 256GB Graphite","6250163":"Samsung Galaxy S25 Edge 512GB","6250169":"SamsungGalaxy ZFold 7 512GB","6250180":"Samsung A17 5G 128GB Black","6250187":"Samsung Galaxy S26 Plus 5G 256 Black","6250191":"Samsung Galaxy S26 Ultra 5G 256 Black","6250193":"Samsung Galaxy S26 Ultra 5G 512 Black","6250200":"Galaxy A37 5G 128GB Grey"
+ };
+ stock.forEach(x=>{let exact=x.catalogName||manualMatches[x.sku];let i=exact?catalog.findIndex(p=>norm(p.name)===norm(exact)):autoMatch(x);if(i>=0){mappings[x.sku]=i;x.catalogName=catalog[i].name}});
+ renderAll();setupEditor();
+}
+
+function currentAvailable(){const shopId=currentUserProfile?.role==='seller'?(selectedShopFilter||currentShopId):currentShopId;return stock.filter(x=>(!shopId||x.shopId===shopId||(!x.shopId&&String(x.shop||'').startsWith(shopId)))&&available(x)>0&&String(x.warehouse).toLowerCase()==='vendibile').map(x=>({s:x,p:catalog[mapped(x)]})).filter(x=>x.p&&Number.isFinite(priceFor(x.p)))}
 function withinBudget(p){const b=answers.budget;if(!b)return true;const price=priceFor(p);return b==='over800'?price>800:price<=Number(b)}
 function storageGb(p){const n=String(p.name||'');const tb=n.match(/\b(1|2)\s*tb\b/i);if(tb)return Number(tb[1])*1024;const gb=n.match(/\b(128|256|512|1024|2048)\s*gb\b/i);return gb?Number(gb[1]):null}
 function filteredBefore(stepIndex){return currentAvailable().filter(({p})=>{if(stepIndex>0&&!withinBudget(p))return false;if(stepIndex>1&&answers.brand&&answers.brand!=='any'&&brandOf(p.name)!==answers.brand.toLowerCase())return false;return true})}
@@ -386,43 +448,10 @@ async function importStockJson(){let f=document.getElementById('stockJson').file
 async function init(){
  try{
   while(!window.firebaseApi){await new Promise(resolve=>window.addEventListener('firebase-ready',resolve,{once:true}))}
-   const [loadedCatalog,sr]=await Promise.all([loadCatalogFromFirestore(),fetch('./stock.json')]);
-  if(!loadedCatalog){
-   const cr=await fetch('./devices.json');
-   if(!cr.ok)throw new Error('Catalogo non trovato su Firebase né nel file iniziale devices.json');
-   catalog=await cr.json();
-  }
-  if(!sr.ok)throw new Error('stock.json iniziale non trovato');
-  if(!Array.isArray(catalog))throw new Error('Formato catalogo non valido');
-  stock=await sr.json();
-  if(!Array.isArray(stock))throw new Error('Formato magazzino iniziale non valido');
-  await loadStockFromFirestore();
-  const manualMatches={
- "6210042":"Honor 600 Smart 5G 128GB Black",
- "6213241":"Apple iPhone 16e 128GB Black",
- "6213277":"Apple iPhone 17 Pro Max 512GB Deep Blue",
- "6213329":"Apple iPhone 18 Pro 256GB Black",
- "6222003":"Motorola edge 60 8+256GB Blue",
- "6222008":"Motorola moto G77 + moto buds 256GB Black Olive",
- "6250158":"Samsung Galaxy A56 5G 256GB Graphite",
- "6250163":"Samsung Galaxy S25 Edge 512GB",
- "6250169":"SamsungGalaxy ZFold 7 512GB",
- "6250180":"Samsung A17 5G 128GB Black",
- "6250187":"Samsung Galaxy S26 Plus 5G 256 Black",
- "6250191":"Samsung Galaxy S26 Ultra 5G 256 Black",
- "6250193":"Samsung Galaxy S26 Ultra 5G 512 Black",
- "6250200":"Galaxy A37 5G 128GB Grey"
-};
-stock.forEach(s=>{let exact=s.catalogName||manualMatches[s.sku];let i=exact?catalog.findIndex(p=>norm(p.name)===norm(exact)):autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}});
-  renderAll();setupEditor();
- }catch(e){
-  ['clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));
-  const home=document.getElementById('homeView');
-  let notice=document.getElementById('startupError');
-  if(!notice){notice=document.createElement('div');notice.id='startupError';notice.className='notice';home.insertBefore(notice,home.firstChild)}
-  notice.textContent='Impossibile caricare i dati. Riprova più tardi o contatta l’amministratore.';
-  console.error('Device Proposer startup error:',e);
- }
+  // Nessun dato operativo viene caricato prima dell'autenticazione.
+  document.getElementById('homeView').classList.remove('hidden');
+ }catch(e){console.error('Device Proposer startup error:',e)}
 }
+
 init();
 </script></body></html>
