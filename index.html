@@ -138,15 +138,21 @@ function parseRetailText(raw){
  const lines=raw.split(/\r?\n/).map(x=>x.replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim()).filter(Boolean),out=[];
  const parseMoney=t=>{let v=String(t).replace(/€|\s/g,'');if(v.includes(',')&&v.includes('.'))v=v.replace(/,/g,'');else if(v.includes(','))v=v.replace(',','.');return Number(v)};
  for(let i=0;i<lines.length;i++){
-  const pm=lines[i].match(/Prezzo listino vendor:\s*€?\s*([\d.,]+)/i);
+  const priceLine=lines[i];
+  const pm=priceLine.match(/Prezzo listino vendor:\s*€?\s*([\d.,]+)(?:\s+(\d{1,3})\.00)?/i);
   if(!pm)continue;
+  // PDF.js può dividere il prezzo in due frammenti: "1,28 9.00" = 1,289.00
+  let vendorToken=pm[1];
+  if(pm[2] && /,\d{1,2}$/.test(vendorToken)){
+   vendorToken=vendorToken.replace(/,/g,'')+pm[2]+'.00';
+  }
   let name='',band='';
   for(let j=i-1;j>=Math.max(0,i-18);j--){
    const line=lines[j];
    if(!name&&productLine(line))name=line.replace(/\s+Fascia di prezzo:.*$/i,'').trim();
    const bm=line.match(/Fascia di prezzo:\s*([A-Z])/i);if(bm)band=bm[1];
   }
-  const vendor=parseMoney(pm[1]);
+  const vendor=parseMoney(vendorToken);
   if(!name||!Number.isFinite(vendor)||vendor<=0)continue;
   let end=i+1;while(end<lines.length&&!/Prezzo listino vendor:/i.test(lines[end]))end++;
   const offers=[];
