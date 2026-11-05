@@ -670,7 +670,7 @@ async function confirmPdfImport(){if(!pendingCatalog)return;const linked={};stoc
 
 let imageBlobs={};
 function technicalModelKey(name){
- let key=norm(name).replace(/\bsamsung\s*galaxy\b/g,'samsung galaxy');
+ let key=norm(name).replace(/\bsamsung\s*galaxy\b/g,'samsung galaxy').replace(/\bsamsunggalaxy\b/g,'samsung galaxy').replace(/\bpro\s*max\b/g,'promax').replace(/\bz\s*flip\b/g,'zflip').replace(/\bz\s*fold\b/g,'zfold');
  const colors=['black titanium','natural titanium','white titanium','black olive','stellar black','twilight black','midnight black','space black','cloud white','cosmic orange','deep blue','jet black','sky blue','light gold','night sky','mist blue','graphite','midnight','starlight','natural','titanium','beige','cream','lavender','mint','orange','teal','burgundy','corsair','olive','sage','black','white','blue','green','red','purple','pink','yellow','silver','gold','gray','grey'].sort((a,b)=>b.length-a.length);
  let changed=true;
  while(changed){
