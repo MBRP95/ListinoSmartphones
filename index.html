@@ -698,18 +698,33 @@ const sharedEditorFields={
  cameraMacro:'fCameraMacro',cameraDepth:'fCameraDepth',cameraFront:'fCameraFront',
  video:'fVideo',os:'fOs',description:'fDescription'
 };
-function variantMemoryLabel(v){
- if(v.storage!==undefined&&v.storage!==null&&String(v.storage).trim())return String(v.storage).match(/\bGB\b|\bTB\b/i)?String(v.storage):String(v.storage)+' GB';
- const matches=[...String(v.name||'').matchAll(/\b(\d{2,4})\s*GB\b/gi)];
- if(matches.length)return matches[matches.length-1][1]+' GB';
- const tb=String(v.name||'').match(/\b(\d+(?:[.,]\d+)?)\s*TB\b/i);
- return tb?tb[1].replace(',','.')+' TB':'—';
+function variantSpecsFromName(v){
+ const name=String(v.name||'');
+ let ram=(v.ram!==undefined&&v.ram!==null&&String(v.ram).trim())?String(v.ram):'';
+ let storage=(v.storage!==undefined&&v.storage!==null&&String(v.storage).trim())?String(v.storage):'';
+ const combo=name.match(/\b(\d{1,2})\s*\+\s*(\d{2,4})\s*GB\b/i);
+ if(combo){
+  if(!ram)ram=combo[1]+' GB';
+  if(!storage)storage=combo[2]+' GB';
+ }
+ if(!storage){
+  const gb=[...name.matchAll(/\b(\d{2,4})\s*GB\b/gi)];
+  if(gb.length)storage=gb[gb.length-1][1]+' GB';
+ }
+ if(!storage){
+  const tb=[...name.matchAll(/\b(\d{1,2}(?:[.,]\d+)?)\s*TB\b/gi)];
+  if(tb.length)storage=tb[tb.length-1][1].replace(',','.')+' TB';
+ }
+ if(!storage){
+  const bare=[...name.matchAll(/\b(64|128|256|512|1024|2048)\b(?=\s|$)/g)];
+  if(bare.length)storage=bare[bare.length-1][1]+' GB';
+ }
+ if(ram&&!/\bGB\b/i.test(ram))ram+=' GB';
+ if(storage&&!/\bGB\b|\bTB\b/i.test(storage))storage+=' GB';
+ return {ram:ram||'—',storage:storage||'—'};
 }
-function variantRamLabel(v){
- if(v.ram!==undefined&&v.ram!==null&&String(v.ram).trim())return String(v.ram).match(/\bGB\b/i)?String(v.ram):String(v.ram)+' GB';
- const m=String(v.name||'').match(/\b(\d+)\s*GB\s*RAM\b/i);
- return m?m[1]+' GB':'—';
-}
+function variantMemoryLabel(v){return variantSpecsFromName(v).storage;}
+function variantRamLabel(v){return variantSpecsFromName(v).ram;}
 function loadEditor(){
  const variants=modelVariants(),p=variants[0];if(!p)return;
  const modelId=p.modelId||modelDocumentId(p.name);
