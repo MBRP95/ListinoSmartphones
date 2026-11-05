@@ -735,9 +735,10 @@ let pendingModelImport=null;
 async function previewModelImport(){
  const file=document.getElementById('modelImportFile').files[0],preview=document.getElementById('modelImportPreview'),btn=document.getElementById('modelImportBtn'),msg=document.getElementById('modelImportMsg');
  pendingModelImport=null;btn.disabled=true;msg.textContent='';
- if(!file){preview.textContent='Seleziona un file JSON.';return;}
  try{
-  const data=JSON.parse(await file.text());
+  let data;
+  if(file){data=JSON.parse(await file.text());}
+  else{const response=await fetch('./deviceModels-batch01.json? v=1'.replace(' ?','?'),{cache:'no-store'});if(!response.ok)throw new Error('Lotto non raggiungibile su GitHub Pages.');data=await response.json();}
   if(data.project!=='deviceproposer'||data.collection!=='deviceModels'||!Array.isArray(data.models))throw new Error('Formato o progetto non riconosciuto.');
   const ids=new Set();
   for(const m of data.models){
