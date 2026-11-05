@@ -52,24 +52,35 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <div class="notice">Disponibilità calcolata come <b>Giacenza − Quantità Impegnata</b>. Quantità futura e in arrivo non vengono considerate vendibili. È una scelta prudenziale: non promette al cliente merce non ancora fisicamente disponibile.</div></div>
 <div class="panel admin-only"><div class="toolbar"><div class="field"><h2>Associa SKU al listino</h2><p class="hint">Il collegamento automatico è solo un suggerimento. Controlla le varianti non abbinate o dubbie: capacità e colore devono corrispondere.</p></div><button class="secondary" onclick="autoMatchAll()">Prova abbinamento automatico</button></div>
 <div class="tablewrap"><table><thead><tr><th>SKU</th><th>Descrizione magazzino</th><th>Giacenza</th><th>Impegnata</th><th>Disponibili</th><th>Variante listino associata</th><th>Esito</th></tr></thead><tbody id="stockRows"></tbody></table></div></div>
-<div class="panel admin-only"><h2>Scheda tecnica condivisa per modello</h2><p class="hint">Seleziona il modello: le caratteristiche e la fotografia vengono applicate automaticamente a tutte le varianti di memoria e colore dello stesso smartphone. Le modifiche saranno incluse nell'esportazione per GitHub.</p>
-<div class="field"><label>Dispositivo da modificare</label><select id="editDevice" onchange="loadEditor()"></select></div>
-<div class="grid">
-<div class="field"><label>RAM (GB)</label><input id="fRam" placeholder="Es. 8"></div>
-<div class="field"><label>Memoria interna (GB)</label><input id="fStorage" placeholder="Es. 256"></div>
-<div class="field"><label>Display</label><input id="fDisplay" placeholder="Es. 6,7 pollici AMOLED"></div>
-<div class="field"><label>Fotocamera</label><input id="fCamera" placeholder="Es. 50 MP + 12 MP"></div>
-<div class="field"><label>Processore</label><input id="fCpu" placeholder="Es. Snapdragon ..."></div>
-<div class="field"><label>Batteria</label><input id="fBattery" placeholder="Es. 5000 mAh"></div>
-<div class="field"><label>Sistema operativo</label><input id="fOs" placeholder="Es. Android 16"></div>
-<div class="field"><label>Descrizione commerciale</label><input id="fDescription" placeholder="Breve descrizione per il cliente"></div>
+<div class="panel admin-only"><h2>Scheda tecnica del modello</h2><p class="hint">Le caratteristiche comuni vengono salvate una volta per modello. RAM e memoria restano proprietà della singola variante.</p>
+<div class="field"><label>Modello</label><select id="editDevice" onchange="loadEditor()"></select></div>
+<h3>Varianti</h3><div class="tablewrap"><table><thead><tr><th>Variante</th><th>RAM</th><th>Memoria</th></tr></thead><tbody id="variantRows"></tbody></table></div>
+<h3 style="margin-top:18px">Specifiche condivise</h3><div class="grid">
+<div class="field"><label>Tecnologia display</label><input id="fDisplayTech" placeholder="AMOLED, OLED, LCD"></div>
+<div class="field"><label>Dimensione display</label><input id="fDisplaySize" placeholder="6,7 pollici"></div>
+<div class="field"><label>Risoluzione</label><input id="fResolution" placeholder="2340 × 1080 pixel"></div>
+<div class="field"><label>Frequenza aggiornamento</label><input id="fRefresh" placeholder="120 Hz"></div>
+<div class="field"><label>Processore</label><input id="fCpu" placeholder="Produttore e modello"></div>
+<div class="field"><label>Batteria</label><input id="fBattery" placeholder="5000 mAh"></div>
+<div class="field"><label>Ricarica</label><input id="fCharging" placeholder="45 W, wireless"></div>
+<div class="field"><label>Fotocamera principale</label><input id="fCameraMain" placeholder="50 MP"></div>
+<div class="field"><label>Ultra-grandangolare</label><input id="fCameraUltra" placeholder="12 MP"></div>
+<div class="field"><label>Teleobiettivo</label><input id="fCameraTele" placeholder="10 MP, zoom ottico"></div>
+<div class="field"><label>Macro</label><input id="fCameraMacro"></div>
+<div class="field"><label>Profondità</label><input id="fCameraDepth"></div>
+<div class="field"><label>Fotocamera frontale</label><input id="fCameraFront" placeholder="12 MP"></div>
+<div class="field"><label>Video</label><input id="fVideo" placeholder="4K 60 fps"></div>
+<div class="field"><label>Sistema operativo</label><input id="fOs" placeholder="Android 16"></div>
+<div class="field"><label>Descrizione commerciale</label><input id="fDescription" placeholder="Descrizione per il cliente"></div>
+</div>
+<h3 style="margin-top:18px">Variante selezionata</h3><div class="grid">
+<div class="field"><label>RAM (GB)</label><input id="fRam" placeholder="8"></div>
+<div class="field"><label>Memoria interna (GB)</label><input id="fStorage" placeholder="256"></div>
 </div>
 <div class="grid" style="grid-template-columns:minmax(220px,1fr) minmax(220px,1fr);align-items:end">
-<div class="field"><label>Fotografia dispositivo</label><input id="fImage" type="file" accept="image/*" onchange="previewDeviceImage()"><div class="muted">L'immagine sarà inserita in images/ nel pacchetto ZIP.</div></div>
+<div class="field"><label>Fotografia dispositivo</label><input id="fImage" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewDeviceImage()"><div class="muted">JPG, PNG o WEBP · massimo 8 MB · Firebase Storage.</div></div>
 <div class="field"><img id="imagePreview" style="display:none;max-width:180px;max-height:140px;object-fit:contain;border:1px solid var(--line);border-radius:10px;padding:5px"><div id="imagePath" class="muted"></div></div>
-</div><div class="actions"><button class="secondary" onclick="clearEditor()">Annulla modifiche</button><button class="primary" onclick="saveEditor()">Salva scheda</button></div><div id="editorMsg" class="muted" style="margin-top:8px"></div>
-</div>
-
+</div><div class="actions"><button class="secondary" onclick="clearEditor()">Annulla modifiche</button><button class="primary" onclick="saveEditor()">Salva scheda su Firebase</button></div><div id="editorMsg" class="muted" style="margin-top:8px"></div></div>
 <div class="field admin-only" style="margin-top:15px"><label>Carica catalogo JSON aggiornato</label><input type="file" id="catalogJson" accept=".json,application/json" onchange="importCatalogJson()"></div>
 <div class="field admin-only"><label>Carica magazzino JSON aggiornato</label><input type="file" id="stockJson" accept=".json,application/json" onchange="importStockJson()"></div>
 <div id="exportMsg" class="muted"></div></div>
@@ -84,6 +95,7 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, collection, getDocs, writeBatch, serverTimestamp, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 const firebaseConfig = {
   apiKey: "AIzaSyA-FeADcnW89AOSuAZ-i3xnF7reReOcg2o",
   authDomain: "deviceproposer.firebaseapp.com",
@@ -96,7 +108,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-window.firebaseApi = { auth, db, signInWithEmailAndPassword, signOut, doc, getDoc, collection, getDocs, writeBatch, serverTimestamp, setDoc, deleteDoc };
+const storage = getStorage(app);
+window.firebaseApi = { auth, db, storage, storageRef, uploadBytes, getDownloadURL, signInWithEmailAndPassword, signOut, doc, getDoc, collection, getDocs, writeBatch, serverTimestamp, setDoc, deleteDoc };
 window.firebaseReady = true;
 window.dispatchEvent(new Event("firebase-ready"));
 </script>
@@ -510,6 +523,10 @@ async function loadCatalogFromFirestore(){
  const snap=await api.getDocs(api.collection(api.db,'devices'));
  if(!snap.empty){
   catalog=snap.docs.map(d=>d.data()).sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+  const models=await api.getDocs(api.collection(api.db,'deviceModels'));
+  window.currentModelSpecs={};
+  models.docs.forEach(d=>window.currentModelSpecs[d.id]=d.data());
+  catalog.forEach(v=>{const id=v.modelId||modelDocumentId(v.name);if(window.currentModelSpecs[id])v.modelSpecs=window.currentModelSpecs[id];});
   return true;
  }
  return false;
@@ -600,12 +617,95 @@ function cancelPdfImport(){pendingCatalog=null;document.getElementById('pdfPrevi
 async function confirmPdfImport(){if(!pendingCatalog)return;const linked={};stock.forEach(s=>{const i=mapped(s);if(i>=0&&catalog[i])linked[s.sku]=catalog[i].name});catalog=pendingCatalog;pendingCatalog=null;mappings={};stock.forEach(s=>{const n=linked[s.sku],i=n?catalog.findIndex(p=>norm(p.name)===norm(n)):-1;if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}});renderAll();setupEditor();document.getElementById('pdfPreview').classList.add('hidden');document.getElementById('retailPdf').value='';await publishCatalogToFirestore();document.getElementById('pdfMsg').textContent='Catalogo aggiornato su Firebase. Magazzino invariato.'}
 
 let imageBlobs={};
-function technicalModelKey(name){return norm(name).replace(/\b\d+\s?(gb|tb)\b/g,' ').replace(/\b(black|white|blue|green|red|purple|pink|yellow|silver|gold|gray|grey|graphite|midnight|starlight|natural|titanium|beige|cream|lavender|mint|orange|teal)\b/g,' ').replace(/\s+/g,' ').trim()}
-function loadEditor(){let i=Number(document.getElementById('editDevice').value),p=catalog[i];if(!p)return;let fields={Ram:'ram',Storage:'storage',Display:'display',Camera:'camera',Cpu:'cpu',Battery:'battery',Os:'os',Description:'description'};Object.entries(fields).forEach(([id,k])=>document.getElementById('f'+id).value=p[k]??'');document.getElementById('fImage').value='';let im=document.getElementById('imagePreview');im.style.display=p.image?'block':'none';im.src=p.image||'';document.getElementById('imagePath').textContent=p.image||'';document.getElementById('editorMsg').textContent=''}
-function clearEditor(){loadEditor()}
-function previewDeviceImage(){let f=document.getElementById('fImage').files[0];if(!f)return;if(!f.type.startsWith('image/')){alert('Seleziona un file immagine.');return}let u=URL.createObjectURL(f),im=document.getElementById('imagePreview');im.src=u;im.style.display='block';document.getElementById('imagePath').textContent='Nuova immagine: '+f.name}
-async function saveEditor(){let i=Number(document.getElementById('editDevice').value),p=catalog[i];if(!p)return;let key=technicalModelKey(p.name),siblings=catalog.filter(x=>technicalModelKey(x.name)===key);let fields={ram:'Ram',storage:'Storage',display:'Display',camera:'Camera',cpu:'Cpu',battery:'Battery',os:'Os',description:'Description'};let values={};Object.entries(fields).forEach(([k,id])=>values[k]=document.getElementById('f'+id).value.trim());let f=document.getElementById('fImage').files[0],imagePath=p.image||'';if(f){let ext=(f.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');let safe=('device-'+key.replace(/\s+/g,'-')).slice(0,75);imagePath='images/'+safe+'.'+ext;imageBlobs[imagePath]=await f.arrayBuffer()}siblings.forEach(x=>{Object.assign(x,values);if(imagePath)x.image=imagePath});document.getElementById('editorMsg').textContent='Scheda salvata per '+siblings.length+' varianti dello stesso modello. Esporta il pacchetto per conservarla su GitHub.';renderCatalog();renderDetail()}
-function setupEditor(){let groups=new Map();catalog.forEach((p,i)=>{let key=technicalModelKey(p.name);if(!groups.has(key))groups.set(key,{p,i})});document.getElementById('editDevice').innerHTML=[...groups.values()].map(({p,i})=>'<option value="'+i+'">'+esc(p.name.replace(/\b\d+\s?(GB|TB)\b/ig,'').trim())+'</option>').join('');loadEditor()}
+function technicalModelKey(name){
+ return norm(name)
+  .replace(/\\b\\d+\\s?(gb|tb)\\b/g,' ')
+  .replace(/\\b(black|white|blue|green|red|purple|pink|yellow|silver|gold|gray|grey|graphite|midnight|starlight|natural|titanium|beige|cream|lavender|mint|orange|teal)\\b/g,' ')
+  .replace(/\\s+/g,' ').trim();
+}
+function modelDocumentId(name){return technicalModelKey(name).replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,120);}
+function modelVariants(){
+ const index=Number(document.getElementById('editDevice').value),p=catalog[index];
+ if(!p)return[];
+ const key=technicalModelKey(p.name);
+ return catalog.filter(x=>technicalModelKey(x.name)===key);
+}
+const sharedEditorFields={
+ displayTech:'fDisplayTech',displaySize:'fDisplaySize',resolution:'fResolution',
+ refreshRate:'fRefresh',cpu:'fCpu',battery:'fBattery',charging:'fCharging',
+ cameraMain:'fCameraMain',cameraUltra:'fCameraUltra',cameraTele:'fCameraTele',
+ cameraMacro:'fCameraMacro',cameraDepth:'fCameraDepth',cameraFront:'fCameraFront',
+ video:'fVideo',os:'fOs',description:'fDescription'
+};
+function loadEditor(){
+ const variants=modelVariants(),p=variants[0];if(!p)return;
+ const modelId=p.modelId||modelDocumentId(p.name);
+ const shared=window.currentModelSpecs?.[modelId]||p.modelSpecs||{};
+ Object.entries(sharedEditorFields).forEach(([key,id])=>document.getElementById(id).value=shared[key]??'');
+ document.getElementById('fRam').value=p.ram??'';
+ document.getElementById('fStorage').value=p.storage??'';
+ document.getElementById('variantRows').innerHTML=variants.map(v=>'<tr><td>'+esc(v.name)+'</td><td>'+esc(v.ram||'—')+'</td><td>'+esc(v.storage||'—')+'</td></tr>').join('');
+ const image=shared.image||p.image||'';
+ const preview=document.getElementById('imagePreview');
+ preview.style.display=image?'block':'none';preview.src=image;
+ document.getElementById('imagePath').textContent=image;
+ document.getElementById('fImage').value='';
+ document.getElementById('editorMsg').textContent='';
+}
+function clearEditor(){loadEditor();}
+function previewDeviceImage(){
+ const file=document.getElementById('fImage').files[0];if(!file)return;
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)){alert('Usa un’immagine JPG, PNG o WEBP.');return;}
+ if(file.size>8*1024*1024){alert('Immagine troppo grande: massimo 8 MB.');return;}
+ const url=URL.createObjectURL(file),preview=document.getElementById('imagePreview');
+ preview.src=url;preview.style.display='block';
+ document.getElementById('imagePath').textContent='Nuova immagine: '+file.name;
+}
+async function saveEditor(){
+ const variants=modelVariants(),p=variants[0],msg=document.getElementById('editorMsg');
+ if(!p)return;
+ if(currentUserProfile?.role!=='admin'){msg.textContent='Solo un amministratore può modificare le specifiche.';return;}
+ const api=window.firebaseApi;
+ if(!api?.storage){msg.textContent='Firebase Storage non è pronto.';return;}
+ const selected=catalog[Number(document.getElementById('editDevice').value)];
+ const modelId=modelDocumentId(p.name);
+ const shared={modelId};
+ Object.entries(sharedEditorFields).forEach(([key,id])=>shared[key]=document.getElementById(id).value.trim());
+ const imageFile=document.getElementById('fImage').files[0];
+ const saveButton=document.querySelector('button[onclick="saveEditor()"]');
+ saveButton.disabled=true;msg.textContent='Salvataggio su Firebase in corso…';
+ try{
+  const previous=window.currentModelSpecs?.[modelId]||p.modelSpecs||{};
+  shared.image=previous.image||p.image||'';
+  if(imageFile){
+   const path='device-models/'+modelId+'/'+Date.now()+'-'+imageFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+   const imageRef=api.storageRef(api.storage,path);
+   await api.uploadBytes(imageRef,imageFile,{contentType:imageFile.type});
+   shared.image=await api.getDownloadURL(imageRef);
+  }
+  shared.updatedAt=new Date().toISOString();
+  const batch=api.writeBatch(api.db);
+  batch.set(api.doc(api.db,'deviceModels',modelId),shared);
+  variants.forEach(v=>{
+   const updated={...v,modelId,modelSpecs:shared};
+   if(v===selected){updated.ram=document.getElementById('fRam').value.trim();updated.storage=document.getElementById('fStorage').value.trim();}
+   batch.set(api.doc(api.db,'devices',catalogDocId(v)),updated);
+   Object.assign(v,updated);
+  });
+  await batch.commit();
+  window.currentModelSpecs=window.currentModelSpecs||{};
+  window.currentModelSpecs[modelId]=shared;
+  msg.textContent='Salvato su Firebase. Specifiche comuni aggiornate per '+variants.length+' varianti; RAM e memoria salvate solo sulla variante selezionata.';
+  renderCatalog();
+ }catch(e){msg.textContent='Salvataggio non riuscito: '+e.message;}
+ finally{saveButton.disabled=false;}
+}
+function setupEditor(){
+ const groups=new Map();
+ catalog.forEach((p,i)=>{const key=technicalModelKey(p.name);if(!groups.has(key))groups.set(key,{p,i});});
+ document.getElementById('editDevice').innerHTML=[...groups.values()].map(({p,i})=>'<option value="'+i+'">'+esc(p.name.replace(/\\b\\d+\\s?(GB|TB)\\b/ig,'').trim())+'</option>').join('');
+ loadEditor();
+}
 async function exportBundle(){if(!window.JSZip){alert('Libreria ZIP non caricata. Verifica la connessione internet.');return}let zip=new JSZip();zip.file('devices.json',JSON.stringify(catalog,null,2));zip.file('stock.json',JSON.stringify(stock,null,2));Object.entries(imageBlobs).forEach(([path,data])=>zip.file(path,data));zip.file('README-GITHUB.txt','Carica devices.json e stock.json nella root del repository e la cartella images/.\\nNon sovrascrivere index.html con questi file.\\nDopo il caricamento GitHub Pages pubblicherà gli aggiornamenti.');let blob=await zip.generateAsync({type:'blob'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='device-proposer-data.zip';a.click();URL.revokeObjectURL(a.href);document.getElementById('exportMsg').textContent='Pacchetto generato. Estrai lo ZIP e carica i file nel repository GitHub.'}
 async function importCatalogJson(){let f=document.getElementById('catalogJson').files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d)||!d.every(x=>x.name))throw new Error('Formato catalogo non valido');catalog=d;imageBlobs={};setupEditor();renderAll();document.getElementById('exportMsg').textContent='Catalogo JSON caricato.'}catch(e){alert('Errore catalogo: '+e.message)}}
 async function importStockJson(){let f=document.getElementById('stockJson').files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d)||!d.every(x=>x.sku))throw new Error('Formato magazzino non valido');stock=d;d.forEach(s=>{if(mappings[s.sku]===undefined)mappings[s.sku]=autoMatch(s)});renderAll();document.getElementById('exportMsg').textContent='Magazzino JSON caricato.'}catch(e){alert('Errore magazzino: '+e.message)}}
