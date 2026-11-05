@@ -135,19 +135,35 @@ let pendingCatalog=null;
 function euroValue(s){const m=String(s).match(/€\s*([\d.]+(?:,\d{2})?)/);return m?Number(m[1].replace(',','.')):null}
 function productLine(s){return /^(Apple|Samsung|SamsungGalaxy|Galaxy|Motorola|HONOR|Honor|Xiaomi|Redmi|TCL|OPPO|Oppo|Realme|Google|OnePlus|Strong|ZTE|Nokia|Doro|Alcatel)\b/i.test(s)}
 function parseRetailText(raw){
- const lines=raw.split(/\r?\n/).map(x=>x.replace(/\u00a0/g,' ').trim()).filter(Boolean),out=[];
- for(let i=0;i<lines.length;i++){if(!/^Prezzo listino vendor:/i.test(lines[i]))continue;
-  let name='';for(let j=i-1;j>=Math.max(0,i-8);j--){if(productLine(lines[j])){name=lines[j];break}}
-  const vendor=euroValue(lines[i]);if(!name||!vendor)continue;
-  let band='';for(let j=i+1;j<Math.min(lines.length,i+5);j++){const m=lines[j].match(/^Fascia di prezzo:\s*(.+)$/i);if(m){band=m[1];break}}
+ const lines=raw.split(/\\r?\\n/).map(x=>x.replace(/\\u00a0/g,' ').replace(/\\s+/g,' ').trim()).filter(Boolean),out=[];
+ for(let i=0;i<lines.length;i++){
+  const priceMatch=lines[i].match(/^Prezzo listino vendor:\\s*€?\\s*([\\d.]+(?:,\\d{2})?)/i);
+  if(!priceMatch)continue;
+  let name='',band='';
+  for(let j=i-1;j>=Math.max(0,i-10);j--){
+   const line=lines[j];
+   if(!name&&productLine(line)){
+    name=line.replace(/\\s+Fascia di prezzo:.*$/i,'').trim();
+    const bm=line.match(/Fascia di prezzo:\\s*([A-Z])/i);if(bm)band=bm[1];
+   }
+   const bm=line.match(/^Fascia di prezzo:\\s*([A-Z])/i);if(bm)band=bm[1];
+  }
+  const vendor=Number(priceMatch[1].replace(',','.'));
+  if(!name||!Number.isFinite(vendor)||vendor<=0)continue;
   let end=i+1;while(end<lines.length&&!/^Prezzo listino vendor:/i.test(lines[end]))end++;
   const offers=[];
-  for(let j=i+1;j<end;j++){if(!/^Fastweb Mobile /i.test(lines[j]))continue;
-   const plan=lines[j],method=lines[j+1]||'';if(!/^(one shot|finanziato|rateale)$/i.test(method))continue;
-   const nums=[];let k=j+2;while(k<Math.min(end,j+9)&&nums.length<5){const v=euroValue(lines[k]);if(v!==null)nums.push(v);else if(/^\d{1,2}$/.test(lines[k]))nums.push(Number(lines[k]));k++}
-   if(method.toLowerCase()==='one shot'){if(nums.length)offers.push({plan,method:'one shot',amounts:[nums[0]],installments:null})}
-   else{const ri=nums.findIndex(v=>Number.isInteger(v)&&v>=6&&v<=60);if(ri>=0){const before=nums.slice(0,ri),after=nums.slice(ri+1);if(method.toLowerCase()==='rateale'){offers.push({plan,method:'rateale',amounts:[after[0]??null,after[1]??null,after[2]??null].filter(v=>v!==null),installments:nums[ri]})}else{offers.push({plan,method:'finanziato',amounts:[before[0]??null,after[0]??null,after[1]??null].filter(v=>v!==null),installments:nums[ri]})}}else if(nums.length>=2)offers.push({plan,method:'rateale',amounts:nums.slice(0,3),installments:null})}
-   j=k-1;
+  for(let j=i+1;j<end;j++){
+   const m=lines[j].match(/^(Fastweb Mobile .+?)\\s+(one shot|finanziato|rateale)\\b(.*)$/i);
+   if(!m)continue;
+   const plan=m[1].trim(),method=m[2].toLowerCase(),tail=m[3];
+   const nums=[...tail.matchAll(/€\\s*([\\d.]+(?:,\\d{2})?)/g)].map(x=>Number(x[1].replace(',','.')));
+   const ints=[...tail.matchAll(/\\b(\\d{1,2})\\b/g)].map(x=>Number(x[1])).filter(x=>x>=6&&x<=60);
+   if(method==='one shot'){
+    if(nums.length)offers.push({plan,method,amounts:[nums[0]],installments:null});
+   }else if(ints.length){
+    if(method==='rateale')offers.push({plan,method,amounts:nums.slice(0,3),installments:ints[0]});
+    else offers.push({plan,method,amounts:nums.slice(0,3),installments:ints[0]});
+   }else if(nums.length)offers.push({plan,method,amounts:nums.slice(0,3),installments:null});
   }
   out.push({name,band,vendorPrice:vendor,offers});
  }
