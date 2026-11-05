@@ -265,7 +265,7 @@ async function loadIndividualSellers(){
   const shops=shopsSnap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false);
   const sel=document.getElementById('newSellerShop');
   sel.innerHTML='<option value="">Seleziona negozio…</option>'+shops.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+'</option>').join('');
-  const rows=(users.users||[]).map(u=>'<tr><td>'+esc(u.username||'')+'</td><td>'+esc(u.role==='admin'?'Amministratore':'Dipendente')+'</td><td>'+esc(u.displayName||'')+'</td><td>'+esc(u.shopName||u.shopId||'—')+'</td><td>'+(u.active?'Attivo':'Disattivato')+'</td><td><button class="secondary" onclick="resetIndividualSellerPassword(\''+esc(u.uid)+'\',\''+esc(u.username)+'\')">Reimposta password</button> <button class="secondary" onclick="toggleIndividualSeller(\''+esc(u.uid)+'\','+(u.active?'false':'true')+')">'+(u.active?'Disattiva':'Riattiva')+'</button></td></tr>').join('');
+  const rows=(users.users||[]).map(u=>'<tr><td>'+esc(u.username||'')+'</td><td>'+esc(u.role==='admin'?'Amministratore':'Dipendente')+'</td><td>'+esc(u.displayName||'')+'</td><td>'+esc(u.shopName||u.shopId||'—')+'</td><td>'+(u.active?'Attivo':'Disattivato')+'</td><td><button class="secondary" onclick="resetIndividualSellerPassword(\''+esc(u.uid)+'\',\''+esc(u.username)+'\')">Reimposta password</button> <button class="danger" onclick="deleteIndividualUser(\''+esc(u.uid)+'\',\''+esc(u.username)+'\')">Elimina definitivamente</button></td></tr>').join('');
   box.innerHTML='<table><thead><tr><th>Username</th><th>Ruolo</th><th>Nome</th><th>Negozio</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>'+rows+'</tbody></table>';
   msg.textContent='Account caricati: '+(users.users||[]).length;
  }catch(e){msg.textContent='Errore: '+e.message}
@@ -286,10 +286,10 @@ async function createIndividualSeller(){
  catch(e){msg.textContent='Creazione non riuscita: '+e.message}
  finally{btn.disabled=false}
 }
-async function toggleIndividualSeller(uid,active){
- if(!confirm(active?'Riattivare questo account?':'Disattivare questo account?'))return;
+async function deleteIndividualUser(uid,username){
+ if(!confirm('ATTENZIONE: eliminare definitivamente l’account '+username+'?\n\nL’utente non potrà più accedere. L’operazione non è reversibile.'))return;
  const msg=document.getElementById('individualUsersMsg');
- try{await callUserAdminApi('/users/update',{uid,active});msg.textContent='Account aggiornato.';await loadIndividualSellers()}catch(e){msg.textContent='Errore: '+e.message}
+ try{await callUserAdminApi('/users/delete',{uid});msg.textContent='Account '+username+' eliminato definitivamente.';await loadIndividualSellers()}catch(e){msg.textContent='Eliminazione non completata: '+e.message}
 }
 async function resetIndividualSellerPassword(uid,username){
  const password=prompt('Nuova password per '+username+' (almeno 8 caratteri):');
