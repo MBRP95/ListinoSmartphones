@@ -175,16 +175,12 @@ async function previewRetailPdf(){
   const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let raw='';
   for(let n=1;n<=pdf.numPages;n++){
    const pg=await pdf.getPage(n),tc=await pg.getTextContent();
-   const items=tc.items.filter(x=>x.str&&x.str.trim()).map(x=>({text:x.str.trim(),x:x.transform?.[4]??0,y:x.transform?.[5]??0}));
-   items.sort((a,b)=>b.y-a.y||a.x-b.x);
-   const rows=[];
-   for(const it of items){
-    let row=rows.find(r=>Math.abs(r.y-it.y)<2.5);
-    if(!row){row={y:it.y,parts:[]};rows.push(row)}
-    row.parts.push(it);
+   for(const item of tc.items){
+    if(!item.str)continue;
+    raw+=item.str;
+    raw+=item.hasEOL?'\\n':' ';
    }
-   rows.sort((a,b)=>b.y-a.y);
-   raw+=rows.map(r=>r.parts.sort((a,b)=>a.x-b.x).map(x=>x.text).join(' ').replace(/\s+/g,' ').trim()).join('\n')+'\n';
+   raw+='\\n';
   }
   const parsed=parseRetailText(raw);if(parsed.length<10)throw new Error('Riconosciute solo '+parsed.length+' varianti. Formato PDF non riconosciuto; catalogo invariato.');
   pendingCatalog=parsed.map(p=>{const old=catalog.find(x=>norm(x.name)===norm(p.name));if(!old)return p;const keep={};['ram','storage','display','camera','cpu','battery','os','description','image'].forEach(k=>{if(old[k]!==undefined)keep[k]=old[k]});return {...p,...keep}});
