@@ -146,7 +146,7 @@ function parseRetailText(raw){
    const plan=lines[j],method=lines[j+1]||'';if(!/^(one shot|finanziato|rateale)$/i.test(method))continue;
    const nums=[];let k=j+2;while(k<Math.min(end,j+9)&&nums.length<5){const v=euroValue(lines[k]);if(v!==null)nums.push(v);else if(/^\d{1,2}$/.test(lines[k]))nums.push(Number(lines[k]));k++}
    if(method.toLowerCase()==='one shot'){if(nums.length)offers.push({plan,method:'one shot',amounts:[nums[0]],installments:null})}
-   else{const ri=nums.findIndex(v=>Number.isInteger(v)&&v>=6&&v<=60);if(ri>=0){const before=nums.slice(0,ri),after=nums.slice(ri+1);offers.push({plan,method:'finanziato',amounts:[before[0]??null,after[1]??after[0]??null,after[2]??null].filter(v=>v!==null),installments:nums[ri],initialContribution:after[0]??null})}else if(nums.length>=2)offers.push({plan,method:'rateale',amounts:[nums[0],nums[1]],installments:null})}
+   else{const ri=nums.findIndex(v=>Number.isInteger(v)&&v>=6&&v<=60);if(ri>=0){const before=nums.slice(0,ri),after=nums.slice(ri+1);if(method.toLowerCase()==='rateale'){offers.push({plan,method:'rateale',amounts:[after[0]??null,after[1]??null,after[2]??null].filter(v=>v!==null),installments:nums[ri]})}else{offers.push({plan,method:'finanziato',amounts:[before[0]??null,after[0]??null,after[1]??null].filter(v=>v!==null),installments:nums[ri]})}}else if(nums.length>=2)offers.push({plan,method:'rateale',amounts:nums.slice(0,3),installments:null})}
    j=k-1;
   }
   out.push({name,band,vendorPrice:vendor,offers});
