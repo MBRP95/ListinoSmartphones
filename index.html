@@ -21,9 +21,9 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav><button id="homeBtn" onclick="goHome()" style="display:none">Indietro</button></nav></header>
 <main>
 <section id="sellerAuthView" class="hidden">
-<div class="hero"><div class="eyebrow">Accesso riservato</div><h1>Area riservata</h1><p class="sub">Inserisci la password per accedere. Il profilo viene riconosciuto automaticamente.</p></div>
+<div class="hero"><div class="eyebrow">Accesso riservato</div><h1>Area riservata</h1><p class="sub">Accedi con il tuo username e la password aziendale.</p></div>
 <div class="panel" style="max-width:460px">
-<div class="field"><label for="sellerPassword">Password</label><input id="sellerPassword" type="password" autocomplete="current-password" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter')verifySellerPassword()"></div>
+<div class="field"><label for="sellerUsername">Username</label><input id="sellerUsername" autocomplete="username" placeholder="Es. seller.modena" onkeydown="if(event.key==='Enter')document.getElementById('sellerPassword').focus()"></div><div class="field"><label for="sellerPassword">Password</label><input id="sellerPassword" type="password" autocomplete="current-password" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter')verifySellerPassword()"></div>
 <div id="sellerAuthMsg" class="muted" style="margin-bottom:12px"></div>
 <div class="actions"><button class="secondary" onclick="goHome()">Indietro</button><button class="primary" onclick="verifySellerPassword()">Accedi</button></div>
 </div></section>
@@ -39,15 +39,15 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <div class="panel"><div class="stephead"><span id="stepLabel">PASSAGGIO 1 DI 3</span><span id="stepName">Budget</span></div><div class="progress"><span id="bar"></span></div><div id="wizard"></div><div class="actions"><button class="secondary" id="back" onclick="move(-1)" disabled>Indietro</button><button class="primary" id="next" onclick="move(1)">Continua</button></div></div>
 <div id="results" class="panel hidden"><div class="eyebrow">Proposta</div><h2>Smartphone disponibili e compatibili</h2><div id="resultSummary" class="chips"></div><div id="cards" class="cards"></div><div id="selectedDevicePanel" class="panel hidden" style="margin-top:18px"><div id="selectedDeviceContent"></div></div></div>
 </section>
-<section id="adminView" class="hidden"><div class="hero"><div class="eyebrow">Area amministratore</div><h1>Aggiorna e pubblica il listino.</h1><p class="sub">Carica il PDF, controlla i dati e pubblica il catalogo.</p></div><div class="panel"><h2>Aggiorna listino da PDF</h2><p class="hint">Carica il nuovo PDF retail. Il catalogo non cambia finché non controlli l'anteprima e confermi.</p><div class="toolbar"><div class="field"><label>Nuovo listino retail (.pdf)</label><input id="retailPdf" type="file" accept="application/pdf,.pdf"></div><button class="primary" onclick="previewRetailPdf()">Analizza PDF</button></div><div id="pdfMsg" class="muted" style="margin-top:9px"></div><div id="pdfPreview" class="hidden" style="margin-top:14px"><div class="stats"><div class="stat"><b id="pdfCount">0</b><span>varianti lette</span></div><div class="stat"><b id="pdfNew">0</b><span>nuove varianti</span></div><div class="stat"><b id="pdfChanged">0</b><span>prezzi modificati</span></div><div class="stat"><b id="pdfWarnings">0</b><span>anomalie</span></div></div><div class="notice">Schede tecniche, fotografie e abbinamenti SKU sono mantenuti quando la variante è riconosciuta. Il magazzino non viene modificato.</div><div class="tablewrap"><table><thead><tr><th>Variante</th><th>Prezzo attuale</th><th>Nuovo prezzo</th><th>Esito</th></tr></thead><tbody id="pdfRows"></tbody></table></div><div class="actions"><button class="secondary" onclick="cancelPdfImport()">Annulla</button><button class="primary" onclick="confirmPdfImport()">Conferma aggiornamento</button></div></div></div><div class="panel"><h2>Pubblica catalogo su GitHub</h2><p class="hint">Il token viene richiesto a ogni pubblicazione e non viene salvato nel sito.</p><button class="primary" onclick="publishCatalogToGitHub()">Pubblica catalogo confermato</button><div id="publishMsg" class="muted" style="margin-top:10px"></div></div><div class="notice">Questa password protegge soltanto l'interfaccia: in un sito statico è leggibile nel codice pubblico. Anche il token è esposto al browser durante l'operazione.</div></section>
+<section id="adminView" class="hidden"><div class="hero"><div class="eyebrow">Area amministratore</div><h1>Aggiorna e pubblica il listino.</h1><p class="sub">Carica il PDF, controlla i dati e pubblica il catalogo.</p></div><div class="panel"><h2>Importazione magazzino globale</h2><p class="hint">Carica l’esportazione completa Excel di tutti i negozi. Le nuove giacenze saranno pubblicate solo dopo il caricamento completo.</p><div class="toolbar"><div class="field"><label>Excel magazzino completo (.xlsx)</label><input id="globalStockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importGlobalStock()">Controlla e pubblica magazzino</button></div><div id="globalStockMsg" class="muted" style="margin-top:10px"></div></div><div class="panel"><h2>Aggiorna listino da PDF</h2><p class="hint">Carica il nuovo PDF retail. Il catalogo non cambia finché non controlli l'anteprima e confermi.</p><div class="toolbar"><div class="field"><label>Nuovo listino retail (.pdf)</label><input id="retailPdf" type="file" accept="application/pdf,.pdf"></div><button class="primary" onclick="previewRetailPdf()">Analizza PDF</button></div><div id="pdfMsg" class="muted" style="margin-top:9px"></div><div id="pdfPreview" class="hidden" style="margin-top:14px"><div class="stats"><div class="stat"><b id="pdfCount">0</b><span>varianti lette</span></div><div class="stat"><b id="pdfNew">0</b><span>nuove varianti</span></div><div class="stat"><b id="pdfChanged">0</b><span>prezzi modificati</span></div><div class="stat"><b id="pdfWarnings">0</b><span>anomalie</span></div></div><div class="notice">Schede tecniche, fotografie e abbinamenti SKU sono mantenuti quando la variante è riconosciuta. Il magazzino non viene modificato.</div><div class="tablewrap"><table><thead><tr><th>Variante</th><th>Prezzo attuale</th><th>Nuovo prezzo</th><th>Esito</th></tr></thead><tbody id="pdfRows"></tbody></table></div><div class="actions"><button class="secondary" onclick="cancelPdfImport()">Annulla</button><button class="primary" onclick="confirmPdfImport()">Conferma aggiornamento</button></div></div></div><div class="panel"><h2>Pubblica catalogo su GitHub</h2><p class="hint">Il token viene richiesto a ogni pubblicazione e non viene salvato nel sito.</p><button class="primary" onclick="publishCatalogToGitHub()">Pubblica catalogo confermato</button><div id="publishMsg" class="muted" style="margin-top:10px"></div></div><div class="notice">Questa password protegge soltanto l'interfaccia: in un sito statico è leggibile nel codice pubblico. Anche il token è esposto al browser durante l'operazione.</div></section>
 <section id="storeView" class="hidden">
 <div class="hero"><div class="eyebrow">Area negozio</div><h1>Catalogo, listino e magazzino.</h1><p class="sub">Il catalogo retail si aggiorna caricando il PDF. Importa il file Excel aggiornato per riallineare disponibilità e quantità del negozio.</p></div>
 <div class="stats"><div class="stat"><b id="catalogCount">106</b><span>varianti nel listino</span></div><div class="stat"><b id="stockCount">14</b><span>varianti smartphone in Excel</span></div><div class="stat"><b id="pieceCount">19</b><span>pezzi a stock iniziale</span></div><div class="stat"><b id="matchedCount">—</b><span>varianti abbinate al listino</span></div></div>
-<div class="panel"><h2>Aggiorna magazzino</h2><p class="hint">Carica l'Excel esportato dal gestionale. Vengono considerate soltanto le righe che sembrano smartphone; accessori e altri articoli sono esclusi. Le righe importate sostituiscono la fotografia iniziale.</p><div class="toolbar"><div class="field"><label>File Excel magazzino (.xlsx)</label><input id="stockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importStock()">Importa magazzino</button></div><div id="importMsg" class="muted" style="margin-top:9px"></div>
+<div class="panel admin-only"><h2>Aggiorna magazzino</h2><p class="hint">Carica l'Excel esportato dal gestionale. Vengono considerate soltanto le righe che sembrano smartphone; accessori e altri articoli sono esclusi. Le righe importate sostituiscono la fotografia iniziale.</p><div class="toolbar"><div class="field"><label>File Excel magazzino (.xlsx)</label><input id="stockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importStock()">Importa magazzino</button></div><div id="importMsg" class="muted" style="margin-top:9px"></div>
 <div class="notice">Disponibilità calcolata come <b>Giacenza − Quantità Impegnata</b>. Quantità futura e in arrivo non vengono considerate vendibili. È una scelta prudenziale: non promette al cliente merce non ancora fisicamente disponibile.</div></div>
-<div class="panel"><div class="toolbar"><div class="field"><h2>Associa SKU al listino</h2><p class="hint">Il collegamento automatico è solo un suggerimento. Controlla le varianti non abbinate o dubbie: capacità e colore devono corrispondere.</p></div><button class="secondary" onclick="autoMatchAll()">Prova abbinamento automatico</button></div>
+<div class="panel admin-only"><div class="toolbar"><div class="field"><h2>Associa SKU al listino</h2><p class="hint">Il collegamento automatico è solo un suggerimento. Controlla le varianti non abbinate o dubbie: capacità e colore devono corrispondere.</p></div><button class="secondary" onclick="autoMatchAll()">Prova abbinamento automatico</button></div>
 <div class="tablewrap"><table><thead><tr><th>SKU</th><th>Descrizione magazzino</th><th>Giacenza</th><th>Impegnata</th><th>Disponibili</th><th>Variante listino associata</th><th>Esito</th></tr></thead><tbody id="stockRows"></tbody></table></div></div>
-<div class="panel"><h2>Scheda tecnica condivisa per modello</h2><p class="hint">Seleziona il modello: le caratteristiche e la fotografia vengono applicate automaticamente a tutte le varianti di memoria e colore dello stesso smartphone. Le modifiche saranno incluse nell'esportazione per GitHub.</p>
+<div class="panel admin-only"><h2>Scheda tecnica condivisa per modello</h2><p class="hint">Seleziona il modello: le caratteristiche e la fotografia vengono applicate automaticamente a tutte le varianti di memoria e colore dello stesso smartphone. Le modifiche saranno incluse nell'esportazione per GitHub.</p>
 <div class="field"><label>Dispositivo da modificare</label><select id="editDevice" onchange="loadEditor()"></select></div>
 <div class="grid">
 <div class="field"><label>RAM (GB)</label><input id="fRam" placeholder="Es. 8"></div>
@@ -65,8 +65,8 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 </div><div class="actions"><button class="secondary" onclick="clearEditor()">Annulla modifiche</button><button class="primary" onclick="saveEditor()">Salva scheda</button></div><div id="editorMsg" class="muted" style="margin-top:8px"></div>
 </div>
 
-<div class="field" style="margin-top:15px"><label>Carica catalogo JSON aggiornato</label><input type="file" id="catalogJson" accept=".json,application/json" onchange="importCatalogJson()"></div>
-<div class="field"><label>Carica magazzino JSON aggiornato</label><input type="file" id="stockJson" accept=".json,application/json" onchange="importStockJson()"></div>
+<div class="field admin-only" style="margin-top:15px"><label>Carica catalogo JSON aggiornato</label><input type="file" id="catalogJson" accept=".json,application/json" onchange="importCatalogJson()"></div>
+<div class="field admin-only"><label>Carica magazzino JSON aggiornato</label><input type="file" id="stockJson" accept=".json,application/json" onchange="importStockJson()"></div>
 <div id="exportMsg" class="muted"></div></div>
 <div class="panel"><h2>Catalogo completo retail</h2><p class="hint">Tutte le varianti presenti nel PDF, anche quelle non disponibili a magazzino. Prezzo vendor e condizioni Fastweb restano distinti.</p><div class="toolbar"><div class="field"><label>Cerca modello / marca</label><input id="catalogSearch" placeholder="Es. iPhone 17, Galaxy S26..." oninput="renderCatalog()"></div><div class="field"><label>Marca</label><select id="brandFilter" onchange="renderCatalog()"><option value="">Tutte</option></select></div></div>
 <div class="tablewrap"><table><thead><tr><th>Modello / variante</th><th>Fascia</th><th>Prezzo vendor</th><th>Offerte</th><th>Disponibilità negozio</th><th></th></tr></thead><tbody id="catalogRows"></tbody></table></div></div>
@@ -74,6 +74,27 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 </section>
 </main>
 <footer>Device Proposer · versione statica. Catalogo e magazzino vengono letti da devices.json e stock.json. Le modifiche nell'area Store vanno esportate e caricate nel repository GitHub.</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, getDocs, writeBatch, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyA-FeADcnW89AOSuAZ-i3xnF7reReOcg2",
+  authDomain: "deviceproposer.firebaseapp.com",
+  projectId: "deviceproposer",
+  storageBucket: "deviceproposer.firebasestorage.app",
+  messagingSenderId: "257823727896",
+  appId: "1:257823727896:web:783a061ee5239c0960be6d",
+  measurementId: "G-K0ED9BVXG6"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+window.firebaseApi = { auth, db, signInWithEmailAndPassword, signOut, doc, getDoc, collection, getDocs, writeBatch, serverTimestamp, setDoc };
+window.firebaseReady = true;
+window.dispatchEvent(new Event("firebase-ready"));
+</script>
 <script>
 let catalog=[];
 let stock=[];
@@ -84,8 +105,9 @@ const questions=[
  {key:'storage',name:'Memoria',title:'Quanta memoria interna ti serve?',opts:[['128','Almeno 128 GB'],['256','Almeno 256 GB'],['512','Almeno 512 GB'],['1024','Almeno 1 TB'],['any','Non lo so / indifferente']]}
 ];
 let answers={},step=0;
-const SELLER_PASSWORD='Listini26';
-const ADMIN_PASSWORD_HASH='6a47007caefd39b97aab42a5263872938c32da9005211c58fdd0aeadfc0884d1';
+let currentUserProfile=null;
+let currentShopId=new URLSearchParams(location.search).get('shop')||'';
+let activeStockVersion='';
 function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/iphone\s*promax/g,'iphone pro max').replace(/samsung\s+galaxy/g,'galaxy').replace(/[^a-z0-9]+/g,' ').trim()}
 function brandOf(s){let n=norm(s);return ['apple','samsung','motorola','honor','oppo','realme','xiaomi','google'].find(b=>n.includes(b))||''}
 function available(s){return Math.max(0,(Number(s.stock)||0)-(Number(s.reserved)||0))}
@@ -104,12 +126,45 @@ function matchScore(a,b){
 }
 function autoMatch(s){let ranked=catalog.map((p,i)=>({i,score:matchScore(s.description,p.name)})).sort((a,b)=>b.score-a.score);return ranked[0]?.score>=.48?ranked[0].i:-1}
 function autoMatchAll(){stock.forEach(s=>{if(mapped(s)<0){const i=autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}}});renderAll();alert('Abbinamento automatico completato. Verifica manualmente ogni SKU: non è una conferma di corrispondenza.')}
-function goHome(){['sellerAuthView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerAuthMsg').textContent='';}
-function enterClient(){document.getElementById('homeView').classList.add('hidden');document.getElementById('sellerAuthView').classList.add('hidden');document.getElementById('clientView').classList.remove('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('homeBtn').style.display='inline-block';step=0;answers={};document.getElementById('results').classList.add('hidden');renderStep()}
-function requestSellerAccess(){document.getElementById('homeView').classList.add('hidden');document.getElementById('clientView').classList.add('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('sellerAuthView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerAuthMsg').textContent='';document.getElementById('sellerPassword').focus()}
+async function goHome(){if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}currentUserProfile=null;['sellerAuthView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';}
+function enterClient(){if(!currentShopId){alert('Questo tablet non è associato a un negozio. Usa il link configurato dall’amministratore.');return}document.getElementById('homeView').classList.add('hidden');document.getElementById('sellerAuthView').classList.add('hidden');document.getElementById('clientView').classList.remove('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('homeBtn').style.display='inline-block';step=0;answers={};document.getElementById('results').classList.add('hidden');renderStep()}
+function requestSellerAccess(){document.getElementById('homeView').classList.add('hidden');document.getElementById('clientView').classList.add('hidden');document.getElementById('storeView').classList.add('hidden');document.getElementById('sellerAuthView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';document.getElementById('sellerUsername').focus()}
 async function publishCatalogToGitHub(){if(!catalog.length){document.getElementById('publishMsg').textContent='Catalogo vuoto.';return}const token=prompt('Inserisci il Fine-grained Personal Access Token GitHub:');if(!token)return;const msg=document.getElementById('publishMsg');msg.textContent='Pubblicazione in corso…';const url='https://api.github.com/repos/MBRP95/ListinoSmartphones/contents/devices.json';try{const headers={Authorization:'Bearer '+token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};const current=await fetch(url,{headers});if(!current.ok)throw Error('Lettura file fallita ('+current.status+'). Controlla token e permessi.');const file=await current.json();const content=JSON.stringify(catalog,null,2);const encoded=btoa(unescape(encodeURIComponent(content)));const res=await fetch(url,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({message:'Aggiornamento listino retail da Device Proposer',content:encoded,sha:file.sha})});const data=await res.json();if(!res.ok)throw Error(data.message||'Errore GitHub '+res.status);msg.textContent='Pubblicato. Commit '+data.commit.sha.slice(0,7)+'. Attendi il deploy di GitHub Pages.'}catch(e){msg.textContent='Pubblicazione fallita: '+e.message}}
-async function verifySellerPassword(){const pw=document.getElementById('sellerPassword').value;const msg=document.getElementById('sellerAuthMsg');if(pw===SELLER_PASSWORD){document.getElementById('sellerAuthView').classList.add('hidden');document.getElementById('storeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='inline-block';document.getElementById('sellerPassword').value='';renderAll();return}try{const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pw));const hash=[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');if(hash===ADMIN_PASSWORD_HASH){document.getElementById('sellerAuthView').classList.add('hidden');document.getElementById('adminView').classList.remove('hidden');document.getElementById('homeBtn').style.display='inline-block';document.getElementById('sellerPassword').value='';return}}catch(e){msg.textContent='Verifica password non disponibile in questo browser.';return}msg.textContent='Password non corretta. Riprova.';document.getElementById('sellerPassword').focus()}
-function currentAvailable(){return stock.filter(x=>available(x)>0&&String(x.warehouse).toLowerCase()==='vendibile').map(x=>({s:x,p:catalog[mapped(x)]})).filter(x=>x.p&&Number.isFinite(priceFor(x.p)))}
+async function verifySellerPassword(){
+ const username=document.getElementById('sellerUsername').value.trim().toLowerCase();
+ const pw=document.getElementById('sellerPassword').value;
+ const msg=document.getElementById('sellerAuthMsg');
+ if(!username||!pw){msg.textContent='Inserisci username e password.';return}
+ try{
+  if(!window.firebaseApi)throw new Error('Firebase non è ancora pronto. Riprova tra qualche secondo.');
+  const email=username.includes('@')?username:username+'@deviceproposer.invalid';
+  const {auth,signInWithEmailAndPassword,doc,getDoc,db}=window.firebaseApi;
+  const credential=await signInWithEmailAndPassword(auth,email,pw);
+  const profileSnap=await getDoc(doc(db,'users',credential.user.uid));
+  if(!profileSnap.exists())throw new Error('Profilo utente non configurato in Firestore.');
+  const profile=profileSnap.data();
+  if(profile.active!==true)throw new Error('Account disattivato. Contatta l’amministratore.');
+  if(!['admin','seller'].includes(profile.role))throw new Error('Ruolo utente non valido.');
+  currentUserProfile={...profile,uid:credential.user.uid};
+  document.getElementById('sellerAuthView').classList.add('hidden');
+  document.getElementById('sellerPassword').value='';
+  document.getElementById('sellerUsername').value='';
+  document.getElementById('homeBtn').style.display='inline-block';
+  if(profile.role==='admin'){
+   document.getElementById('adminView').classList.remove('hidden');
+   document.querySelectorAll('.admin-only').forEach(el=>el.classList.remove('hidden'));
+  }else{
+   if(!profile.shopId)throw new Error('Il profilo seller non è associato a un negozio.');
+   document.getElementById('storeView').classList.remove('hidden');
+   document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
+   renderAll();
+  }
+ }catch(e){
+  msg.textContent=e.code==='auth/invalid-credential'?'Username o password non corretti.':e.message;
+  try{if(window.firebaseApi)await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(_){}
+ }
+}
+function currentAvailable(){return stock.filter(x=>(!currentShopId||x.shopId===currentShopId||(!x.shopId&&String(x.shop||'').startsWith(currentShopId)))&&available(x)>0&&String(x.warehouse).toLowerCase()==='vendibile').map(x=>({s:x,p:catalog[mapped(x)]})).filter(x=>x.p&&Number.isFinite(priceFor(x.p)))}
 function withinBudget(p){const b=answers.budget;if(!b)return true;const price=priceFor(p);return b==='over800'?price>800:price<=Number(b)}
 function storageGb(p){const n=String(p.name||'');const tb=n.match(/\b(1|2)\s*tb\b/i);if(tb)return Number(tb[1])*1024;const gb=n.match(/\b(128|256|512|1024|2048)\s*gb\b/i);return gb?Number(gb[1]):null}
 function filteredBefore(stepIndex){return currentAvailable().filter(({p})=>{if(stepIndex>0&&!withinBudget(p))return false;if(stepIndex>1&&answers.brand&&answers.brand!=='any'&&brandOf(p.name)!==answers.brand.toLowerCase())return false;return true})}
@@ -120,7 +175,7 @@ function move(d){if(d<0){step=Math.max(0,step-1);renderStep();return}if(!answers
 function offersFor(p){return p.offers||[]}
 function priceFor(p){let v=Number(p.vendorPrice);return Number.isFinite(v)&&v>1?v:Number.POSITIVE_INFINITY}
 function showResults(){
- let candidates=stock.filter(s=>available(s)>0&&s.warehouse.toLowerCase()==='vendibile').map(s=>({s,p:catalog[mapped(s)]})).filter(x=>x.p&&Number.isFinite(priceFor(x.p)));
+ let candidates=stock.filter(s=>(!currentShopId||s.shopId===currentShopId||(!s.shopId&&String(s.shop||'').startsWith(currentShopId)))&&available(s)>0&&s.warehouse.toLowerCase()==='vendibile').map(s=>({s,p:catalog[mapped(s)]})).filter(x=>x.p&&Number.isFinite(priceFor(x.p)));
  candidates=candidates.filter(({p})=>{if(!withinBudget(p))return false;if(answers.brand!=='any'&&brandOf(p.name)!==answers.brand.toLowerCase())return false;let cap=storageGb(p);if(answers.storage!=='any'&&(!cap||cap<Number(answers.storage)))return false;return true});
  candidates.sort((a,b)=>priceFor(a.p)-priceFor(b.p));
  document.getElementById('results').classList.remove('hidden');document.getElementById('resultSummary').innerHTML=questions.map(q=>`<span class="chip">${q.name}: ${answers[q.key]==='any'?'Indifferente':answers[q.key]}</span>`).join('');
@@ -138,6 +193,59 @@ function renderStock(){document.getElementById('stockCount').textContent=stock.l
 function renderCatalog(){let q=norm(document.getElementById('catalogSearch').value);let b=document.getElementById('brandFilter').value;let rows=catalog.map((p,i)=>({p,i})).filter(({p})=>(!q||norm(p.name).includes(q))&&(!b||brandOf(p.name)===b));document.getElementById('catalogRows').innerHTML=rows.map(({p,i})=>{let ss=stock.filter(s=>mapped(s)===i);let qty=ss.reduce((a,s)=>a+available(s),0);return `<tr><td>${esc(p.name)}</td><td>${p.band}</td><td>${money(p.vendorPrice)}</td><td>${p.offers.length}</td><td>${qty?qty+' pz':'Non a stock'}</td><td><button class="rowbtn" onclick="document.getElementById('detailSelect').value='${i}';renderDetail()">Dettaglio</button></td></tr>`}).join('')}
 function renderDetail(){let p=catalog[Number(document.getElementById('detailSelect').value)];if(!p)return;let i=Number(document.getElementById('detailSelect').value);let ss=stock.filter(s=>mapped(s)===i);document.getElementById('detailBox').innerHTML=`<h3>${esc(p.name)}</h3><div class="chips"><span class="chip">Fascia ${esc(p.band)}</span><span class="chip">Prezzo vendor ${money(p.vendorPrice)}</span><span class="chip">${ss.reduce((a,s)=>a+available(s),0)} disponibili</span></div><div class="tablewrap"><table><thead><tr><th>Offerta</th><th>Pagamento</th><th>Importo</th><th>Rate</th><th>Rata</th><th>Prezzo finale</th></tr></thead><tbody>${p.offers.map(o=>`<tr><td>${esc(o.plan)}</td><td>${o.method}</td><td>${o.amounts[0]!=null?money(o.amounts[0]):'—'}</td><td>${o.installments??'—'}</td><td>${o.amounts[1]!=null&&o.method==='finanziato'?money(o.amounts[1]):'—'}</td><td>${o.amounts[o.amounts.length-1]!=null?money(o.amounts[o.amounts.length-1]):'—'}</td></tr>`).join('')}</tbody></table></div>`}
 function renderAll(){document.getElementById('catalogCount').textContent=catalog.length;let brands=[...new Set(catalog.map(p=>brandOf(p.name)).filter(Boolean))].sort();let sel=document.getElementById('brandFilter');let old=sel.value;sel.innerHTML='<option value="">Tutte</option>'+brands.map(b=>`<option value="${b}">${b[0].toUpperCase()+b.slice(1)}</option>`).join('');sel.value=old;document.getElementById('detailSelect').innerHTML=catalog.map((p,i)=>`<option value="${i}">${esc(p.name)}</option>`).join('');renderStock();renderCatalog();renderDetail()}
+
+async function importGlobalStock(){
+ const file=document.getElementById('globalStockFile').files[0],msg=document.getElementById('globalStockMsg');
+ if(!file){msg.textContent='Seleziona prima il file Excel.';return}
+ if(!window.XLSX){msg.textContent='Libreria Excel non caricata.';return}
+ if(currentUserProfile?.role!=='admin'){msg.textContent='Operazione consentita soltanto all’amministratore.';return}
+ const btn=document.querySelector('button[onclick="importGlobalStock()"]');btn.disabled=true;msg.textContent='Controllo del file in corso…';
+ try{
+  const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
+  const ws=wb.Sheets['Magazzino']||wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+  const get=(r,k)=>r[k]??r[Object.keys(r).find(x=>norm(x)===norm(k))]??'';
+  const shops=new Map();
+  const all=rows.map(r=>{
+   const shop=String(get(r,'Negozio')).trim();
+   const shopId=(shop.match(/^[A-Z]{2}\d{3}/i)||[])[0]?.toUpperCase()||'';
+   return {sku:String(get(r,'Codice Prodotto')).trim(),description:String(get(r,'Descrizione')).trim(),shop,shopId,warehouse:String(get(r,'Tipo Magazzino')).trim(),stock:Number(get(r,'Giacenza'))||0,future:Number(get(r,'Giacenza Futura'))||0,ordered:Number(get(r,'Quantità Ordinata'))||0,incoming:Number(get(r,'Quantità In Arrivo'))||0,reserved:Number(get(r,'Quantità Impegnata'))||0,shipped:Number(get(r,'Quantità Spedita'))||0};
+  }).filter(x=>x.sku&&x.shopId&&x.shop&&x.warehouse);
+  if(!all.length)throw new Error('Nessuna riga valida: verifica intestazioni e foglio Magazzino.');
+  all.forEach(x=>shops.set(x.shopId,x.shop));
+  const dup=new Set();for(const x of all){const k=x.shopId+'|'+x.sku+'|'+x.warehouse;if(dup.has(k))throw new Error('Riga duplicata per SKU/negozio/magazzino: '+k);dup.add(k)}
+  const activeShops=await window.firebaseApi.getDocs(window.firebaseApi.collection(window.firebaseApi.db,'shops'));
+  const known=new Set(activeShops.docs.map(d=>d.id));
+  const unknown=[...shops.keys()].filter(id=>!known.has(id));
+  if(unknown.length)throw new Error('Negozi non configurati in Firestore: '+unknown.join(', ')+'. Importazione annullata.');
+  if(shops.size<2)throw new Error('Il file sembra incompleto: sono stati riconosciuti meno di 2 negozi.');
+  const version='v'+Date.now();
+  const db=window.firebaseApi.db,writeBatch=window.firebaseApi.writeBatch,doc=window.firebaseApi.doc;
+  let batch=writeBatch(db),count=0,batches=0;
+  for(const x of all){
+   const id=encodeURIComponent(x.shopId+'_'+x.sku+'_'+x.warehouse).replace(/%/g,'_');
+   batch.set(doc(db,'stockVersions',version,'items',id),x);
+   count++;
+   if(count%450===0){await batch.commit();batches++;batch=writeBatch(db)}
+  }
+  if(count%450!==0){await batch.commit();batches++}
+  await window.firebaseApi.setDoc(doc(db,'settings','stock'),{activeVersion:version,rowCount:all.length,shopCount:shops.size,updatedAt:window.firebaseApi.serverTimestamp(),updatedBy:currentUserProfile.uid});
+  activeStockVersion=version;
+  await loadStockFromFirestore();
+  msg.textContent='Pubblicazione completata: '+all.length+' righe, '+shops.size+' negozi, versione '+version+'.';
+ }catch(e){msg.textContent='Importazione non pubblicata: '+e.message}
+ finally{btn.disabled=false}
+}
+async function loadStockFromFirestore(){
+ const api=window.firebaseApi,db=api.db;
+ const setting=await api.getDoc(api.doc(db,'settings','stock'));
+ if(!setting.exists()||!setting.data().activeVersion)return false;
+ activeStockVersion=setting.data().activeVersion;
+ const snap=await api.getDocs(api.collection(db,'stockVersions',activeStockVersion,'items'));
+ stock=snap.docs.map(d=>d.data());
+ return true;
+}
+
 async function importStock(){let f=document.getElementById('stockFile').files[0];if(!f){alert('Seleziona prima il file Excel.');return}if(!window.XLSX){alert('Libreria Excel non caricata: verifica la connessione internet e riprova.');return}try{let wb=XLSX.read(await f.arrayBuffer(),{type:'array'});let ws=wb.Sheets['Magazzino']||wb.Sheets[wb.SheetNames[0]];let rows=XLSX.utils.sheet_to_json(ws,{defval:''});let get=(r,k)=>r[k]??r[Object.keys(r).find(x=>norm(x)===norm(k))]??'';let next=rows.filter(r=>{let d=String(get(r,'Descrizione'));return /iphone|galaxy|samsung|honor|motorola|oppo|realme|xiaomi|redmi|pixel|oneplus/i.test(d)&&!/buds|auricolari|caricabatter|vetro|cover|custodia|screen protector|screenglass|skinny|t-shirt/i.test(d)}).map(r=>({sku:String(get(r,'Codice Prodotto')),description:String(get(r,'Descrizione')),shop:String(get(r,'Negozio')),warehouse:String(get(r,'Tipo Magazzino')),stock:Number(get(r,'Giacenza'))||0,reserved:Number(get(r,'Quantità Impegnata'))||0,future:Number(get(r,'Giacenza Futura'))||0,ordered:Number(get(r,'Quantità Ordinata'))||0,incoming:Number(get(r,'Quantità In Arrivo'))||0}));if(!next.length)throw new Error('Nessuna riga smartphone riconosciuta. Controlla intestazioni e foglio Magazzino.');stock=next;next.forEach(s=>{const i=autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}});renderAll();document.getElementById('importMsg').textContent=`Importate ${next.length} varianti smartphone. Disponibili: ${next.reduce((a,s)=>a+available(s),0)} pezzi. Verifica gli abbinamenti prima di usare la vista Cliente.`}catch(e){alert('Errore importazione: '+e.message)}}
 
 
@@ -224,10 +332,12 @@ async function importCatalogJson(){let f=document.getElementById('catalogJson').
 async function importStockJson(){let f=document.getElementById('stockJson').files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d)||!d.every(x=>x.sku))throw new Error('Formato magazzino non valido');stock=d;d.forEach(s=>{if(mappings[s.sku]===undefined)mappings[s.sku]=autoMatch(s)});renderAll();document.getElementById('exportMsg').textContent='Magazzino JSON caricato.'}catch(e){alert('Errore magazzino: '+e.message)}}
 async function init(){
  try{
-  const [cr,sr]=await Promise.all([fetch('./devices.json'),fetch('./stock.json')]);
+  while(!window.firebaseApi){await new Promise(resolve=>window.addEventListener('firebase-ready',resolve,{once:true}))}
+   const [cr,sr]=await Promise.all([fetch('./devices.json'),fetch('./stock.json')]);
   if(!cr.ok||!sr.ok)throw new Error('devices.json o stock.json non trovato nella root del sito');
   catalog=await cr.json();stock=await sr.json();
   if(!Array.isArray(catalog)||!Array.isArray(stock))throw new Error('Formato JSON non valido');
+   await loadStockFromFirestore();
   const manualMatches={
  "6210042":"Honor 600 Smart 5G 128GB Black",
  "6213241":"Apple iPhone 16e 128GB Black",
