@@ -21,7 +21,7 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav><button id="homeBtn" onclick="goHome()" style="display:none">Indietro</button></nav></header>
 <main>
 <section id="sellerAuthView" class="hidden">
-<div class="hero"><div class="eyebrow">Accesso riservato</div><h1>Area riservata</h1><p class="sub">Accedi con il tuo username e la password aziendale.</p></div>
+<div class="hero"><div class="eyebrow">Accesso riservato</div><h1>Area riservata</h1><p class="sub">Inserisci le credenziali previste per la modalità scelta.</p></div>
 <div class="panel" style="max-width:460px">
 <div class="field"><label for="sellerUsername">Username</label><input id="sellerUsername" autocomplete="username" placeholder="Es. seller.modena" onkeydown="if(event.key==='Enter')document.getElementById('sellerPassword').focus()"></div><div class="field"><label for="sellerPassword">Password</label><input id="sellerPassword" type="password" autocomplete="current-password" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter')verifySellerPassword()"></div>
 <div id="sellerAuthMsg" class="muted" style="margin-bottom:12px"></div>
