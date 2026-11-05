@@ -68,7 +68,7 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <div class="field admin-only" style="margin-top:15px"><label>Carica catalogo JSON aggiornato</label><input type="file" id="catalogJson" accept=".json,application/json" onchange="importCatalogJson()"></div>
 <div class="field admin-only"><label>Carica magazzino JSON aggiornato</label><input type="file" id="stockJson" accept=".json,application/json" onchange="importStockJson()"></div>
 <div id="exportMsg" class="muted"></div></div>
-<div class="panel"><h2>Catalogo completo retail</h2><p class="hint">Tutte le varianti presenti nel PDF, anche quelle non disponibili a magazzino. Prezzo vendor e condizioni Fastweb restano distinti.</p><div class="toolbar"><div class="field"><label>Cerca modello / marca</label><input id="catalogSearch" placeholder="Es. iPhone 17, Galaxy S26..." oninput="renderCatalog()"></div><div class="field"><label>Marca</label><select id="brandFilter" onchange="renderCatalog()"><option value="">Tutte</option></select></div></div>
+<div class="panel"><h2>Catalogo e promozioni disponibili</h2><p class="hint">Sono mostrati soltanto i dispositivi con almeno un pezzo vendibile nel negozio selezionato.</p><div class="toolbar"><div class="field"><label>Negozio</label><select id="shopFilter" onchange="changeShopFilter()"></select></div><div class="field"><label>Cerca modello / marca</label><input id="catalogSearch" placeholder="Es. iPhone 17, Galaxy S26..." oninput="renderCatalog()"></div><div class="field"><label>Marca</label><select id="brandFilter" onchange="renderCatalog()"><option value="">Tutte</option></select></div></div>
 <div class="tablewrap"><table><thead><tr><th>Modello / variante</th><th>Fascia</th><th>Prezzo vendor</th><th>Offerte</th><th>Disponibilità negozio</th><th></th></tr></thead><tbody id="catalogRows"></tbody></table></div></div>
 <div class="panel"><h2>Dettaglio variante e condizioni</h2><div class="field"><label>Variante</label><select id="detailSelect" onchange="renderDetail()"></select></div><div id="detailBox"></div></div>
 </section>
@@ -107,6 +107,7 @@ const questions=[
 let answers={},step=0;
 let currentUserProfile=null;
 let currentShopId=new URLSearchParams(location.search).get('shop')||'';
+let selectedShopFilter='';
 let activeStockVersion='';
 function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/iphone\s*promax/g,'iphone pro max').replace(/samsung\s+galaxy/g,'galaxy').replace(/[^a-z0-9]+/g,' ').trim()}
 function brandOf(s){let n=norm(s);return ['apple','samsung','motorola','honor','oppo','realme','xiaomi','google'].find(b=>n.includes(b))||''}
@@ -169,6 +170,7 @@ async function verifySellerPassword(){
   if(profile.active!==true)throw new Error('Account disattivato. Contatta l’amministratore.');
   if(!['admin','seller'].includes(profile.role))throw new Error('Ruolo utente non valido.');
   currentUserProfile={...profile,uid:credential.user.uid};
+  selectedShopFilter=profile.role==='seller'?(profile.shopId||''):'';
   document.getElementById('sellerAuthView').classList.add('hidden');
   document.getElementById('sellerPassword').value='';
   document.getElementById('sellerUsername').value='';
@@ -213,13 +215,23 @@ function generateProposalPdf(){const p=catalog[selectedDeviceIndex],o=p?.offers?
 function money(v){return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(Number(v)||0)}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function scopedStock(){
- const shopId=currentUserProfile?.role==='seller'?currentUserProfile.shopId:currentShopId;
+ const shopId=currentUserProfile?.role==='seller'?(selectedShopFilter||currentUserProfile.shopId):currentShopId;
  return stock.filter(s=>(!shopId||s.shopId===shopId||(!s.shopId&&String(s.shop||'').startsWith(shopId)))&&String(s.warehouse||'').toLowerCase()==='vendibile'&&available(s)>0);
+}
+function changeShopFilter(){selectedShopFilter=document.getElementById('shopFilter').value;renderAll()}
+function setupShopFilter(){
+ const sel=document.getElementById('shopFilter');if(!sel)return;
+ const shops=new Map();stock.forEach(s=>{if(s.shopId)shops.set(s.shopId,s.shop||s.shopId)});
+ const preferred=currentUserProfile?.role==='seller'?currentUserProfile.shopId:(selectedShopFilter||currentShopId);
+ sel.innerHTML=[...shops].sort((a,b)=>a[1].localeCompare(b[1],'it')).map(([id,name])=>'<option value="'+id+'">'+esc(name)+' ('+id+')</option>').join('');
+ if(preferred&&shops.has(preferred))sel.value=preferred;
+ else if(shops.size)sel.selectedIndex=0;
+ selectedShopFilter=sel.value||preferred||'';
 }
 function renderStock(){const rows=stock;document.getElementById('stockCount').textContent=rows.length;document.getElementById('pieceCount').textContent=rows.reduce((a,s)=>a+available(s),0);let matched=rows.filter(s=>mapped(s)>=0).length;document.getElementById('matchedCount').textContent=matched+'/'+rows.length;document.getElementById('stockRows').innerHTML=rows.map(s=>{let i=mapped(s);return `<tr><td>${esc(s.sku)}</td><td>${esc(s.description)}</td><td>${s.stock}</td><td>${s.reserved}</td><td class="status ${available(s)>0?'ok':'bad'}">${available(s)}</td><td><select onchange="mappings['${esc(s.sku)}']=Number(this.value);renderStock();renderCatalog()"><option value="-1">— Non associato —</option>${catalog.map((p,j)=>`<option value="${j}" ${i===j?'selected':''}>${esc(p.name)}</option>`).join('')}</select></td><td class="status ${i>=0?'ok':'bad'}">${i>=0?'Associato':'Da associare'}</td></tr>`}).join('')}
 function renderCatalog(){let q=norm(document.getElementById('catalogSearch').value);let b=document.getElementById('brandFilter').value;const scoped=scopedStock();let rows=catalog.map((p,i)=>({p,i})).filter(({p,i})=>(!q||norm(p.name).includes(q))&&(!b||brandOf(p.name)===b)&&(currentUserProfile?.role!=='seller'||scoped.some(s=>mapped(s)===i)));document.getElementById('catalogRows').innerHTML=rows.map(({p,i})=>{let ss=scoped.filter(s=>mapped(s)===i);let qty=ss.reduce((a,s)=>a+available(s),0);return `<tr><td>${esc(p.name)}</td><td>${p.band}</td><td>${money(p.vendorPrice)}</td><td>${p.offers.length}</td><td>${qty?qty+' pz':'Non a stock'}</td><td><button class="rowbtn" onclick="document.getElementById('detailSelect').value='${i}';renderDetail()">Dettaglio</button></td></tr>`}).join('')}
-function renderDetail(){let p=catalog[Number(document.getElementById('detailSelect').value)];if(!p)return;let i=Number(document.getElementById('detailSelect').value);let ss=scopedStock().filter(s=>mapped(s)===i);document.getElementById('detailBox').innerHTML=`<h3>${esc(p.name)}</h3><div class="chips"><span class="chip">Fascia ${esc(p.band)}</span><span class="chip">Prezzo vendor ${money(p.vendorPrice)}</span><span class="chip">${ss.reduce((a,s)=>a+available(s),0)} disponibili</span></div><div class="tablewrap"><table><thead><tr><th>Offerta</th><th>Pagamento</th><th>Importo</th><th>Rate</th><th>Rata</th><th>Prezzo finale</th></tr></thead><tbody>${p.offers.map(o=>`<tr><td>${esc(o.plan)}</td><td>${o.method}</td><td>${o.amounts[0]!=null?money(o.amounts[0]):'—'}</td><td>${o.installments??'—'}</td><td>${o.amounts[1]!=null&&o.method==='finanziato'?money(o.amounts[1]):'—'}</td><td>${o.amounts[o.amounts.length-1]!=null?money(o.amounts[o.amounts.length-1]):'—'}</td></tr>`).join('')}</tbody></table></div>`}
-function renderAll(){document.getElementById('catalogCount').textContent=catalog.length;let brands=[...new Set(catalog.map(p=>brandOf(p.name)).filter(Boolean))].sort();let sel=document.getElementById('brandFilter');let old=sel.value;sel.innerHTML='<option value="">Tutte</option>'+brands.map(b=>`<option value="${b}">${b[0].toUpperCase()+b.slice(1)}</option>`).join('');sel.value=old;const visible=scopedStock();document.getElementById('detailSelect').innerHTML=catalog.map((p,i)=>({p,i})).filter(({i})=>currentUserProfile?.role!=='seller'||visible.some(s=>mapped(s)===i)).map(({p,i})=>`<option value="${i}">${esc(p.name)}</option>`).join('');renderStock();renderCatalog();renderDetail()}
+function renderDetail(){let i=Number(document.getElementById('detailSelect').value);let p=catalog[i];if(!p){document.getElementById('detailBox').innerHTML='<p class="muted">Nessun dispositivo disponibile nel negozio selezionato.</p>';return}let ss=scopedStock().filter(s=>mapped(s)===i);if(!ss.length){document.getElementById('detailBox').innerHTML='<p class="muted">Questo dispositivo non è disponibile nel negozio selezionato.</p>';return}document.getElementById('detailBox').innerHTML=`<h3>${esc(p.name)}</h3><div class="chips"><span class="chip">Fascia ${esc(p.band)}</span><span class="chip">Prezzo vendor ${money(p.vendorPrice)}</span><span class="chip">${ss.reduce((a,s)=>a+available(s),0)} disponibili</span></div><div class="tablewrap"><table><thead><tr><th>Offerta</th><th>Pagamento</th><th>Importo</th><th>Rate</th><th>Rata</th><th>Prezzo finale</th></tr></thead><tbody>${p.offers.map(o=>`<tr><td>${esc(o.plan)}</td><td>${o.method}</td><td>${o.amounts[0]!=null?money(o.amounts[0]):'—'}</td><td>${o.installments??'—'}</td><td>${o.amounts[1]!=null&&o.method==='finanziato'?money(o.amounts[1]):'—'}</td><td>${o.amounts[o.amounts.length-1]!=null?money(o.amounts[o.amounts.length-1]):'—'}</td></tr>`).join('')}</tbody></table></div>`}
+function renderAll(){document.getElementById('catalogCount').textContent=catalog.length;setupShopFilter();let brands=[...new Set(catalog.map(p=>brandOf(p.name)).filter(Boolean))].sort();let sel=document.getElementById('brandFilter');let old=sel.value;sel.innerHTML='<option value="">Tutte</option>'+brands.map(b=>`<option value="${b}">${b[0].toUpperCase()+b.slice(1)}</option>`).join('');sel.value=old;const visible=scopedStock();document.getElementById('detailSelect').innerHTML=catalog.map((p,i)=>({p,i})).filter(({i})=>currentUserProfile?.role!=='seller'||visible.some(s=>mapped(s)===i)).map(({p,i})=>`<option value="${i}">${esc(p.name)}</option>`).join('');renderStock();renderCatalog();renderDetail()}
 
 async function importGlobalStock(){
  const file=document.getElementById('globalStockFile').files[0],msg=document.getElementById('globalStockMsg');
