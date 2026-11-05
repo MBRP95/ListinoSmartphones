@@ -698,6 +698,18 @@ const sharedEditorFields={
  cameraMacro:'fCameraMacro',cameraDepth:'fCameraDepth',cameraFront:'fCameraFront',
  video:'fVideo',os:'fOs',description:'fDescription'
 };
+function variantMemoryLabel(v){
+ if(v.storage!==undefined&&v.storage!==null&&String(v.storage).trim())return String(v.storage).match(/\\bGB\\b|\\bTB\\b/i)?String(v.storage):String(v.storage)+' GB';
+ const matches=[...String(v.name||'').matchAll(/\\b(\\d{2,4})\\s*GB\\b/gi)];
+ if(matches.length)return matches[matches.length-1][1]+' GB';
+ const tb=String(v.name||'').match(/\\b(\\d+(?:[.,]\\d+)?)\\s*TB\\b/i);
+ return tb?tb[1].replace(',','.')+' TB':'—';
+}
+function variantRamLabel(v){
+ if(v.ram!==undefined&&v.ram!==null&&String(v.ram).trim())return String(v.ram).match(/\\bGB\\b/i)?String(v.ram):String(v.ram)+' GB';
+ const m=String(v.name||'').match(/\\b(\\d+)\\s*GB\\s*RAM\\b/i);
+ return m?m[1]+' GB':'—';
+}
 function loadEditor(){
  const variants=modelVariants(),p=variants[0];if(!p)return;
  const modelId=p.modelId||modelDocumentId(p.name);
@@ -706,7 +718,7 @@ function loadEditor(){
  Object.entries(sharedEditorFields).forEach(([key,id])=>document.getElementById(id).value=shared[key]??legacy[key]??'');
  document.getElementById('fRam').value=p.ram??'';
  document.getElementById('fStorage').value=p.storage??'';
- document.getElementById('variantRows').innerHTML=variants.map(v=>'<tr><td>'+esc(v.name)+'</td><td>'+esc(v.ram||'—')+'</td><td>'+esc(v.storage||'—')+'</td></tr>').join('');
+ document.getElementById('variantRows').innerHTML=variants.map(v=>'<tr><td>'+esc(v.name)+'</td><td>'+esc(variantRamLabel(v))+'</td><td>'+esc(variantMemoryLabel(v))+'</td></tr>').join('');
  const image=shared.image||p.image||'';
  const preview=document.getElementById('imagePreview');
  preview.style.display=image?'block':'none';preview.src=image;
