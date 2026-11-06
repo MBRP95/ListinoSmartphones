@@ -685,14 +685,16 @@ function storageGb(p){const n=String(p.name||'');const specs=Object.fromEntries(
 function deviceFeatureText(p){return getDeviceSpecs(p).map(x=>x.join(' ')).join(' ').toLowerCase()}
 function deviceScore(p){
  const a=answers,price=priceFor(p),text=deviceFeatureText(p),specs=Object.fromEntries(getDeviceSpecs(p).map(x=>[x[0],String(x[1])]));let score=0,max=0,reasons=[];
- const add=(weight,points,reason)=>{max+=weight;score+=points;if(points>=weight*.72&&reason)reasons.push(reason)};
- if(a.system&&a.system!=='any'){const apple=brandOf(p.name)==='apple',match=a.system==='iOS'?apple:!apple;add(12,match?12:0,match?'Sistema operativo in linea con la preferenza':'');}
+ const unmet=[];const add=(weight,points,reason,miss)=>{max+=weight;score+=points;if(points>=weight*.72&&reason)reasons.push(reason);else if(miss)unmet.push(miss)};
+ if(a.budget&&a.budget!=='any'){const cap=a.budget==='over800'?800:Number(a.budget);const ok=a.budget==='over800'?price>800:price<=cap;add(20,ok?20:0,ok?'Nel budget indicato':'','Fuori budget');}
+ if(a.storage&&a.storage!=='any'){const cap=storageGb(p),need=Number(a.storage);const ok=cap!==null&&cap>=need;add(10,ok?10:0,ok?'Memoria adeguata':'',cap===null?'Memoria non verificata':'Memoria inferiore a quella richiesta');}
+ if(a.system&&a.system!=='any'){const apple=brandOf(p.name)==='apple',match=a.system==='iOS'?apple:!apple;add(12,match?12:0,match?'Sistema operativo in linea con la preferenza':'','Sistema operativo diverso');}
  const camera=Object.entries(specs).filter(([k])=>/fotocamera|video|teleobiettivo|ultra-grandangolare/i.test(k)).map(x=>x[1]).join(' ').toLowerCase();
- if(a.camera&&a.camera!=='any'){let pts=4; if(a.camera==='basic')pts= camera?8:4; if(a.camera==='good')pts=(/ois|stabilizz|\b50\s*mp|\b48\s*mp|\b200\s*mp/i.test(camera)?12:camera?7:4);if(a.camera==='pro')pts=(/teleobiettivo|ultra-grandangolare/i.test(camera)?15:/4k|\b8k/i.test(camera)?11:camera?7:4);if(a.camera==='selfie')pts=(specs['Fotocamera frontale']?12:4);add(15,pts,pts>=11?'Fotocamere coerenti con l’utilizzo':'');}
- if(a.display&&a.display!=='any'){let pts=4;const size=parseFloat(String(specs['Dimensione display']||'').replace(',','.'));if(a.display==='compact')pts=size?(size<=6.3?12:size<=6.5?7:2):4;if(a.display==='large')pts=size?(size>=6.6?12:size>=6.4?8:3):4;if(a.display==='smooth')pts=(/120\s*hz|90\s*hz/i.test(text)?12:/\b60\s*hz/i.test(text)?3:5);if(a.display==='quality')pts=(/amoled|oled/i.test(text)?12:/lcd/i.test(text)?2:5);add(12,pts,pts>=9?'Schermo in linea con la preferenza':'');}
- if(a.battery&&a.battery!=='any'){let pts=5;const battery=(specs['Batteria']||'').match(/(\d{3,5})\s*m?a?h/i);const mah=battery?Number(battery[1]):0;if(a.battery==='long')pts=mah>=6000?12:mah>=5000?10:mah>=4500?7:mah?3:5;if(a.battery==='fast')pts=/\\b(45|50|60|65|67|80|90|100|120)\\s*w/i.test(specs['Ricarica']||'')?12:specs['Ricarica']?7:5;if(a.battery==='normal')pts=mah>=4500?10:mah?7:5;add(12,pts,pts>=9?'Autonomia/ricarica interessante':'');}
- if(a.use&&a.use!=='any'){let pts=7;if(a.use==='photos')pts=/ois|stabilizz|\\b50\\s*mp|\\b48\\s*mp|\\b200\\s*mp/i.test(camera)?12:camera?8:5;if(a.use==='gaming')pts=(/120\\s*hz/i.test(text)?5:0)+(/snapdragon|dimensity|a1[789]|a18|a19/i.test(text)?7:3);if(a.use==='work')pts=(/8\\s*gb|12\\s*gb|16\\s*gb/i.test(text)?6:3)+(/120\\s*hz|amoled|oled/i.test(text)?4:2);if(a.use==='simple')pts=price<=250?12:price<=350?9:5;add(10,Math.min(10,pts),pts>=8?'Adatto all’utilizzo dichiarato':'');}
- return {score:max?Math.round(score/max*100):0,reasons};
+ if(a.camera&&a.camera!=='any'){let pts=4; if(a.camera==='basic')pts= camera?8:4; if(a.camera==='good')pts=(/ois|stabilizz|\b50\s*mp|\b48\s*mp|\b200\s*mp/i.test(camera)?12:camera?7:4);if(a.camera==='pro')pts=(/teleobiettivo|ultra-grandangolare/i.test(camera)?15:/4k|\b8k/i.test(camera)?11:camera?7:4);if(a.camera==='selfie')pts=(specs['Fotocamera frontale']?12:4);add(15,pts,pts>=11?'Fotocamere coerenti con l’utilizzo':'','Fotocamera non in linea con la preferenza');}
+ if(a.display&&a.display!=='any'){let pts=4;const size=parseFloat(String(specs['Dimensione display']||'').replace(',','.'));if(a.display==='compact')pts=size?(size<=6.3?12:size<=6.5?7:2):4;if(a.display==='large')pts=size?(size>=6.6?12:size>=6.4?8:3):4;if(a.display==='smooth')pts=(/120\s*hz|90\s*hz/i.test(text)?12:/\b60\s*hz/i.test(text)?3:5);if(a.display==='quality')pts=(/amoled|oled/i.test(text)?12:/lcd/i.test(text)?2:5);add(12,pts,pts>=9?'Schermo in linea con la preferenza':'','Schermo non in linea con la preferenza');}
+ if(a.battery&&a.battery!=='any'){let pts=5;const battery=(specs['Batteria']||'').match(/(\d{3,5})\s*m?a?h/i);const mah=battery?Number(battery[1]):0;if(a.battery==='long')pts=mah>=6000?12:mah>=5000?10:mah>=4500?7:mah?3:5;if(a.battery==='fast')pts=/\\b(45|50|60|65|67|80|90|100|120)\\s*w/i.test(specs['Ricarica']||'')?12:specs['Ricarica']?7:5;if(a.battery==='normal')pts=mah>=4500?10:mah?7:5;add(12,pts,pts>=9?'Autonomia/ricarica interessante':'','Batteria/ricarica non in linea con la preferenza');}
+ if(a.use&&a.use!=='any'){let pts=7;if(a.use==='photos')pts=/ois|stabilizz|\\b50\\s*mp|\\b48\\s*mp|\\b200\\s*mp/i.test(camera)?12:camera?8:5;if(a.use==='gaming')pts=(/120\\s*hz/i.test(text)?5:0)+(/snapdragon|dimensity|a1[789]|a18|a19/i.test(text)?7:3);if(a.use==='work')pts=(/8\\s*gb|12\\s*gb|16\\s*gb/i.test(text)?6:3)+(/120\\s*hz|amoled|oled/i.test(text)?4:2);if(a.use==='simple')pts=price<=250?12:price<=350?9:5;add(10,Math.min(10,pts),pts>=8?'Adatto all’utilizzo dichiarato':'','Prestazioni non ideali per l’utilizzo');}
+ return {score:max?Math.round(score/max*100):0,reasons,unmet};
 }
 function currentAvailable(){const shopId=currentUserProfile?.role==='seller'?(selectedShopFilter||currentShopId):currentShopId;return stock.filter(x=>(!shopId||x.shopId===shopId||(!x.shopId&&String(x.shop||'').startsWith(shopId)))&&available(x)>0&&String(x.warehouse).toLowerCase()==='vendibile').map(x=>({s:x,p:catalog[mapped(x)]})).filter(x=>x.p&&Number.isFinite(priceFor(x.p)))}
 function optionsFor(q){return q.opts||[]}
@@ -711,24 +713,12 @@ function move(d){if(d<0){step=Math.max(0,step-1);renderStep();return}if(!answers
 function offersFor(p){return p.offers||[]}
 function priceFor(p){let v=Number(p.vendorPrice);return Number.isFinite(v)&&v>1?v:Number.POSITIVE_INFINITY}
 function showResults(){
- let candidates=currentAvailable().filter(({p})=>{
-  const budget=answers.budget,price=priceFor(p);
-  if(budget&&budget!=='any'){
-   if(budget==='over800'){if(!(price>800))return false;}
-   else if(price>Number(budget))return false;
-  }
-  const storage=answers.storage;
-  if(storage&&storage!=='any'){
-   const capacity=storageGb(p);
-   if(capacity===null||capacity<Number(storage))return false;
-  }
-  return true;
- }).map(({s,p})=>({s,p,...deviceScore(p)}));
+ let candidates=currentAvailable().map(({s,p})=>({s,p,...deviceScore(p)}));
  candidates.sort((a,b)=>b.score-a.score||priceFor(a.p)-priceFor(b.p));
  document.getElementById('results').classList.remove('hidden');
  document.getElementById('resultSummary').innerHTML=activeQuestions.filter(q=>answers[q.key]&&answers[q.key]!=='any').map(q=>`<span class="chip">${q.name}: ${esc((q.opts.find(o=>o[0]===answers[q.key])||[])[1]||answers[q.key])}</span>`).join('');
  document.getElementById('selectedDevicePanel').classList.add('hidden');
- document.getElementById('cards').innerHTML=candidates.length?candidates.slice(0,6).map(({s,p,score,reasons})=>{const pi=catalog.indexOf(p);return `<article class="device product-card" onclick="selectDevice(${pi},'${esc(s.sku)}')"><div class="product-art">${phoneVisual()}</div><div class="devicehead"><h3>${esc(p.name)}</h3><span class="stock">${available(s)} disponibili</span></div><div class="muted">SKU ${esc(s.sku)} · Fascia ${esc(p.band||'—')}</div><div class="client-match"><span>Compatibilità</span><b>${score}%</b></div><div class="client-match-bar"><i style="width:${score}%"></i></div><div class="price">${money(priceFor(p))}</div><div class="muted">Prezzo di listino</div><div class="client-reasons">${reasons.slice(0,2).map(x=>'<span>✓ '+esc(x)+'</span>').join('')}</div><div class="card-cta">Scopri il dispositivo <span>→</span></div></article>`}).join(''):'<div class="notice"><strong>Nessuno smartphone soddisfa tutti i criteri obbligatori.</strong><br>Nel budget selezionato non risultano modelli con la memoria richiesta. Prova ad aumentare il budget o a ridurre la memoria desiderata.</div>';
+ document.getElementById('cards').innerHTML=candidates.length?candidates.slice(0,6).map(({s,p,score,reasons,unmet})=>{const pi=catalog.indexOf(p);return `<article class="device product-card" onclick="selectDevice(${pi},'${esc(s.sku)}')"><div class="product-art">${phoneVisual()}</div><div class="devicehead"><h3>${esc(p.name)}</h3><span class="stock">${available(s)} disponibili</span></div><div class="muted">SKU ${esc(s.sku)} · Fascia ${esc(p.band||'—')}</div><div class="client-match"><span>Compatibilità</span><b>${score}%</b></div><div class="client-match-bar"><i style="width:${score}%"></i></div><div class="price">${money(priceFor(p))}</div><div class="muted">Prezzo di listino</div><div class="client-reasons">${reasons.slice(0,2).map(x=>'<span>✓ '+esc(x)+'</span>').join('')}${unmet.length?'<span class="client-unmet">✕ '+esc(unmet[0])+'</span>':''}</div><div class="card-cta">Scopri il dispositivo <span>→</span></div></article>`}).join(''):'<div class="notice">Al momento non risultano smartphone disponibili e abbinati al catalogo per questo negozio.</div>';
  document.getElementById('results').scrollIntoView({behavior:'smooth'});
 }
 let selectedDeviceIndex=-1,selectedDeviceSku='',selectedOfferIndex=0;
