@@ -733,7 +733,15 @@ function variantSpecsFromName(v){
   const bare=[...name.matchAll(/\b(64|128|256|512|1024|2048)\b(?=\s|$)/g)];
   if(bare.length)storage=bare[bare.length-1][1]+' GB';
  }
- if(!ram){const modelId=v.modelId||modelDocumentId(v.name);const sharedRam=v.modelSpecs?.ram||window.currentModelSpecs?.[modelId]?.ram;if(sharedRam)ram=String(sharedRam);}
+ if(!ram){
+  const derivedModelId=v.name?modelDocumentId(v.name):'';
+  const ids=[v.modelId,derivedModelId].filter(Boolean);
+  let sharedRam=v.modelSpecs?.ram||'';
+  if(!sharedRam&&window.currentModelSpecs){
+   for(const id of ids){if(window.currentModelSpecs[id]?.ram){sharedRam=window.currentModelSpecs[id].ram;break;}}
+  }
+  if(sharedRam)ram=String(sharedRam);
+ }
  if(ram&&!/\bGB\b/i.test(ram))ram+=' GB';
  if(storage&&!/\bGB\b|\bTB\b/i.test(storage))storage+=' GB';
  return {ram:ram||'—',storage:storage||'—'};
