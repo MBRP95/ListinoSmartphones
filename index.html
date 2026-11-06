@@ -455,7 +455,7 @@ body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreen
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, getDocs, writeBatch, serverTimestamp, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyA-FeADcnW89AOSuAZ-i3xnF7reReOcg2o",
   authDomain: "deviceproposer.firebaseapp.com",
@@ -468,7 +468,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-window.firebaseApi = { auth, db, signInWithEmailAndPassword, signOut, doc, getDoc, collection, getDocs, writeBatch, serverTimestamp, setDoc, deleteDoc };
+window.firebaseApi = { auth, db, signInWithEmailAndPassword, signOut, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc };
 window.firebaseReady = true;
 window.dispatchEvent(new Event("firebase-ready"));
 </script>
@@ -538,13 +538,19 @@ async function startSellerMode(){
  sel.innerHTML=shops.length?'<option value="">Seleziona un negozio...</option>'+shops.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+' ('+esc(x.id)+')</option>').join(''):'<option value="">Nessun negozio disponibile</option>';
  if(currentUserProfile?.shopId&&shops.some(x=>x.id===currentUserProfile.shopId))sel.value=currentUserProfile.shopId;
 }
-function confirmSellerShop(){
+async function confirmSellerShop(){
  const id=document.getElementById('sellerShopSelect').value;
- if(!id){document.getElementById('sellerShopMsg').textContent='Seleziona un negozio prima di continuare.';return}
+ const msg=document.getElementById('sellerShopMsg');
+ if(!id){msg.textContent='Seleziona un negozio prima di continuare.';return}
  selectedShopFilter=id;currentShopId=id;
- document.getElementById('sellerShopView').classList.add('hidden');
- document.getElementById('storeView').classList.remove('hidden');
- renderAll();
+ msg.textContent='Caricamento disponibilità del negozio…';
+ try{
+  await loadStockFromFirestore(id);
+  applyStockMappings();
+  document.getElementById('sellerShopView').classList.add('hidden');
+  document.getElementById('storeView').classList.remove('hidden');
+  renderAll();
+ }catch(e){msg.textContent='Errore caricamento magazzino: '+e.message}
 }
 async function toggleClientFullscreen(){
  const view=document.getElementById('clientView'),btn=document.getElementById('clientFullscreenBtn');
@@ -593,7 +599,17 @@ async function startClientMode(){
  if(!shops.size)stock.forEach(x=>{if(x.shopId)shops.set(x.shopId,x.shop||x.shopId)});
  sel.innerHTML=shops.size?[...shops].sort((a,b)=>a[1].localeCompare(b[1],'it')).map(([id,name])=>'<option value="'+id+'">'+esc(name)+' ('+id+')</option>').join(''):'<option value="">Nessun negozio trovato: verifica importazione globale</option>';
 }
-function confirmClientShop(){const id=document.getElementById('clientShopSelect').value;if(!id){alert('Seleziona un negozio.');return}currentShopId=id;document.getElementById('clientShopPanel').classList.add('hidden');document.getElementById('clientStartPanel').classList.remove('hidden')}
+async function confirmClientShop(){
+ const id=document.getElementById('clientShopSelect').value;
+ if(!id){alert('Seleziona un negozio.');return}
+ currentShopId=id;
+ try{
+  await loadStockFromFirestore(id);
+  applyStockMappings();
+  document.getElementById('clientShopPanel').classList.add('hidden');
+  document.getElementById('clientStartPanel').classList.remove('hidden');
+ }catch(e){alert('Errore caricamento disponibilità: '+e.message)}
+}
 function beginGuidedChoice(){document.getElementById('clientStartPanel').classList.add('hidden');document.getElementById('clientDirectPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.remove('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel):not(#clientStartPanel):not(#clientDirectPanel)').classList.remove('hidden');startClientWizard()}
 function beginDirectChoice(){document.getElementById('clientStartPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.add('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel):not(#clientStartPanel):not(#clientDirectPanel)').classList.add('hidden');document.getElementById('clientDirectPanel').classList.remove('hidden');document.getElementById('clientDeviceSearch').value='';renderClientDeviceList()}
 function renderClientDeviceList(){const q=norm(document.getElementById('clientDeviceSearch').value);const rows=currentAvailable().filter(({p})=>!q||norm(p.name).includes(q));document.getElementById('clientDeviceList').innerHTML=rows.length?rows.map(({s,p})=>{const i=catalog.indexOf(p);return '<button class="device product-card" onclick="selectDevice('+i+',\''+esc(s.sku)+'\')"><div class="devicehead"><h3>'+esc(p.name)+'</h3></div><div class="price">'+money(priceFor(p))+'</div><div class="card-cta">Scegli questo modello →</div></button>'}).join(''):'<div class="notice">Nessun dispositivo trovato.</div>'}
@@ -806,7 +822,9 @@ async function verifySellerPassword(){
   if(requestedAccessRole==='staff'&&profile.role==='client')throw new Error('Usa le credenziali dipendenti per accedere all’area negozio.');
   currentUserProfile={...profile,uid:credential.user.uid};
   selectedShopFilter=profile.role==='seller'?'':'';
-  await loadAuthenticatedData();
+  await loadCatalogFromFirestore();
+  if(profile.role==='admin') await loadAuthenticatedData({loadStock:true});
+  else { stock=[]; mappings={}; }
   document.getElementById('sellerAuthView').classList.add('hidden');
   document.getElementById('sellerPassword').value='';
   document.getElementById('sellerUsername').value='';
@@ -834,17 +852,22 @@ async function verifySellerPassword(){
   try{if(window.firebaseApi)await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(_){}
  }
 }
-async function loadAuthenticatedData(){
- const loaded=await loadCatalogFromFirestore();
- if(!loaded)throw new Error('Catalogo non pubblicato su Firebase.');
- const hasStock=await loadStockFromFirestore();
- if(!hasStock)throw new Error('Magazzino globale non pubblicato su Firebase.');
+function applyStockMappings(){
  mappings={};
  const manualMatches={
  "6210042":"Honor 600 Smart 5G 128GB Black","6213241":"Apple iPhone 16e 128GB Black","6213277":"Apple iPhone 17 Pro Max 512GB Deep Blue","6213329":"Apple iPhone 18 Pro 256GB Black","6222003":"Motorola edge 60 8+256GB Blue","6222008":"Motorola moto G77 + moto buds 256GB Black Olive","6250158":"Samsung Galaxy A56 5G 256GB Graphite","6250163":"Samsung Galaxy S25 Edge 512GB","6250169":"SamsungGalaxy ZFold 7 512GB","6250180":"Samsung A17 5G 128GB Black","6250187":"Samsung Galaxy S26 Plus 5G 256 Black","6250191":"Samsung Galaxy S26 Ultra 5G 256 Black","6250193":"Samsung Galaxy S26 Ultra 5G 512 Black","6250200":"Galaxy A37 5G 128GB Grey"
  };
  stock.forEach(x=>{let exact=x.catalogName||manualMatches[x.sku];let i=exact?catalog.findIndex(p=>norm(p.name)===norm(exact)):autoMatch(x);if(i>=0){mappings[x.sku]=i;x.catalogName=catalog[i].name}});
- renderAll();
+}
+async function loadAuthenticatedData({loadStock=false,shopId=null}={}){
+ const loaded=await loadCatalogFromFirestore();
+ if(!loaded)throw new Error('Catalogo non pubblicato su Firebase.');
+ if(loadStock){
+  const hasStock=await loadStockFromFirestore(shopId);
+  if(!hasStock)throw new Error('Magazzino non pubblicato su Firebase.');
+  applyStockMappings();
+  renderAll();
+ }
 }
 
 function currentAvailable(){const shopId=currentUserProfile?.role==='seller'?(selectedShopFilter||currentShopId):currentShopId;return stock.filter(x=>(!shopId||x.shopId===shopId||(!x.shopId&&String(x.shop||'').startsWith(shopId)))&&available(x)>0&&String(x.warehouse).toLowerCase()==='vendibile').map(x=>({s:x,p:catalog[mapped(x)]})).filter(x=>x.p&&Number.isFinite(priceFor(x.p)))}
@@ -1097,12 +1120,14 @@ async function loadCatalogFromFirestore(){
  return false;
 }
 
-async function loadStockFromFirestore(){
+async function loadStockFromFirestore(shopId=null){
  const api=window.firebaseApi,db=api.db;
  const setting=await api.getDoc(api.doc(db,'settings','stock'));
  if(!setting.exists()||!setting.data().activeVersion)return false;
  activeStockVersion=setting.data().activeVersion;
- const snap=await api.getDocs(api.collection(db,'stockVersions',activeStockVersion,'items'));
+ const items=api.collection(db,'stockVersions',activeStockVersion,'items');
+ const stockQuery=shopId?api.query(items,api.where('shopId','==',shopId)):items;
+ const snap=await api.getDocs(stockQuery);
  stock=snap.docs.map(d=>d.data());
  return true;
 }
