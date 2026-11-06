@@ -1,6 +1,6 @@
 <!-- Device Proposer: dati caricati da devices.json e stock.json nella stessa directory. -->
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-05-proposal-pdf1">
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-06-flow-fix2">
 <title>Device Proposer</title>
 <style>
 :root{--ink:#172033;--muted:#667085;--line:#e5e9f0;--bg:#f4f6fa;--blue:#2457d6;--green:#087b57;--amber:#8a5b08}
@@ -560,7 +560,7 @@ async function startSellerMode(){
   const api=window.firebaseApi;
   if(!api?.db||!api.auth?.currentUser)throw new Error('Sessione Firebase non valida.');
   const snap=await api.getDocs(api.collection(api.db,'shops'));
-  const shops=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||a.id),'it'));
+  const shops=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'it'));
   sel.innerHTML=shops.length?'<option value="">Seleziona un negozio...</option>'+shops.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+' ('+esc(x.id)+')</option>').join(''):'<option value="">Nessun negozio attivo</option>';
   if(currentUserProfile?.shopId&&shops.some(x=>x.id===currentUserProfile.shopId))sel.value=currentUserProfile.shopId;
   if(!shops.length)msg.textContent='Nessun negozio attivo trovato in Firestore.';
@@ -964,9 +964,10 @@ function selectDevice(index,sku){
  panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function offerMethod(offer){
- const raw=String(offer?.method||offer?.paymentMethod||offer?.type||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ const raw=String(offer?.method||offer?.paymentMethod||offer?.paymentType||offer?.type||offer?.kind||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ const installmentCount=Number.parseInt(String(offer?.installments??'').match(/\d+/)?.[0]||'0',10);
  if(/one.?shot|unica|contant|saldo/.test(raw))return 'one shot';
- if(/finanz|rate|install|credito/.test(raw)||Number(offer?.installments)>0)return 'finanziato';
+ if(/finanz|rate|install|credito/.test(raw)||installmentCount>0)return 'finanziato';
  return 'rateale';
 }
 function getOfferPromoGroups(deviceIndex){
