@@ -534,7 +534,7 @@ document.addEventListener('fullscreenchange',()=>{
  const active=!!document.fullscreenElement;
  btn.textContent=active?'×':'⛶';btn.setAttribute('aria-label',active?'Esci dallo schermo intero':'Attiva schermo intero');btn.title=active?'Esci':'Schermo intero';
 });
-async function startClientMode(){
+async async function startClientMode(){
  document.getElementById('sellerAuthView').classList.add('hidden');
  document.getElementById('clientView').classList.remove('hidden');
  document.getElementById('storeView').classList.add('hidden');
