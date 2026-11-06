@@ -1,6 +1,6 @@
 <!-- Device Proposer: dati caricati da devices.json e stock.json nella stessa directory. -->
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-06-seller-contrast-global-stock-pdfbar">
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-06-seller-contrast-device-visual-update-dates">
 <title>Device Proposer</title>
 <style>
 :root{--ink:#172033;--muted:#667085;--line:#e5e9f0;--bg:#f4f6fa;--blue:#2457d6;--green:#087b57;--amber:#8a5b08}
@@ -390,6 +390,20 @@ body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreen
 #storeView .seller-offer-option .primary{color:#17100a!important;font-weight:900}
 #storeView .seller-offer-group .muted,#storeView .seller-offer-option .muted{color:#d9c4a5!important}
 @media(max-width:650px){#proposalOverlay>div:first-child{padding:8px!important}#proposalPdfBtn{font-size:11px!important;padding:9px 12px!important}#proposalRestartBtn,#proposalBackBtn{font-size:10px!important;padding:8px 9px!important}}
+#storeView .seller-offer-groups .seller-offer-group,#storeView .seller-offer-groups .seller-offer-option{background:#211a14!important;color:#fff1d6!important;border:1px solid #78532f!important}
+#storeView .seller-offer-groups .seller-offer-group *,#storeView .seller-offer-groups .seller-offer-option *{color:#fff1d6!important}
+#storeView .seller-offer-groups .seller-offer-option small{color:#e5cba8!important}
+#storeView .seller-offer-groups .seller-monthly{color:#ffd27a!important}
+#storeView .offer-step .device.choice.promo-choice,#storeView .offer-rate-options .device.choice.offer-choice,#storeView #sellerOfferChoices .device.choice.offer-choice{background:#211a14!important;background-image:linear-gradient(135deg,#2b2118,#17120e)!important;color:#fff1d6!important;border:1px solid #80572f!important;box-shadow:0 5px 16px #0005!important}
+#storeView .offer-step .device.choice.promo-choice *,#storeView .offer-rate-options .device.choice.offer-choice *,#storeView #sellerOfferChoices .device.choice.offer-choice *{color:#fff1d6!important}
+#storeView .offer-step .device.choice.promo-choice small,#storeView .offer-rate-options .device.choice.offer-choice small,#storeView #sellerOfferChoices .device.choice.offer-choice small{color:#e5cba8!important}
+#storeView .offer-step .device.choice.promo-choice .offer-kicker,#storeView .offer-rate-options .device.choice.offer-choice .offer-kicker{color:#ffd27a!important}
+#storeView .offer-step .device.choice.promo-choice .promo-device-price{color:#ffd27a!important}
+#storeView .offer-step .device.choice.promo-choice:hover,#storeView .offer-rate-options .device.choice.offer-choice:hover,#storeView #sellerOfferChoices .device.choice.offer-choice:hover{border-color:#ffb52e!important;box-shadow:0 0 0 2px #ffb52e35,0 8px 20px #0006!important}
+#storeView .seller-offer-option button.primary{background:linear-gradient(100deg,#ff9d00,#f04b25)!important;color:#17100a!important}
+.data-freshness{display:flex;flex-wrap:wrap;gap:10px 28px;margin:-8px 0 18px;padding:12px 16px;border:1px solid #8b653d;border-radius:12px;background:linear-gradient(110deg,#211a14,#17130f);color:#f5e4ca;font-size:12px}
+.data-freshness span{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.data-freshness b{color:#ffd27a;font-weight:800}
+@media(max-width:650px){.data-freshness{display:grid;gap:7px}}
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head><body>
@@ -509,6 +523,10 @@ let clientLoginVerified=false;
 let currentShopId=new URLSearchParams(location.search).get('shop')||'';
 let selectedShopFilter='';
 let activeStockVersion='';
+let catalogUpdatedAt=null;
+let stockUpdatedAt=null;
+function formatUpdateDate(value){if(!value)return 'Non disponibile';let date=null;try{date=typeof value.toDate==='function'?value.toDate():value instanceof Date?value:new Date(value)}catch(_){}if(!date||Number.isNaN(date.getTime()))return 'Non disponibile';return new Intl.DateTimeFormat('it-IT',{dateStyle:'short',timeStyle:'short'}).format(date)}
+function renderDataFreshness(){['adminView','storeView'].forEach(viewId=>{const view=document.getElementById(viewId);if(!view)return;let box=view.querySelector('.data-freshness');if(!box){box=document.createElement('div');box.className='data-freshness';const hero=view.querySelector('.hero');if(hero)hero.insertAdjacentElement('afterend',box);else view.insertAdjacentElement('afterbegin',box)}box.innerHTML='<span><b>Ultimo aggiornamento promozioni</b>'+formatUpdateDate(catalogUpdatedAt)+'</span><span><b>Ultimo aggiornamento magazzino</b>'+formatUpdateDate(stockUpdatedAt)+'</span>'})}
 function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/iphone\s*promax/g,'iphone pro max').replace(/samsung\s+galaxy/g,'galaxy').replace(/[^a-z0-9]+/g,' ').trim()}
 function brandOf(s){let n=norm(s);return ['apple','samsung','motorola','honor','oppo','realme','xiaomi','google'].find(b=>n.includes(b))||''}
 function available(s){return Math.max(0,(Number(s.stock)||0)-(Number(s.reserved)||0))}
@@ -595,6 +613,7 @@ async function confirmSellerShop(){
   applyStockMappings();
   document.getElementById('sellerShopView').classList.add('hidden');
   document.getElementById('storeView').classList.remove('hidden');
+  renderDataFreshness();
   renderAll();
  }catch(e){msg.textContent='Errore caricamento magazzino: '+e.message}
 }
@@ -746,6 +765,8 @@ async function publishCatalogToFirestore(){
   }
   for(const d of existing.docs){if(!desired.has(d.id)){batch.delete(d.ref);ops++;if(ops===450){await batch.commit();batch=api.writeBatch(db);ops=0}}}
   if(ops)await batch.commit();
+  await api.setDoc(api.doc(db,'settings','catalog'),{updatedAt:api.serverTimestamp(),deviceCount:desired.size,updatedBy:user.uid});
+  catalogUpdatedAt=new Date();renderDataFreshness();
   msg.textContent='Catalogo pubblicato su Firebase: '+desired.size+' varianti. Nessun token GitHub necessario.';
  }catch(e){msg.textContent='Pubblicazione non completata: '+e.message}
  finally{btn.disabled=false}
@@ -876,6 +897,7 @@ async function verifySellerPassword(){
   if(profile.role==='admin'){
    setupEditor();
    document.getElementById('adminView').classList.remove('hidden');
+   renderDataFreshness();
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.remove('hidden'));
   }else if(profile.role==='seller'){
    document.getElementById('storeView').classList.add('hidden');
@@ -967,6 +989,7 @@ function selectDevice(index,sku){
  const stockItem=stock.find(s=>String(s.sku)===String(sku)),specs=getDeviceSpecs(p);
  document.getElementById('selectedDeviceContent').innerHTML=`
  <div class="selected-product">
+  <div class="selected-art">${phoneVisual()}</div>
   <div class="selected-info"><div class="eyebrow">Smartphone selezionato</div><h2>${esc(p.name)}</h2><p class="hint">${esc(p.band||'Smartphone')}</p><div class="price">${money(priceFor(p))}</div><span class="muted">Prezzo di listino</span></div>
  </div>
  <h3 class="section-title">Caratteristiche tecniche</h3>
@@ -1233,7 +1256,8 @@ async function importGlobalStock(){
 
 async function loadCatalogFromFirestore(){
  const api=window.firebaseApi;
- const snap=await api.getDocs(api.collection(api.db,'devices'));
+ const [snap,metaSnap]=await Promise.all([api.getDocs(api.collection(api.db,'devices')),api.getDoc(api.doc(api.db,'settings','catalog'))]);
+ catalogUpdatedAt=metaSnap.exists()?metaSnap.data().updatedAt||null:null;
  if(!snap.empty){
   catalog=snap.docs.map(d=>d.data()).sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
   const models=await api.getDocs(api.collection(api.db,'deviceModels'));
@@ -1248,12 +1272,14 @@ async function loadCatalogFromFirestore(){
 async function loadStockFromFirestore(shopId=null){
  const api=window.firebaseApi,db=api.db;
  const setting=await api.getDoc(api.doc(db,'settings','stock'));
- if(!setting.exists()||!setting.data().activeVersion)return false;
+ if(!setting.exists()||!setting.data().activeVersion){stockUpdatedAt=null;renderDataFreshness();return false;}
+ stockUpdatedAt=setting.data().updatedAt||null;
  activeStockVersion=setting.data().activeVersion;
  const items=api.collection(db,'stockVersions',activeStockVersion,'items');
  const stockQuery=shopId?api.query(items,api.where('shopId','==',shopId)):items;
  const snap=await api.getDocs(stockQuery);
  stock=snap.docs.map(d=>d.data());
+ renderDataFreshness();
  return true;
 }
 
