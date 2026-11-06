@@ -1031,13 +1031,25 @@ function offerInstallmentCount(offer){
  const raw=String(offer?.installments??'');
  return Number.parseInt(raw.match(/\d+/)?.[0]||'0',10);
 }
-function offerDeviceTotal(offer,p){
+function offerAdvance(offer,p){
  const raw=Array.isArray(offer?.amounts)?Number(offer.amounts[0]):NaN;
- return Number.isFinite(raw)&&raw>0?raw:priceFor(p);
+ return Number.isFinite(raw)&&raw>=0?raw:priceFor(p);
 }
 function offerMonthlyPayment(offer,p){
- const count=offerInstallmentCount(offer),total=offerDeviceTotal(offer,p);
- return count>0&&Number.isFinite(total)?total/count:null;
+ const raw=Array.isArray(offer?.amounts)?Number(offer.amounts[1]):NaN;
+ return Number.isFinite(raw)&&raw>=0?raw:null;
+}
+function offerFinancedAmount(offer,p){
+ const count=offerInstallmentCount(offer),monthly=offerMonthlyPayment(offer,p);
+ return count>0&&monthly!==null?count*monthly:null;
+}
+function offerDeviceTotal(offer,p){
+ const advance=offerAdvance(offer,p);
+ if(offerMethod(offer)==='finanziato'){
+  const financed=offerFinancedAmount(offer,p);
+  return financed!==null?advance+financed:NaN;
+ }
+ return advance;
 }
 function offerMethod(offer){
  const raw=String(offer?.method||offer?.paymentMethod||offer?.paymentType||offer?.type||offer?.kind||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -1074,14 +1086,14 @@ function showPromoRates(deviceIndex,groupIndex,mode){
  host.classList.remove('offer-step');
  const title='<div class="promo-rate-head"><button type="button" class="secondary" id="changePromo">← Cambia promozione</button><div><span class="offer-kicker">PROMO SIM SELEZIONATA</span><h3>'+esc(group.plan)+'</h3></div></div>';
  const options=group.items.map(({offer,index})=>{
-  const a=offer.amounts||[],devicePrice=a[0]!=null?money(a[0]):money(priceFor(p));
-  const method=offerMethod(offer),installments=offerInstallmentCount(offer);
+  const method=offerMethod(offer),installments=offerInstallmentCount(offer),advance=offerAdvance(offer,p);
   const monthly=method==='finanziato'?offerMonthlyPayment(offer,p):null;
+  const financed=method==='finanziato'?offerFinancedAmount(offer,p):null;
   const detail=method==='finanziato'
-   ? (installments?installments+' rate':'Finanziamento')+' · '+(monthly!==null?'rata '+money(monthly)+'/mese':'rata non calcolabile')+' · totale dispositivo '+devicePrice
-   : method==='one shot'?'Pagamento unico · totale '+devicePrice:'Rateale · '+a.map(money).join(' · ');
-  if(mode==='seller')return '<div class="seller-offer-option"><span><b>'+(method==='finanziato'?'Finanziamento':method==='one shot'?'Pagamento unico':'Rateale')+'</b><small>'+esc(detail)+'</small></span><button class="primary" onclick="sellerGenerateOffer('+deviceIndex+','+index+')">Conferma</button></div>';
-  return '<button type="button" class="device choice offer-choice" data-offer-index="'+index+'"><span class="offer-kicker">'+(method==='finanziato'?'FINANZIAMENTO':method==='one shot'?'PAGAMENTO UNICO':'RATEALE')+'</span><b>'+(installments?installments+' rate':method==='one shot'?'Pagamento unico':'Modalità rateale')+'</b><strong>'+esc(detail)+'</strong></button>';
+   ? 'Anticipo '+money(advance)+' · '+(installments?installments+' rate':'Rateale')+' · '+(monthly!==null?'rata '+money(monthly)+'/mese':'rata non configurata')+' · importo finanziato '+(financed!==null?money(financed):'da configurare')
+   : method==='one shot'?'Pagamento unico · totale '+money(advance):'Rateale · '+(offer.amounts||[]).map(money).join(' · ');
+  if(mode==='seller')return '<div class="seller-offer-option"><span><b>'+(method==='finanziato'?'Rateale':method==='one shot'?'Pagamento unico':'Rateale')+'</b><small>'+esc(detail)+'</small></span><button class="primary" onclick="sellerGenerateOffer('+deviceIndex+','+index+')">Conferma</button></div>';
+  return '<button type="button" class="device choice offer-choice" data-offer-index="'+index+'"><span class="offer-kicker">'+(method==='finanziato'?'RATEALE':method==='one shot'?'PAGAMENTO UNICO':'RATEALE')+'</span><b>'+(installments?installments+' rate':method==='one shot'?'Pagamento unico':'Modalità rateale')+'</b><strong>'+esc(detail)+'</strong></button>';
  }).join('');
  host.innerHTML=title+'<h4 class="section-title">2. Scegli la modalità e la durata</h4><div class="offer-rate-options">'+options+'</div>';
  host.querySelector('#changePromo')?.addEventListener('click',()=>renderPromoSelection(mode==='client'?'offerChoices':'sellerOfferGroups',deviceIndex,mode));
