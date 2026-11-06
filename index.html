@@ -1,6 +1,6 @@
 <!-- Device Proposer: dati caricati da devices.json e stock.json nella stessa directory. -->
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-06-restore-shop-filter-fix-pdf-layout">
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-06-restore-shop-filter-pdf-layout-no-shop-step">
 <title>Device Proposer</title>
 <style>
 :root{--ink:#172033;--muted:#667085;--line:#e5e9f0;--bg:#f4f6fa;--blue:#2457d6;--green:#087b57;--amber:#8a5b08}
@@ -910,7 +910,7 @@ async function verifySellerPassword(){
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.remove('hidden'));
   }else if(profile.role==='seller'){
    document.getElementById('storeView').classList.add('hidden');
-   document.getElementById('sellerShopView').classList.remove('hidden');
+   document.getElementById('sellerShopView').classList.add('hidden');
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
    selectedShopFilter=profile.shopId||'';currentShopId=profile.shopId||'';
    await startSellerMode();
