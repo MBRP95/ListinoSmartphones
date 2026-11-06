@@ -1,6 +1,6 @@
 <!-- Device Proposer: dati caricati da devices.json e stock.json nella stessa directory. -->
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-06-flow-fix2">
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-06-seller-contrast-global-stock-pdfbar">
 <title>Device Proposer</title>
 <style>
 :root{--ink:#172033;--muted:#667085;--line:#e5e9f0;--bg:#f4f6fa;--blue:#2457d6;--green:#087b57;--amber:#8a5b08}
@@ -373,6 +373,23 @@ body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreen
 #clientFullscreenBtn{display:block!important;position:fixed!important;z-index:10020!important;right:14px!important;top:14px!important;width:42px!important;height:42px!important;padding:0!important;border-radius:50%!important;background:#17130fee!important;color:#ffd27a!important;border:1px solid #a66b2c!important;font-size:21px!important;line-height:1!important;opacity:.9!important}
 #clientView #selectedDevicePanel{display:block}
 
+/* SELLER CONTRAST + LEGIBILITY */
+#storeView .seller-offer-group{background:#17130f!important;border:1px solid #72502e!important;color:#fff1d6!important}
+#storeView .seller-offer-group>strong,#storeView .seller-offer-group h3,#storeView .seller-offer-group h4{color:#fff1d6!important}
+#storeView .seller-offer-option{background:#211a14!important;border:1px solid #6b4b2b!important;color:#fff1d6!important}
+#storeView .seller-offer-option b,#storeView .seller-offer-option span{color:#fff1d6!important}
+#storeView .seller-offer-option small{color:#e4cba7!important}
+#storeView .seller-monthly{color:#ffd27a!important}
+#storeView .promo-choice{background:#211a14!important;border:1px solid #78532b!important;color:#fff1d6!important}
+#storeView .promo-choice b,#storeView .promo-choice strong{color:#fff1d6!important}
+#storeView .promo-choice small{color:#e4cba7!important}
+#storeView .offer-rate-options .offer-choice{background:#211a14!important;border:1px solid #78532b!important;color:#fff1d6!important}
+#storeView .offer-rate-options .offer-choice b,#storeView .offer-rate-options .offer-choice strong{color:#fff1d6!important}
+#storeView .offer-rate-options .offer-choice small{color:#e4cba7!important}
+#storeView .offer-kicker{color:#ffd27a!important;background:#392512!important;border:1px solid #80542d!important}
+#storeView .seller-offer-option .primary{color:#17100a!important;font-weight:900}
+#storeView .seller-offer-group .muted,#storeView .seller-offer-option .muted{color:#d9c4a5!important}
+@media(max-width:650px){#proposalOverlay>div:first-child{padding:8px!important}#proposalPdfBtn{font-size:11px!important;padding:9px 12px!important}#proposalRestartBtn,#proposalBackBtn{font-size:10px!important;padding:8px 9px!important}}
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head><body>
@@ -450,7 +467,7 @@ body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreen
 <div id="detailPanel" class="panel hidden"><div class="toolbar" style="justify-content:space-between;align-items:center"><h2>Dettaglio variante e condizioni</h2><button class="secondary" onclick="closeDetail()">Chiudi</button></div><div id="detailBox"></div></div>
 </section>
 </main>
-<footer>Device Proposer · versione statica. Catalogo e magazzino vengono letti da devices.json e stock.json. Le modifiche nell'area Store vanno esportate e caricate nel repository GitHub.</footer>
+
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -573,7 +590,7 @@ async function confirmSellerShop(){
  selectedShopFilter=id;currentShopId=id;
  msg.textContent='Caricamento disponibilità del negozio…';
  try{
-  const loaded=await loadStockFromFirestore(id);
+  const loaded=await loadStockFromFirestore();
   if(!loaded)throw new Error('Magazzino non pubblicato su Firebase.');
   applyStockMappings();
   document.getElementById('sellerShopView').classList.add('hidden');
@@ -957,7 +974,7 @@ function selectDevice(index,sku){
  <h3 class="section-title">1. Scegli la promozione SIM</h3>
  <div id="offerChoices" class="offer-step"></div>
  <div id="offerSummary" class="notice offer-summary hidden"></div>
- <div class="actions"><button class="secondary" onclick="goBack()">Indietro</button><button id="clientGeneratePdf" class="primary hidden" onclick="generateProposalPdf()">Genera proposta PDF</button></div>
+ <div class="actions"><button class="secondary" onclick="goBack()">Indietro</button><button id="clientGeneratePdf" class="primary hidden" onclick="generateProposalPdf()">Conferma</button></div>
  <p class="hint">Dopo aver scelto la promozione, potrai selezionare la durata del finanziamento.</p>`;
  if(!offers.length)document.getElementById('offerChoices').innerHTML='<div class="notice">Non sono presenti offerte per questo dispositivo.</div>';
  else renderPromoSelection('offerChoices',index,'client');
@@ -1003,7 +1020,7 @@ function showPromoRates(deviceIndex,groupIndex,mode){
   const detail=method==='finanziato'
    ? (installments?installments+' rate':'Finanziamento')+' · '+(a[1]!=null?'rata '+money(a[1])+'/mese':'rata non indicata')+' · totale dispositivo '+devicePrice
    : method==='one shot'?'Pagamento unico · totale '+devicePrice:'Rateale · '+a.map(money).join(' · ');
-  if(mode==='seller')return '<div class="seller-offer-option"><span><b>'+(method==='finanziato'?'Finanziamento':method==='one shot'?'Pagamento unico':'Rateale')+'</b><small>'+esc(detail)+'</small></span><button class="primary" onclick="sellerGenerateOffer('+deviceIndex+','+index+')">Genera PDF</button></div>';
+  if(mode==='seller')return '<div class="seller-offer-option"><span><b>'+(method==='finanziato'?'Finanziamento':method==='one shot'?'Pagamento unico':'Rateale')+'</b><small>'+esc(detail)+'</small></span><button class="primary" onclick="sellerGenerateOffer('+deviceIndex+','+index+')">Conferma</button></div>';
   return '<button type="button" class="device choice offer-choice" data-offer-index="'+index+'"><span class="offer-kicker">'+(method==='finanziato'?'FINANZIAMENTO':method==='one shot'?'PAGAMENTO UNICO':'RATEALE')+'</span><b>'+(installments?installments+' rate':method==='one shot'?'Pagamento unico':'Modalità rateale')+'</b><strong>'+esc(detail)+'</strong></button>';
  }).join('');
  host.innerHTML=title+'<h4 class="section-title">2. Scegli la modalità e la durata</h4><div class="offer-rate-options">'+options+'</div>';
@@ -1052,8 +1069,8 @@ function generateProposalPdf(){
  const overlayHost=fullscreenHost||kioskHost||document.body;
  overlay.style.cssText='position:fixed;inset:0;width:100%;height:100%;min-height:100dvh;z-index:2147483647;background:#050505;display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden;';
  const controls=document.createElement('div');
- controls.style.cssText='display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding:9px 16px;background:#090909;border-bottom:1px solid #6d4a20;min-height:58px;z-index:2;';
- controls.innerHTML='<div style="display:flex;justify-content:flex-start">'+(isClientFlow?'<button id="proposalRestartBtn" type="button" style="border:1px solid #80542d;background:#17110c;color:#f5d7b0;border-radius:24px;padding:9px 14px;font-weight:800">NUOVA PROPOSTA</button>':'')+'</div><button id="proposalPdfBtn" type="button" style="border:1px solid #ffb52e;background:linear-gradient(90deg,#ff8a00,#d83222);color:#fff;border-radius:24px;padding:10px 24px;font-weight:900;letter-spacing:.8px;box-shadow:0 0 14px #ff8a0055">PDF · STAMPA</button><div style="display:flex;justify-content:flex-end"><button id="proposalBackBtn" type="button" style="border:1px solid #a66b2c;background:#17130f;color:#ffd27a;border-radius:24px;padding:9px 16px;font-weight:900;letter-spacing:.6px">← INDIETRO</button></div>';
+ controls.style.cssText='position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 16px;background:#090909;border-bottom:1px solid #6d4a20;min-height:58px;z-index:2;';
+ controls.innerHTML='<div style="display:flex;justify-content:flex-start;min-width:0">'+(isClientFlow?'<button id="proposalRestartBtn" type="button" style="border:1px solid #80542d;background:#17110c;color:#f5d7b0;border-radius:24px;padding:9px 14px;font-weight:800">NUOVA PROPOSTA</button>':'')+'</div><button id="proposalPdfBtn" type="button" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:1px solid #ffb52e;background:linear-gradient(90deg,#ff8a00,#d83222);color:#fff;border-radius:24px;padding:10px 24px;font-weight:900;letter-spacing:.8px;white-space:nowrap;box-shadow:0 0 14px #ff8a0055">PDF · STAMPA</button><div style="display:flex;justify-content:flex-end;min-width:0"><button id="proposalBackBtn" type="button" style="border:1px solid #a66b2c;background:#17130f;color:#ffd27a;border-radius:24px;padding:9px 16px;font-weight:900;letter-spacing:.6px">← INDIETRO</button></div>';
  overlay.appendChild(controls);
  const frame=document.createElement('iframe');frame.title='Anteprima proposta smartphone';frame.style.cssText='display:block;width:100%;height:100%;min-height:0;border:0;background:#050505;';
  frame.setAttribute('sandbox','allow-scripts allow-modals allow-same-origin');
@@ -1166,7 +1183,7 @@ function showDetail(index){
  renderPromoSelection('sellerOfferGroups',index,'seller');
  document.getElementById('detailPanel').scrollIntoView({behavior:'smooth',block:'start'});
 }
-function sellerPrepareProposal(index){const p=catalog[index];if(!p)return;selectedDeviceIndex=index;selectedOfferIndex=0;const skuItem=stock.find(x=>mapped(x)===index);selectedDeviceSku=skuItem?.sku||'CATALOGO';const offers=p.offers||[];if(!offers.length){alert('Questo modello non ha promozioni configurate.');return}const choices=offers.map((o,i)=>'<button class="device choice offer-choice '+(i===0?'selected':'')+'" onclick="sellerChooseOffer('+i+')"><b>'+esc(o.plan)+'</b><small>'+esc(o.method||'')+'</small><strong>'+(o.amounts||[]).map(money).join(' · ')+'</strong></button>').join('');document.getElementById('detailBox').insertAdjacentHTML('beforeend','<h3 style="margin-top:18px">Scegli la promozione</h3><div class="cards offer-grid" id="sellerOfferChoices">'+choices+'</div><div class="actions"><button class="primary" onclick="generateProposalPdf()">Genera PDF</button></div>')}
+function sellerPrepareProposal(index){const p=catalog[index];if(!p)return;selectedDeviceIndex=index;selectedOfferIndex=0;const skuItem=stock.find(x=>mapped(x)===index);selectedDeviceSku=skuItem?.sku||'CATALOGO';const offers=p.offers||[];if(!offers.length){alert('Questo modello non ha promozioni configurate.');return}const choices=offers.map((o,i)=>'<button class="device choice offer-choice '+(i===0?'selected':'')+'" onclick="sellerChooseOffer('+i+')"><b>'+esc(o.plan)+'</b><small>'+esc(o.method||'')+'</small><strong>'+(o.amounts||[]).map(money).join(' · ')+'</strong></button>').join('');document.getElementById('detailBox').insertAdjacentHTML('beforeend','<h3 style="margin-top:18px">Scegli la promozione</h3><div class="cards offer-grid" id="sellerOfferChoices">'+choices+'</div><div class="actions"><button class="primary" onclick="generateProposalPdf()">Conferma</button></div>')}
 function sellerChooseOffer(i){const p=catalog[selectedDeviceIndex];if(!p?.offers?.[i])return;selectedOfferIndex=i;document.querySelectorAll('#sellerOfferChoices button').forEach((b,n)=>b.classList.toggle('selected',n===i))}
 function closeDetail(){document.getElementById('detailPanel').classList.add('hidden');document.getElementById('detailBox').innerHTML=''}
 function renderAll(){const count=document.getElementById('catalogCount');if(count)count.textContent=catalog.length;setupShopFilter();let brands=[...new Set(catalog.map(p=>brandOf(p.name)).filter(Boolean))].sort();let sel=document.getElementById('brandFilter');if(sel){let old=sel.value;sel.innerHTML='<option value="">Tutte</option>'+brands.map(b=>`<option value="${b}">${b[0].toUpperCase()+b.slice(1)}</option>`).join('');sel.value=old;}renderStock();renderCatalog()}
