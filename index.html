@@ -822,9 +822,8 @@ async function verifySellerPassword(){
   if(requestedAccessRole==='staff'&&profile.role==='client')throw new Error('Usa le credenziali dipendenti per accedere all’area negozio.');
   currentUserProfile={...profile,uid:credential.user.uid};
   selectedShopFilter=profile.role==='seller'?'':'';
-  await loadCatalogFromFirestore();
   if(profile.role==='admin') await loadAuthenticatedData({loadStock:true});
-  else { stock=[]; mappings={}; }
+  else { await loadCatalogFromFirestore(); stock=[]; mappings={}; }
   document.getElementById('sellerAuthView').classList.add('hidden');
   document.getElementById('sellerPassword').value='';
   document.getElementById('sellerUsername').value='';
