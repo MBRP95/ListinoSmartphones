@@ -736,10 +736,14 @@ function variantSpecsFromName(v){
  if(!ram){
   const derivedModelId=v.name?modelDocumentId(v.name):'';
   const ids=[v.modelId,derivedModelId].filter(Boolean);
-  let sharedRam=v.modelSpecs?.ram||'';
-  if(!sharedRam&&window.currentModelSpecs){
-   for(const id of ids){if(window.currentModelSpecs[id]?.ram){sharedRam=window.currentModelSpecs[id].ram;break;}}
+  let sharedSpecs=v.modelSpecs||{};
+  if(window.currentModelSpecs){
+   for(const id of ids){if(window.currentModelSpecs[id]){sharedSpecs=window.currentModelSpecs[id];break;}}
   }
+  const ramByStorage=sharedSpecs.ramByStorage||{};
+  const storageKey=String(storage||'').replace(/\s+/g,' ').trim().toUpperCase();
+  const mappedRam=ramByStorage[storageKey]||ramByStorage[storageKey.replace(/\s*GB$/,'')];
+  const sharedRam=mappedRam||sharedSpecs.ram||'';
   if(sharedRam)ram=String(sharedRam);
  }
  if(ram&&!/\bGB\b/i.test(ram))ram+=' GB';
