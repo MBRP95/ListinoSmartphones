@@ -1,6 +1,6 @@
 <!-- Device Proposer: dati caricati da devices.json e stock.json nella stessa directory. -->
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-06-admin-edit-offer-amounts-pdf-total-badge-fullscreen-exit">
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-06-budget-lowest-device-offer-price">
 <title>Device Proposer</title>
 <style>
 :root{--ink:#172033;--muted:#667085;--line:#e5e9f0;--bg:#f4f6fa;--blue:#2457d6;--green:#087b57;--amber:#8a5b08}
@@ -952,13 +952,13 @@ async function loadAuthenticatedData({loadStock=false,shopId=null}={}){
 }
 
 function currentAvailable(){const shopId=currentUserProfile?.role==='seller'?(selectedShopFilter||currentShopId):currentShopId;return stock.filter(x=>(!shopId||x.shopId===shopId||(!x.shopId&&String(x.shop||'').startsWith(shopId)))&&available(x)>0&&String(x.warehouse).toLowerCase()==='vendibile').map(x=>({s:x,p:catalog[mapped(x)]})).filter(x=>x.p&&Number.isFinite(priceFor(x.p)))}
-function withinBudget(p){const b=answers.budget;if(!b||b==='any')return true;const price=priceFor(p);return b==='over800'?price>800:price<=Number(b)}
+function withinBudget(p){const b=answers.budget;if(!b||b==='any')return true;const price=budgetPriceFor(p);return b==='over800'?price>800:price<=Number(b)}
 function storageGb(p){const n=String(p.name||'');const specs=Object.fromEntries(getDeviceSpecs(p).map(x=>[x[0],String(x[1])]));const raw=specs['Memoria interna']||'';const tb=raw.match(/\b(1|2)\s*tb\b/i)||n.match(/\b(1|2)\s*tb\b/i);if(tb)return Number(tb[1])*1024;const gb=raw.match(/\b(64|128|256|512|1024|2048)\s*gb\b/i)||n.match(/\b(64|128|256|512|1024|2048)\s*gb\b/i);return gb?Number(gb[1]):null}
 function deviceFeatureText(p){return getDeviceSpecs(p).map(x=>x.join(' ')).join(' ').toLowerCase()}
 function deviceScore(p){
  const a=answers,price=priceFor(p),text=deviceFeatureText(p),specs=Object.fromEntries(getDeviceSpecs(p).map(x=>[x[0],String(x[1])]));let score=0,max=0,reasons=[];
  const unmet=[];const add=(weight,points,reason,miss)=>{max+=weight;score+=points;if(points>=weight*.45&&reason)reasons.push(reason);else if(miss&&points<=weight*.25)unmet.push(miss)};
- if(a.budget&&a.budget!=='any'){const cap=a.budget==='over800'?800:Number(a.budget);const ok=a.budget==='over800'?price>800:price<=cap;add(20,ok?20:0,ok?'Nel budget indicato':'','Fuori budget');}
+ if(a.budget&&a.budget!=='any'){const budgetPrice=budgetPriceFor(p),cap=a.budget==='over800'?800:Number(a.budget);const ok=a.budget==='over800'?budgetPrice>800:budgetPrice<=cap;add(20,ok?20:0,ok?'Nel budget indicato':'','Fuori budget');}
  if(a.storage&&a.storage!=='any'){const cap=storageGb(p),need=Number(a.storage);const ok=cap!==null&&cap>=need;add(10,ok?10:0,ok?'Memoria adeguata':'',cap===null?'Memoria non verificata':'Memoria inferiore a quella richiesta');}
  if(a.system&&a.system!=='any'){const apple=brandOf(p.name)==='apple',match=a.system==='iOS'?apple:!apple;add(12,match?12:0,match?'Sistema operativo in linea con la preferenza':'','Sistema operativo diverso');}
  const camera=Object.entries(specs).filter(([k])=>/fotocamera|video|teleobiettivo|ultra-grandangolare/i.test(k)).map(x=>x[1]).join(' ').toLowerCase();
@@ -984,6 +984,14 @@ function choose(k,v){answers[k]=v;renderStep()}
 function move(d){if(d<0){step=Math.max(0,step-1);renderStep();return}if(!answers[activeQuestions[step].key])return;if(step<activeQuestions.length-1){step++;renderStep()}else showResults()}
 function offersFor(p){return p.offers||[]}
 function priceFor(p){let v=Number(p.vendorPrice);return Number.isFinite(v)&&v>1?v:Number.POSITIVE_INFINITY}
+function budgetPriceFor(p){
+ const values=[priceFor(p)];
+ (p?.offers||[]).forEach(o=>{
+  const v=Number(Array.isArray(o.amounts)?o.amounts[0]:NaN);
+  if(Number.isFinite(v)&&v>1)values.push(v);
+ });
+ return Math.min(...values);
+}
 function showResults(){
  let candidates=currentAvailable().map(({s,p})=>({s,p,...deviceScore(p)}));
  candidates.sort((a,b)=>b.score-a.score||priceFor(a.p)-priceFor(b.p));
