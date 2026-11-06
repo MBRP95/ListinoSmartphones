@@ -837,6 +837,15 @@ async function importModelImagesZip(){
  try{
   const zip=await JSZip.loadAsync(file);
   const groups=new Map();
+  const modelDocsSnap=await api.getDocs(api.collection(api.db,'deviceModels'));
+  const modelDocIdsByKey=new Map();
+  modelDocsSnap.docs.forEach(d=>{
+   const data=d.data()||{};
+   const label=data.displayName||data.name||data.modelName||d.id;
+   const key=technicalModelKey(label);
+   if(!modelDocIdsByKey.has(key))modelDocIdsByKey.set(key,[]);
+   modelDocIdsByKey.get(key).push(d.id);
+  });
   catalog.forEach(v=>{
    if(!isTechnicalSmartphone(v.name))return;
    const key=technicalModelKey(v.name);
@@ -865,16 +874,20 @@ async function importModelImagesZip(){
     });
     const uploaded=await response.json().catch(()=>({}));
     if(!response.ok||!uploaded.success)throw new Error(uploaded.error||'Upload GitHub non riuscito');
-    const ref=api.doc(api.db,'deviceModels',modelId),snap=await api.getDoc(ref);
-    const previous=snap.exists()?snap.data():(window.currentModelSpecs?.[modelId]||variants[0].modelSpecs||{});
-    const shared={...previous,modelId,image:uploaded.imageUrl,updatedAt:new Date().toISOString()};
+    const matchingDocIds=[...new Set([modelId,...(modelDocIdsByKey.get(key)||[])])];
+    const sharedById={};
+    for(const docId of matchingDocIds){
+     const existing=window.currentModelSpecs?.[docId]||modelDocsSnap.docs.find(d=>d.id===docId)?.data()||{};
+     sharedById[docId]={...existing,modelId:docId,image:uploaded.imageUrl,updatedAt:new Date().toISOString()};
+    }
+    const shared=sharedById[modelId]||{modelId,image:uploaded.imageUrl,updatedAt:new Date().toISOString()};
     const batch=api.writeBatch(api.db);
-    batch.set(ref,shared,{merge:true});
+    matchingDocIds.forEach(docId=>batch.set(api.doc(api.db,'deviceModels',docId),sharedById[docId]||{modelId:docId,image:uploaded.imageUrl,updatedAt:new Date().toISOString()},{merge:true}));
     variants.forEach(v=>batch.set(api.doc(api.db,'devices',catalogDocId(v)),{...v,modelId,modelSpecs:shared,image:uploaded.imageUrl},{merge:true}));
     await batch.commit();
-    window.currentModelSpecs=window.currentModelSpecs||{};window.currentModelSpecs[modelId]=shared;
+    window.currentModelSpecs=window.currentModelSpecs||{};Object.entries(sharedById).forEach(([docId,data])=>window.currentModelSpecs[docId]=data);
     variants.forEach(v=>{v.modelId=modelId;v.modelSpecs=shared;v.image=uploaded.imageUrl;});
-    done++;rows.push({name:entry.name,status:'Caricata · '+variants.length+' varianti aggiornate'});
+    done++;rows.push({name:entry.name,status:'Caricata · '+variants.length+' varianti e '+matchingDocIds.length+' schede modello aggiornate'});
    }catch(e){failed++;rows.push({name:entry.name,status:'Errore: '+e.message});}
    msg.textContent='Elaborazione: '+(done+failed+skipped)+' / '+images.length+' immagini · '+done+' caricate · '+failed+' errori · '+skipped+' non abbinate';
   }
