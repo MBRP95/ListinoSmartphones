@@ -348,6 +348,18 @@ body.client-kiosk #clientView{position:fixed;inset:0;z-index:9998;display:block!
 body.client-kiosk #clientFullscreenBtn{top:auto;right:7px;bottom:7px;width:25px;height:25px;font-size:13px;opacity:.22;background:#111;border-color:#776047}
 body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreenBtn:hover{opacity:.9}
 @media print{#clientFullscreenBtn{display:none!important}}
+
+/* CONTRAST FIX — technical specs and unmet requirements */
+#clientView .spec-item{background:#f7f9fc!important;border:1px solid #dce3ed!important}
+#clientView .spec-item span{color:#66758b!important;font-size:11px!important;font-weight:800!important}
+#clientView .spec-item strong{display:block;color:#17243b!important;font-size:14px!important;line-height:1.5!important;font-weight:800!important;margin-top:5px}
+#clientView .client-reasons span.client-unmet{display:inline-block!important;background:#090909!important;color:#ff5b5b!important;border:1px solid #743333!important;box-shadow:none!important}
+@media(max-width:700px){
+ #clientView .spec-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+ #clientView .spec-item{padding:12px 11px!important}
+ #clientView .spec-item strong{font-size:14px!important;line-height:1.45!important}
+}
+
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head><body>
@@ -847,7 +859,7 @@ function showResults(){
  document.getElementById('results').classList.remove('hidden');
  document.getElementById('resultSummary').innerHTML=activeQuestions.filter(q=>answers[q.key]&&answers[q.key]!=='any').map(q=>`<span class="chip">${q.name}: ${esc((q.opts.find(o=>o[0]===answers[q.key])||[])[1]||answers[q.key])}</span>`).join('');
  document.getElementById('selectedDevicePanel').classList.add('hidden');
- document.getElementById('cards').innerHTML=candidates.length?candidates.slice(0,6).map(({s,p,score,reasons,unmet})=>{const pi=catalog.indexOf(p);return `<article class="device product-card" onclick="selectDevice(${pi},'${esc(s.sku)}')"><div class="devicehead"><h3>${esc(p.name)}</h3><span class="stock">${available(s)} disponibili</span></div><div class="muted">SKU ${esc(s.sku)} · Fascia ${esc(p.band||'—')}</div><div class="client-match"><span>Compatibilità</span><b>${score}%</b></div><div class="client-match-bar"><i style="width:${score}%"></i></div><div class="price">${money(priceFor(p))}</div><div class="muted">Prezzo di listino</div><div class="client-reasons">${reasons.slice(0,2).map(x=>'<span>✓ '+esc(x)+'</span>').join('')}${unmet.map(x=>'<span class="client-unmet" style="background:#fff0f0!important;color:#b42318!important;border:1px solid #f4c7c7!important;display:inline-block">✕ '+esc(x)+'</span>').join('')}</div><div class="card-cta">Scopri il dispositivo <span>→</span></div></article>`}).join(''):'<div class="notice">Al momento non risultano smartphone disponibili e abbinati al catalogo per questo negozio.</div>';
+ document.getElementById('cards').innerHTML=candidates.length?candidates.slice(0,6).map(({s,p,score,reasons,unmet})=>{const pi=catalog.indexOf(p);return `<article class="device product-card" onclick="selectDevice(${pi},'${esc(s.sku)}')"><div class="devicehead"><h3>${esc(p.name)}</h3><span class="stock">${available(s)} disponibili</span></div><div class="muted">SKU ${esc(s.sku)} · Fascia ${esc(p.band||'—')}</div><div class="client-match"><span>Compatibilità</span><b>${score}%</b></div><div class="client-match-bar"><i style="width:${score}%"></i></div><div class="price">${money(priceFor(p))}</div><div class="muted">Prezzo di listino</div><div class="client-reasons">${reasons.slice(0,2).map(x=>'<span>✓ '+esc(x)+'</span>').join('')}${unmet.map(x=>'<span class="client-unmet">✕ '+esc(x)+'</span>').join('')}</div><div class="card-cta">Scopri il dispositivo <span>→</span></div></article>`}).join(''):'<div class="notice">Al momento non risultano smartphone disponibili e abbinati al catalogo per questo negozio.</div>';
  document.getElementById('results').scrollIntoView({behavior:'smooth'});
 }
 let selectedDeviceIndex=-1,selectedDeviceSku='',selectedOfferIndex=0;
