@@ -1104,8 +1104,8 @@ function showPromoRates(deviceIndex,groupIndex,mode){
   const detail=method==='finanziato'
    ? 'Totale dispositivo '+money(advance)+' · '+(installments?installments+' rate':'durata non indicata')+' · '+(monthly!==null?'rata '+money(monthly)+'/mese':'rata non calcolabile')
    : method==='one shot'?'Pagamento unico · totale '+money(advance):'Anticipo '+money(advance)+' · 24 rate da '+(monthly!==null?money(monthly):'non configurate')+'/mese · totale '+money(offerDeviceTotal(offer,p));
-  if(mode==='seller')return '<div class="seller-offer-option"><span><b>'+(method==='finanziato'?'Rateale':method==='one shot'?'Pagamento unico':'Rateale')+'</b><small>'+esc(detail)+'</small></span><button class="primary" onclick="sellerGenerateOffer('+deviceIndex+','+index+')">Conferma</button></div>';
-  return '<button type="button" class="device choice offer-choice" data-offer-index="'+index+'"><span class="offer-kicker">'+(method==='finanziato'?'RATEALE':method==='one shot'?'PAGAMENTO UNICO':'RATEALE')+'</span><b>'+(installments?installments+' rate':method==='one shot'?'Pagamento unico':'Modalità rateale')+'</b><strong>'+esc(detail)+'</strong></button>';
+  if(mode==='seller')return '<div class="seller-offer-option"><span><b>'+(method==='finanziato'?'Finanziamento':method==='one shot'?'Pagamento unico':'Rateale')+'</b><small>'+esc(detail)+'</small></span><button class="primary" onclick="sellerGenerateOffer('+deviceIndex+','+index+')">Conferma</button></div>';
+  return '<button type="button" class="device choice offer-choice" data-offer-index="'+index+'"><span class="offer-kicker">'+(method==='finanziato'?'FINANZIAMENTO':method==='one shot'?'PAGAMENTO UNICO':'RATEALE')+'</span><b>'+(installments?installments+' rate':method==='one shot'?'Pagamento unico':'Modalità rateale')+'</b><strong>'+esc(detail)+'</strong></button>';
  }).join('');
  host.innerHTML=title+'<h4 class="section-title">2. Scegli la modalità e la durata</h4><div class="offer-rate-options">'+options+'</div>';
  host.querySelector('#changePromo')?.addEventListener('click',()=>renderPromoSelection(mode==='client'?'offerChoices':'sellerOfferGroups',deviceIndex,mode));
