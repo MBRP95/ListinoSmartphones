@@ -1100,7 +1100,7 @@ function renderCatalog(){
   return `<tr><td>${esc(p.name)}</td><td>${esc(p.band||'—')}</td><td>${money(p.vendorPrice)}</td><td>${(p.offers||[]).length}</td><td>${availability}</td><td><button class="rowbtn" onclick="showDetail(${i})">Dettaglio</button></td></tr>`;
  }).join(''):'<tr><td colspan="6" class="muted">Nessuno smartphone disponibile con i filtri selezionati.</td></tr>';
 }
-function sellerOfferGroupsHtml(deviceIndex){return '<div id="sellerOfferGroups" class="offer-step"></div>';}
+function sellerOfferGroupsHtml(deviceIndex){return '';}
 function sellerGenerateOffer(deviceIndex,offerIndex){
  const p=catalog[deviceIndex],offer=p?.offers?.[offerIndex];
  if(!p||!offer)return;
