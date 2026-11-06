@@ -1,6 +1,6 @@
 <!-- Device Proposer: dati caricati da devices.json e stock.json nella stessa directory. -->
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-05-proposal-pdf1">
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-06-flow-fix2">
 <title>Device Proposer</title>
 <style>
 :root{--ink:#172033;--muted:#667085;--line:#e5e9f0;--bg:#f4f6fa;--blue:#2457d6;--green:#087b57;--amber:#8a5b08}
@@ -150,7 +150,7 @@ footer{max-width:1180px;margin:28px auto 40px;padding:0 22px;color:#8a96a9;font-
 body{background:#f4f6fa}
 header{min-height:76px;padding:15px max(24px,calc((100% - 1240px)/2));background:#101c33;box-shadow:0 8px 26px #0d1b3218}
 .brand{display:flex;align-items:center;gap:12px;font-size:16px;letter-spacing:1.3px}
-.brand:before{content:"D";display:grid;place-items:center;width:37px;height:37px;border:1px solid #ffffff35;border-radius:11px;background:linear-gradient(145deg,#4779ed,#2349ae);color:white;font-size:19px;font-weight:900}
+.brand:before{display:none!important}
 .brand small{font-size:9px;letter-spacing:2px}
 main{max-width:1240px;margin:38px auto 54px}
 .hero h1{letter-spacing:-1.7px}
@@ -168,15 +168,14 @@ main{max-width:1240px;margin:38px auto 54px}
 .orbit-two{width:205px;height:205px;border-color:#ffffff30}
 .art-phone{position:relative;width:112px;height:218px;border:5px solid #cbd8f2;border-radius:25px;background:linear-gradient(145deg,#436fbd,#152c57);box-shadow:0 24px 50px #07152d80;transform:rotate(9deg)}
 .art-phone:before{content:"";position:absolute;inset:7px;border:1px solid #ffffff45;border-radius:17px;background:radial-gradient(circle at 70% 28%,#91b7ff88,transparent 30%),linear-gradient(145deg,#355c9e,#172b50)}
-.art-phone span{position:absolute;z-index:2;top:9px;left:36px;width:30px;height:6px;border-radius:8px;background:#101c33}
-.art-phone b{position:absolute;z-index:2;top:22px;left:14px;width:17px;height:17px;border:3px solid #b9d0fa;border-radius:50%;background:#263f70}
-.art-phone i{position:absolute;z-index:2;top:22px;left:38px;width:17px;height:17px;border:3px solid #b9d0fa;border-radius:50%;background:#263f70}
+.art-phone span{position:absolute;z-index:2;top:9px;left:39px;width:25px;height:5px;border-radius:8px;background:#101c33}
+.art-phone b,.art-phone i{display:none!important}
 .art-chip{position:absolute;right:9%;bottom:48px;padding:12px 15px;border:1px solid #ffffff30;border-radius:12px;background:#ffffff12;color:#e5edff;font-size:10px;font-weight:850;letter-spacing:1.5px;line-height:1.6;backdrop-filter:blur(8px)}
 .home-section-head{display:flex;justify-content:space-between;align-items:end;margin:38px 0 16px}
 .home-section-head .eyebrow{color:#7185a6;font-size:10px;letter-spacing:1.7px}
 .home-section-head h2{margin:5px 0 0;font-size:24px;letter-spacing:-.7px}
 .home-caption{padding-bottom:5px;color:#9aa6b8;font-size:9px;font-weight:850;letter-spacing:1.5px}
-.home-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+.home-choices{display:grid;grid-template-columns:minmax(0,520px);justify-content:center;gap:17px;width:100%}.home-choice{width:100%;max-width:520px;margin-inline:auto}
 .home-choice{display:flex;align-items:flex-start;gap:20px;min-height:190px;padding:27px 25px;text-align:left;border:1px solid #e3e9f2;border-radius:19px;background:#fff;box-shadow:0 7px 22px #14274408;transition:transform .2s,border-color .2s,box-shadow .2s}
 .home-choice:hover{transform:translateY(-4px);border-color:#b9cafa;box-shadow:0 16px 32px #18376c12}
 .choice-icon{flex:0 0 48px;width:48px;height:48px;display:grid;place-items:center;border-radius:14px;background:#edf3ff;color:#315fda;font-size:13px;font-weight:900;letter-spacing:.5px}
@@ -377,7 +376,7 @@ body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreen
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head><body>
-<header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav><button id="homeBtn" onclick="goHome()" style="display:none">Indietro</button></nav></header>
+<header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav><button id="homeBtn" onclick="goBack()" style="display:none">Indietro</button></nav></header>
 <main>
 <section id="sellerAuthView" class="hidden">
 <div class="hero"><div class="eyebrow">Accesso riservato</div><h1>Area riservata</h1><p class="sub">Inserisci le credenziali previste per la modalità scelta.</p></div>
@@ -511,7 +510,34 @@ function matchScore(a,b){
 }
 function autoMatch(s){let ranked=catalog.map((p,i)=>({i,score:matchScore(s.description,p.name)})).sort((a,b)=>b.score-a.score);return ranked[0]?.score>=.48?ranked[0].i:-1}
 function autoMatchAll(){stock.forEach(s=>{if(mapped(s)<0){const i=autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}}});renderAll();alert('Abbinamento automatico completato. Verifica manualmente ogni SKU: non è una conferma di corrispondenza.')}
-async function goHome(){if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}currentUserProfile=null;['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';}
+async function goHome(){if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}currentUserProfile=null;selectedDeviceIndex=-1;selectedDeviceSku='';selectedOfferIndex=0;['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';}
+function goBack(){
+ const overlay=document.getElementById('proposalOverlay');
+ if(overlay&&typeof overlay.closeProposal==='function'){overlay.closeProposal();return;}
+ if(currentUserProfile?.role==='client'){
+  const selected=document.getElementById('selectedDevicePanel');
+  if(selected&&!selected.classList.contains('hidden')){
+   selected.classList.add('hidden');
+   const target=selectedDeviceOrigin==='direct'?document.getElementById('clientDirectPanel'):document.getElementById('results');
+   target.classList.remove('hidden');target.scrollIntoView({behavior:'smooth',block:'start'});return;
+  }
+  const direct=document.getElementById('clientDirectPanel');
+  if(direct&&!direct.classList.contains('hidden')){direct.classList.add('hidden');document.getElementById('clientStartPanel').classList.remove('hidden');return;}
+  const results=document.getElementById('results');
+  if(results&&!results.classList.contains('hidden')){results.classList.add('hidden');document.getElementById('clientStartPanel').classList.remove('hidden');document.querySelector('#clientView .hero').classList.add('hidden');return;}
+  const start=document.getElementById('clientStartPanel');
+  if(start&&!start.classList.contains('hidden')){start.classList.add('hidden');document.getElementById('clientShopPanel').classList.remove('hidden');return;}
+  return;
+ }
+ if(currentUserProfile?.role==='seller'){
+  const detail=document.getElementById('detailPanel');
+  if(detail&&!detail.classList.contains('hidden')){closeDetail();return;}
+  document.getElementById('storeView').classList.add('hidden');
+  document.getElementById('sellerShopView').classList.remove('hidden');startSellerMode();return;
+ }
+ if(currentUserProfile?.role==='admin')return;
+ goHome();
+}
 function requestUnifiedAccess(){
  requestedAccessRole='auto';clientLoginVerified=false;
  document.getElementById('homeView').classList.add('hidden');
@@ -530,11 +556,15 @@ function enterClient(){requestUnifiedAccess()}
 async function startSellerMode(){
  const sel=document.getElementById('sellerShopSelect'),msg=document.getElementById('sellerShopMsg');
  sel.innerHTML='<option value="">Caricamento negozi...</option>';msg.textContent='';
- const api=window.firebaseApi;
- const snap=await api.getDocs(api.collection(api.db,'shops'));
- const shops=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'it'));
- sel.innerHTML=shops.length?'<option value="">Seleziona un negozio...</option>'+shops.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+' ('+esc(x.id)+')</option>').join(''):'<option value="">Nessun negozio disponibile</option>';
- if(currentUserProfile?.shopId&&shops.some(x=>x.id===currentUserProfile.shopId))sel.value=currentUserProfile.shopId;
+ try{
+  const api=window.firebaseApi;
+  if(!api?.db||!api.auth?.currentUser)throw new Error('Sessione Firebase non valida.');
+  const snap=await api.getDocs(api.collection(api.db,'shops'));
+  const shops=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'it'));
+  sel.innerHTML=shops.length?'<option value="">Seleziona un negozio...</option>'+shops.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+' ('+esc(x.id)+')</option>').join(''):'<option value="">Nessun negozio attivo</option>';
+  if(currentUserProfile?.shopId&&shops.some(x=>x.id===currentUserProfile.shopId))sel.value=currentUserProfile.shopId;
+  if(!shops.length)msg.textContent='Nessun negozio attivo trovato in Firestore.';
+ }catch(e){sel.innerHTML='<option value="">Errore caricamento negozi</option>';msg.textContent='Impossibile caricare i negozi: '+e.message;console.error('startSellerMode:',e);}
 }
 async function confirmSellerShop(){
  const id=document.getElementById('sellerShopSelect').value;
@@ -543,7 +573,8 @@ async function confirmSellerShop(){
  selectedShopFilter=id;currentShopId=id;
  msg.textContent='Caricamento disponibilità del negozio…';
  try{
-  await loadStockFromFirestore(id);
+  const loaded=await loadStockFromFirestore(id);
+  if(!loaded)throw new Error('Magazzino non pubblicato su Firebase.');
   applyStockMappings();
   document.getElementById('sellerShopView').classList.add('hidden');
   document.getElementById('storeView').classList.remove('hidden');
@@ -830,12 +861,11 @@ async function verifySellerPassword(){
    document.getElementById('adminView').classList.remove('hidden');
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.remove('hidden'));
   }else if(profile.role==='seller'){
-   document.getElementById('sellerShopView').classList.add('hidden');
-   document.getElementById('storeView').classList.remove('hidden');
+   document.getElementById('storeView').classList.add('hidden');
+   document.getElementById('sellerShopView').classList.remove('hidden');
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
-   if(!profile.shopId)throw new Error('Account non associato a un negozio. Contatta l’amministratore.');
-   selectedShopFilter=profile.shopId;currentShopId=profile.shopId;
-   renderAll();
+   selectedShopFilter=profile.shopId||'';currentShopId=profile.shopId||'';
+   await startSellerMode();
   }else{
    clientLoginVerified=true;
    await startClientMode();
@@ -907,13 +937,14 @@ function showResults(){
  document.getElementById('cards').innerHTML=candidates.length?candidates.slice(0,6).map(({s,p,score,reasons,unmet})=>{const pi=catalog.indexOf(p);return `<article class="device product-card" onclick="selectDevice(${pi},'${esc(s.sku)}')"><div class="devicehead"><h3>${esc(p.name)}</h3><span class="stock">${available(s)} disponibili</span></div><div class="muted">SKU ${esc(s.sku)} · Fascia ${esc(p.band||'—')}</div><div class="client-match"><span>Compatibilità</span><b>${score}%</b></div><div class="client-match-bar"><i style="width:${score}%"></i></div><div class="price">${money(priceFor(p))}</div><div class="muted">Prezzo di listino</div><div class="client-reasons">${reasons.slice(0,2).map(x=>'<span>✓ '+esc(x)+'</span>').join('')}${unmet.map(x=>'<span class="client-unmet">✕ '+esc(x)+'</span>').join('')}</div><div class="card-cta">Scopri il dispositivo <span>→</span></div></article>`}).join(''):'<div class="notice">Al momento non risultano smartphone disponibili e abbinati al catalogo per questo negozio.</div>';
  document.getElementById('results').scrollIntoView({behavior:'smooth'});
 }
-let selectedDeviceIndex=-1,selectedDeviceSku='',selectedOfferIndex=0;
+let selectedDeviceIndex=-1,selectedDeviceSku='',selectedOfferIndex=0,selectedDeviceOrigin='guided';
 function selectDevice(index,sku){
  selectedDeviceIndex=index;selectedDeviceSku=sku;selectedOfferIndex=0;
  const p=catalog[index];if(!p)return;
  const offers=p.offers||[],visibleOffers=[];
  offers.forEach((o,i)=>{const priceKey=JSON.stringify([o.method||'',o.installments??null,o.amounts||[]]);if(!visibleOffers.some(x=>x.priceKey===priceKey))visibleOffers.push({o,i,priceKey})});
  const directMode=document.getElementById('clientDirectPanel')&&!document.getElementById('clientDirectPanel').classList.contains('hidden');
+ selectedDeviceOrigin=directMode?'direct':'guided';
  if(directMode){document.getElementById('clientDirectPanel').classList.add('hidden');document.getElementById('results').classList.remove('hidden');}
  const panel=document.getElementById('selectedDevicePanel');panel.classList.remove('hidden');
  const stockItem=stock.find(s=>String(s.sku)===String(sku)),specs=getDeviceSpecs(p);
@@ -926,24 +957,33 @@ function selectDevice(index,sku){
  <h3 class="section-title">1. Scegli la promozione SIM</h3>
  <div id="offerChoices" class="offer-step"></div>
  <div id="offerSummary" class="notice offer-summary hidden"></div>
- <div class="actions"><button class="secondary" onclick="document.getElementById('selectedDevicePanel').classList.add('hidden')">Chiudi</button><button id="clientGeneratePdf" class="primary hidden" onclick="generateProposalPdf()">Genera proposta PDF</button></div>
+ <div class="actions"><button class="secondary" onclick="goBack()">Indietro</button><button id="clientGeneratePdf" class="primary hidden" onclick="generateProposalPdf()">Genera proposta PDF</button></div>
  <p class="hint">Dopo aver scelto la promozione, potrai selezionare la durata del finanziamento.</p>`;
  if(!offers.length)document.getElementById('offerChoices').innerHTML='<div class="notice">Non sono presenti offerte per questo dispositivo.</div>';
  else renderPromoSelection('offerChoices',index,'client');
  panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
+function offerMethod(offer){
+ const raw=String(offer?.method||offer?.paymentMethod||offer?.paymentType||offer?.type||offer?.kind||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ const installmentCount=Number.parseInt(String(offer?.installments??'').match(/\d+/)?.[0]||'0',10);
+ if(/one.?shot|unica|contant|saldo/.test(raw))return 'one shot';
+ if(/finanz|rate|install|credito/.test(raw)||installmentCount>0)return 'finanziato';
+ return 'rateale';
+}
 function getOfferPromoGroups(deviceIndex){
  const groups=new Map();
  (catalog[deviceIndex]?.offers||[]).forEach((offer,index)=>{
-  const plan=String(offer.plan||'Promozione').trim();
-  if(!groups.has(plan))groups.set(plan,{plan,items:[]});
-  groups.get(plan).items.push({offer,index});
+  const plan=String(offer.plan||offer.promo||'Promozione').trim();
+  const key=norm(plan).replace(/[^a-z0-9]+/g,' ').trim();
+  if(!groups.has(key))groups.set(key,{plan,items:[]});
+  groups.get(key).items.push({offer,index});
  });
  return [...groups.values()];
 }
 function renderPromoSelection(containerId,deviceIndex,mode){
  const host=document.getElementById(containerId),groups=getOfferPromoGroups(deviceIndex);
  if(!host)return;
+ host.classList.add('offer-step');
  host.innerHTML=groups.map((g,i)=>{
   const ref=g.items.find(x=>x.offer.method==='finanziato')||g.items[0];
   const amount=ref.offer.amounts?.[0];
@@ -955,14 +995,16 @@ function showPromoRates(deviceIndex,groupIndex,mode){
  const p=catalog[deviceIndex],group=getOfferPromoGroups(deviceIndex)[groupIndex];
  const host=document.getElementById(mode==='client'?'offerChoices':'sellerOfferGroups');
  if(!p||!group||!host)return;
+ host.classList.remove('offer-step');
  const title='<div class="promo-rate-head"><button type="button" class="secondary" id="changePromo">← Cambia promozione</button><div><span class="offer-kicker">PROMO SIM SELEZIONATA</span><h3>'+esc(group.plan)+'</h3></div></div>';
  const options=group.items.map(({offer,index})=>{
   const a=offer.amounts||[],devicePrice=a[0]!=null?money(a[0]):money(priceFor(p));
-  const detail=offer.method==='finanziato'
-   ? (offer.installments||'—')+' rate · '+(a[1]!=null?money(a[1])+'/mese':'rata non indicata')+' · dispositivo '+devicePrice
-   : offer.method==='one shot'?'Pagamento unico · dispositivo '+devicePrice:'Rateale · '+a.map(money).join(' · ');
-  if(mode==='seller')return '<div class="seller-offer-option"><span><b>'+(offer.method==='finanziato'?'Finanziamento':offer.method==='one shot'?'Pagamento unico':'Rateale')+'</b><small>'+esc(detail)+'</small></span><button class="primary" onclick="sellerGenerateOffer('+deviceIndex+','+index+')">Genera PDF</button></div>';
-  return '<button type="button" class="device choice offer-choice" data-offer-index="'+index+'"><span class="offer-kicker">'+(offer.method==='finanziato'?'FINANZIAMENTO':offer.method==='one shot'?'PAGAMENTO UNICO':'RATEALE')+'</span><b>'+(offer.installments?offer.installments+' rate':'Pagamento unico')+'</b><strong>'+esc(detail)+'</strong></button>';
+  const method=offerMethod(offer),installments=Number(offer.installments)||0;
+  const detail=method==='finanziato'
+   ? (installments?installments+' rate':'Finanziamento')+' · '+(a[1]!=null?'rata '+money(a[1])+'/mese':'rata non indicata')+' · totale dispositivo '+devicePrice
+   : method==='one shot'?'Pagamento unico · totale '+devicePrice:'Rateale · '+a.map(money).join(' · ');
+  if(mode==='seller')return '<div class="seller-offer-option"><span><b>'+(method==='finanziato'?'Finanziamento':method==='one shot'?'Pagamento unico':'Rateale')+'</b><small>'+esc(detail)+'</small></span><button class="primary" onclick="sellerGenerateOffer('+deviceIndex+','+index+')">Genera PDF</button></div>';
+  return '<button type="button" class="device choice offer-choice" data-offer-index="'+index+'"><span class="offer-kicker">'+(method==='finanziato'?'FINANZIAMENTO':method==='one shot'?'PAGAMENTO UNICO':'RATEALE')+'</span><b>'+(installments?installments+' rate':method==='one shot'?'Pagamento unico':'Modalità rateale')+'</b><strong>'+esc(detail)+'</strong></button>';
  }).join('');
  host.innerHTML=title+'<h4 class="section-title">2. Scegli la modalità e la durata</h4><div class="offer-rate-options">'+options+'</div>';
  host.querySelector('#changePromo')?.addEventListener('click',()=>renderPromoSelection(mode==='client'?'offerChoices':'sellerOfferGroups',deviceIndex,mode));
@@ -979,14 +1021,14 @@ function showPromoRates(deviceIndex,groupIndex,mode){
 function selectOffer(index){
  const p=catalog[selectedDeviceIndex],o=p?.offers?.[index];if(!o)return;
  selectedOfferIndex=index;
- const a=o.amounts||[];
- const detail=o.method==='one shot'?'Pagamento unico: '+money(a[0]):o.method==='finanziato'?(o.installments||'—')+' rate da '+(a[1]!=null?money(a[1]):'—')+' · dispositivo '+(a[0]!=null?money(a[0]):money(priceFor(p))):a.map(money).join(' · ');
+ const a=o.amounts||[],method=offerMethod(o);
+ const detail=method==='one shot'?'Totale: '+money(a[0]!=null?a[0]:priceFor(p)):method==='finanziato'?(Number(o.installments)||'—')+' rate · '+(a[1]!=null?money(a[1])+'/mese':'rata non indicata')+' · totale dispositivo '+money(a[0]!=null?a[0]:priceFor(p)):a.map(money).join(' · ');
  const summary=document.getElementById('offerSummary');if(summary)summary.textContent=o.plan+' — '+detail;
 }
 function generateProposalPdf(){
  const p=catalog[selectedDeviceIndex],o=p?.offers?.[selectedOfferIndex];
  if(!p||!o){alert('Seleziona prima uno smartphone e una delle sue offerte.');return}
- const amounts=o.amounts||[],method=o.method==='one shot'?'Pagamento in un’unica soluzione':o.method==='finanziato'?'Finanziamento':'Rateale';
+ const amounts=o.amounts||[],offerType=offerMethod(o),method=offerType==='one shot'?'Pagamento in un’unica soluzione':offerType==='finanziato'?'Finanziamento':'Rateale';
  const allSpecs=getDeviceSpecs(p),isClientFlow=requestedAccessRole==='client',match=isClientFlow?deviceScore(p).reasons:[],keys=new Set();
  const commercialDescription=allSpecs.find(([k])=>k==='Descrizione')?.[1]||p.description||'';
  if(match.includes('Memoria adeguata'))['RAM','Memoria interna'].forEach(x=>keys.add(x));
@@ -995,9 +1037,12 @@ function generateProposalPdf(){
  if(match.includes('Schermo in linea con la preferenza'))['Tecnologia display','Dimensione display','Frequenza aggiornamento','Risoluzione'].forEach(x=>keys.add(x));
  if(match.includes('Autonomia/ricarica interessante'))['Batteria','Ricarica'].forEach(x=>keys.add(x));
  if(match.includes('Adatto all’utilizzo dichiarato'))['Processore','RAM','Tecnologia display','Frequenza aggiornamento'].forEach(x=>keys.add(x));
- const specs=(isClientFlow?allSpecs.filter(([k,v])=>keys.has(k)&&v&&!/^(?:—|–|-|n\/a|na)$/i.test(String(v).trim())):allSpecs.filter(([k,v])=>v&&!/^(?:—|–|-|n\/a|na)$/i.test(String(v).trim()))).slice(0,isClientFlow?6:12);
+ const validSpecs=allSpecs.filter(([k,v])=>v&&!/^(?:—|–|-|n\/a|na)$/i.test(String(v).trim()));
+ const preferredSpecs=isClientFlow&&keys.size?validSpecs.filter(([k])=>keys.has(k)):validSpecs;
+ const specs=[...preferredSpecs,...validSpecs.filter(([k])=>!keys.has(k))].filter((item,i,arr)=>arr.findIndex(x=>x[0]===item[0])===i).slice(0,isClientFlow?6:12);
  const specHtml=specs.map(([k,v])=>'<div class="spec"><span>'+esc(k)+'</span><strong>'+esc(v)+'</strong></div>').join('');
- const rows=[['Piano tariffario',o.plan],['Pagamento',method],['Importo/i',amounts.map(money).join(' · ')],['Numero rate',o.installments||'—']].filter(x=>x[1]&&x[1]!=='—').map(([k,v])=>'<div class="offer-row"><span>'+esc(k)+'</span><strong>'+esc(v)+'</strong></div>').join('');
+ const deviceTotal=amounts[0]!=null?money(amounts[0]):money(priceFor(p));
+ const rows=[['Piano tariffario',o.plan],['Modalità',method],...(offerType==='finanziato'?[['Totale dispositivo',deviceTotal],['Rata mensile',amounts[1]!=null?money(amounts[1]):'Non indicata'],['Durata',o.installments?(o.installments+' rate'):'Non indicata']]:[['Totale da pagare',deviceTotal]])].filter(x=>x[1]&&x[1]!=='—').map(([k,v])=>'<div class="offer-row"><span>'+esc(k)+'</span><strong>'+esc(v)+'</strong></div>').join('');
  const highlights=match.filter(x=>x!=='Nel budget indicato');
  const highlightHtml=highlights.length?'<section class="highlights"><div class="section-title"><span>01</span><h2>Quello che cercavi</h2></div><div class="highlight-grid">'+highlights.map(x=>'<div class="highlight"><b>✦</b><span>'+esc(x)+'</span></div>').join('')+'</div></section>':'';
  const existing=document.getElementById('proposalOverlay');if(existing)existing.remove();
@@ -1005,15 +1050,23 @@ function generateProposalPdf(){
  const fullscreenHost=document.fullscreenElement;
  const kioskHost=document.body.classList.contains('client-kiosk')?document.getElementById('clientView'):null;
  const overlayHost=fullscreenHost||kioskHost||document.body;
- overlay.style.cssText='position:absolute;inset:0;width:100%;height:100%;min-height:100dvh;z-index:2147483647;background:#050505;display:flex;flex-direction:column;overflow:auto;';
- const frame=document.createElement('iframe');frame.title='Anteprima proposta smartphone';frame.style.cssText='flex:1 1 auto;width:100%;height:100%;min-height:100%;border:0;background:#050505;';
+ overlay.style.cssText='position:fixed;inset:0;width:100%;height:100%;min-height:100dvh;z-index:2147483647;background:#050505;display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden;';
+ const controls=document.createElement('div');
+ controls.style.cssText='display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding:9px 16px;background:#090909;border-bottom:1px solid #6d4a20;min-height:58px;z-index:2;';
+ controls.innerHTML='<div style="display:flex;justify-content:flex-start">'+(isClientFlow?'<button id="proposalRestartBtn" type="button" style="border:1px solid #80542d;background:#17110c;color:#f5d7b0;border-radius:24px;padding:9px 14px;font-weight:800">NUOVA PROPOSTA</button>':'')+'</div><button id="proposalPdfBtn" type="button" style="border:1px solid #ffb52e;background:linear-gradient(90deg,#ff8a00,#d83222);color:#fff;border-radius:24px;padding:10px 24px;font-weight:900;letter-spacing:.8px;box-shadow:0 0 14px #ff8a0055">PDF · STAMPA</button><div style="display:flex;justify-content:flex-end"><button id="proposalBackBtn" type="button" style="border:1px solid #a66b2c;background:#17130f;color:#ffd27a;border-radius:24px;padding:9px 16px;font-weight:900;letter-spacing:.6px">← INDIETRO</button></div>';
+ overlay.appendChild(controls);
+ const frame=document.createElement('iframe');frame.title='Anteprima proposta smartphone';frame.style.cssText='display:block;width:100%;height:100%;min-height:0;border:0;background:#050505;';
  frame.setAttribute('sandbox','allow-scripts allow-modals allow-same-origin');
  overlay.appendChild(frame);overlayHost.appendChild(overlay);
- if(overlayHost===document.body)overlay.style.position='fixed';
  const previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
+ const closeProposal=()=>{overlay.remove();document.body.style.overflow=previousOverflow;};
+ overlay.closeProposal=closeProposal;
+ controls.querySelector('#proposalPdfBtn').addEventListener('click',()=>{try{frame.contentWindow.focus();frame.contentWindow.print();}catch(e){alert('Impossibile aprire la stampa PDF: '+e.message);}});
+ controls.querySelector('#proposalBackBtn').addEventListener('click',closeProposal);
+ if(isClientFlow)controls.querySelector('#proposalRestartBtn').addEventListener('click',()=>{closeProposal();restartClientFlow();});
  const w=frame.contentWindow;
  const css=`*{box-sizing:border-box}html,body{margin:0;padding:0;background:#000000;color:#f5f8ff;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}.sheet{width:210mm;height:297mm;margin:16px auto;background:#050505;position:relative;overflow:hidden;box-shadow:0 18px 55px #0008}.hero{height:91mm;padding:10mm 14mm 0;position:relative;overflow:hidden;background:radial-gradient(ellipse at 76% 55%,#261006 0%,#100b08 34%,#050505 78%)}.tunnel{position:absolute;inset:0;overflow:hidden;opacity:.95}.tunnel:before,.tunnel:after{content:"";position:absolute;left:50%;top:49%;width:145mm;height:92mm;transform:translate(-50%,-50%) perspective(240px) rotateY(-10deg);border:1.4px solid #ffd52a;box-shadow:0 0 5px #ffd52a,0 0 16px #ff8a00, inset 0 0 12px #ffb000;clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}.tunnel:after{width:110mm;height:70mm;border-color:#ff3b22;box-shadow:0 0 5px #ff39d0,0 0 16px #ff5a1f,inset 0 0 12px #ff5a1f;transform:translate(-50%,-50%) perspective(240px) rotateY(10deg)}.tunnel-lines{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 17mm,#ff8a0012 17.2mm 17.5mm,transparent 17.7mm 34mm);mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent)}.top-shade{position:absolute;inset:0;background:linear-gradient(90deg,#000000ee 0%,#000000aa 48%,#00000055 100%),linear-gradient(0deg,#050505 0%,transparent 38%)}.brandline{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:3}.brand{font-size:10px;letter-spacing:2.5px;font-weight:900;color:#fff;text-shadow:0 0 10px #ffd52a}.date{font-size:8px;color:#f1c27a}.hero-copy{position:relative;z-index:3;margin-top:9mm;max-width:98mm}.eyebrow{display:inline-block;padding:2.2mm 4mm;border:1px solid #ffb52e;border-radius:20px;color:#ffd85a;background:#102b4d99;font-size:8px;letter-spacing:1.4px;font-weight:900;text-transform:uppercase;box-shadow:0 0 13px #ff8a0055}.hero h1{font-size:23px;line-height:1.08;letter-spacing:-.5px;margin:6mm 0 3mm;color:#fff;text-shadow:0 0 18px #318cff88}.sub{font-size:10px;color:#f5d7b0;margin:0}.price-row{display:flex;align-items:baseline;gap:4mm;margin-top:8mm}.price{font-size:30px;font-weight:900;letter-spacing:-1px;color:#fff;text-shadow:0 0 14px #ff8a0099}.price-note{font-size:8px;color:#ffc04d;letter-spacing:1px}.device-orbit{position:absolute;z-index:3;right:15mm;top:26mm;width:43mm;height:54mm;border:1px solid #ffcc3388;border-radius:12mm;display:grid;place-items:center;transform:rotate(7deg);background:linear-gradient(145deg,#17100b,#050505);box-shadow:0 0 8px #ffb000,0 0 28px #ff6a0088,inset 0 0 22px #ffcf2222}.device-orbit:before{content:"";position:absolute;inset:-5mm;border:1px solid #ff4b22aa;border-radius:15mm;transform:rotate(-12deg);box-shadow:0 0 14px #ff6a00aa}.art{position:relative;z-index:2;width:33mm;height:51mm;display:grid;place-items:center}.art svg{width:31mm;height:49mm;filter:drop-shadow(0 0 7px #ffd52a)}.neon-tag{position:absolute;z-index:4;right:13mm;bottom:11mm;color:#ffbd3b;font-size:7px;font-weight:900;letter-spacing:1.6px;text-shadow:0 0 8px #ff4b22}.content{padding:6mm 14mm 13mm;position:relative;background:linear-gradient(180deg,#050505,#090909)}.section-title{display:flex;align-items:center;gap:3mm;margin-bottom:3mm}.section-title>span{font-size:8px;font-weight:900;color:#081324;background:#ffd52a;border-radius:2mm;padding:1.8mm 2.5mm;box-shadow:0 0 12px #ff8a0066}.section-title h2{font-size:14px;margin:0;color:#f4f8ff;letter-spacing:-.2px}.highlight-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm}.highlight{display:flex;align-items:center;gap:2.5mm;padding:2.8mm 3mm;border:1px solid #bd4a22;border-radius:2mm;background:linear-gradient(100deg,#111111,#18110c);box-shadow:inset 0 0 12px #ff8a0010;min-height:11mm}.highlight:nth-child(even){border-color:#b85a25;background:linear-gradient(100deg,#17100d,#101010)}.highlight b{font-size:11px;color:#ffd52a;text-shadow:0 0 8px #ff8a00;flex:none}.highlight:nth-child(even) b{color:#ff4b22;text-shadow:0 0 8px #ff4b22}.highlight span{font-size:8.5px;font-weight:700;color:#e0eaff;line-height:1.2}.tech{margin-top:5mm}.tech-head{display:flex;align-items:end;justify-content:space-between;margin-bottom:3mm}.tech-head h2{font-size:14px;margin:0;color:#f4f8ff}.tech-head small{font-size:7px;color:#ffb52e;letter-spacing:1.2px;font-weight:800}.specs{display:grid;grid-template-columns:1fr 1fr;gap:2.2mm}.spec{padding:2.6mm 3mm;min-height:12mm;border:1px solid #39302a;border-radius:2mm;background:linear-gradient(110deg,#151515,#0c0c0c);position:relative;overflow:hidden}.spec:before{content:"";position:absolute;left:0;top:0;bottom:0;width:1mm;background:#ffd52a;box-shadow:0 0 8px #ff8a00}.spec:nth-child(4n+2):before{background:#ff4b22;box-shadow:0 0 8px #ff4b22}.spec:nth-child(4n+3):before{background:#ff7a00;box-shadow:0 0 8px #ff7a00}.spec:nth-child(4n):before{background:#ffb52e;box-shadow:0 0 8px #ffb52e}.spec span{display:block;color:#d9b98b;font-size:7px;margin-bottom:1.2mm}.spec strong{font-size:9px;line-height:1.2;color:#f0f6ff}.offer{margin-top:4mm;padding:3mm 4mm;border:1px solid #ffd52a;border-radius:3mm;background:linear-gradient(110deg,#17100b,#090909 70%,#1b0d08);position:relative;box-shadow:0 0 12px #ff8a0044,inset 0 0 18px #ffb00012;overflow:hidden}.offer:after{content:"";position:absolute;width:45mm;height:45mm;border:1px solid #ff4b2299;border-radius:50%;right:-17mm;top:-24mm;box-shadow:0 0 12px #ff6a0088,0 0 0 8mm #ff9a0011}.offer-kicker{font-size:7px;letter-spacing:1.7px;color:#ffd52a;font-weight:900}.plan{font-size:16px;font-weight:900;margin:1.5mm 0 2.5mm;position:relative;z-index:1;color:#fff}.offer-row{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #ffffff20;padding:1.8mm 0;position:relative;z-index:1}.offer-row span{font-size:7.5px;color:#9fb9dd}.offer-row strong{font-size:8.5px;text-align:right;color:#fff}.foot{position:absolute;left:14mm;right:14mm;bottom:6mm;padding-top:2mm;border-top:1px solid #273956;color:#7186a7;font-size:6.5px;line-height:1.35}.page-mark{position:absolute;right:14mm;bottom:2.5mm;font-size:6px;color:#5d7397;letter-spacing:1.4px;font-weight:900}.toolbar{width:210mm;margin:12px auto;display:flex;justify-content:center;gap:10px}.toolbar button{border:1px solid #ffb52e;background:#102447;color:#eafaff;padding:11px 18px;border-radius:30px;font-weight:800;font-size:14px;box-shadow:0 0 12px #ff8a0033}.toolbar button.primary{background:linear-gradient(90deg,#ff8a00,#d83222);border:0}.toolbar button:active{transform:scale(.98)}@page{size:A4 portrait;margin:0}@media screen and (max-width:760px){body{padding:0 0 20px}.preview-stage{margin:12px auto;position:relative}.sheet{width:210mm;height:297mm;margin:0;transform-origin:top left}.toolbar{width:100%;margin:12px auto;flex-wrap:wrap}.toolbar button{font-size:12px;padding:10px 14px}}@media print{html,body{width:210mm;height:297mm;background:#050505}.toolbar{display:none!important}.sheet{width:210mm;height:297mm;margin:0;box-shadow:none;break-after:avoid-page;page-break-after:avoid}.hero,.content,.offer,.highlight,.spec{break-inside:avoid}}`;
- const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>La tua proposta smartphone</title><style>'+css+'</style></head><body><div class="preview-stage"><main class="sheet"><header class="hero"><div class="tunnel"><div class="tunnel-lines"></div></div><div class="top-shade"></div><div class="brandline"><div class="brand">DEVICE PROPOSER ✦</div><div class="date">PROPOSTA · '+new Date().toLocaleDateString('it-IT')+'</div></div><div class="hero-copy"><div class="eyebrow">LA TUA PROSSIMA ESPERIENZA</div><h1>'+esc(p.name)+'</h1><p class="sub">'+esc(commercialDescription)+'</p><div class="price-row"><div class="price">'+money(priceFor(p))+'</div><div class="price-note">PREZZO<br>SMARTPHONE</div></div></div><div class="device-orbit"><div class="art">'+phoneVisual()+'</div></div><div class="neon-tag">SCELTO PER TE ✦</div></header><div class="content">'+highlightHtml+'<section class="tech"><div class="tech-head"><h2>Le sue carte vincenti</h2><small>DATI TECNICI SELEZIONATI</small></div><div class="specs">'+(specHtml||'<div class="spec"><strong>Dettagli tecnici non disponibili</strong></div>')+'</div></section><section class="offer"><div class="offer-kicker">✦ LA TUA OFFERTA</div><div class="plan">'+esc(o.plan)+'</div>'+rows+'</section></div><div class="foot">Proposta informativa basata sui dati del listino caricato. Prezzi, disponibilità e condizioni sono da verificare al momento della sottoscrizione.</div><div class="page-mark">DEVICE PROPOSER · SMARTPHONE</div></main></div><div class="toolbar">'+(isClientFlow?'<button class="primary" id="restartProposal">Ricomincia</button>':'<button class="primary" id="printProposal">Stampa / Salva in PDF</button><button id="closeProposal">Chiudi anteprima</button>')+'</div></body></html>';
+ const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>La tua proposta smartphone</title><style>'+css+'</style></head><body><div class="preview-stage"><main class="sheet"><header class="hero"><div class="tunnel"><div class="tunnel-lines"></div></div><div class="top-shade"></div><div class="brandline"><div class="brand">DEVICE PROPOSER ✦</div><div class="date">PROPOSTA · '+new Date().toLocaleDateString('it-IT')+'</div></div><div class="hero-copy"><div class="eyebrow">LA TUA PROSSIMA ESPERIENZA</div><h1>'+esc(p.name)+'</h1><p class="sub">'+esc(commercialDescription)+'</p><div class="price-row"><div class="price">'+money(priceFor(p))+'</div><div class="price-note">PREZZO<br>SMARTPHONE</div></div></div><div class="device-orbit"><div class="art">'+phoneVisual()+'</div></div><div class="neon-tag">SCELTO PER TE ✦</div></header><div class="content">'+highlightHtml+(specHtml?'<section class="tech"><div class="tech-head"><h2>Le sue carte vincenti</h2><small>DATI TECNICI SELEZIONATI</small></div><div class="specs">'+specHtml+'</div></section>':'')+'<section class="offer"><div class="offer-kicker">✦ LA TUA OFFERTA</div><div class="plan">'+esc(o.plan)+'</div>'+rows+'</section></div><div class="foot">Proposta informativa basata sui dati del listino caricato. Prezzi, disponibilità e condizioni sono da verificare al momento della sottoscrizione.</div><div class="page-mark">DEVICE PROPOSER · SMARTPHONE</div></main></div></body></html>';
  frame.srcdoc=html;
  frame.addEventListener('load',()=>{
   const doc=frame.contentDocument,win=frame.contentWindow;
@@ -1026,12 +1079,6 @@ function generateProposalPdf(){
   win.addEventListener('resize',fit);
   win.addEventListener('beforeprint',()=>{const page=doc.querySelector('.sheet'),stage=doc.querySelector('.preview-stage');if(page&&stage){page.style.transform='none';stage.style.width='210mm';stage.style.height='297mm'}});
   win.addEventListener('afterprint',fit);
-  if(isClientFlow){
-   doc.getElementById('restartProposal').addEventListener('click',()=>{overlay.remove();document.body.style.overflow=previousOverflow;restartClientFlow()});
-  }else{
-   doc.getElementById('printProposal').addEventListener('click',()=>win.print());
-   doc.getElementById('closeProposal').addEventListener('click',()=>{overlay.remove();document.body.style.overflow=previousOverflow});
-  }
   fit();
  });
 }
