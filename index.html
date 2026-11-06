@@ -483,27 +483,28 @@ function matchScore(a,b){
 function autoMatch(s){let ranked=catalog.map((p,i)=>({i,score:matchScore(s.description,p.name)})).sort((a,b)=>b.score-a.score);return ranked[0]?.score>=.48?ranked[0].i:-1}
 function autoMatchAll(){stock.forEach(s=>{if(mapped(s)<0){const i=autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}}});renderAll();alert('Abbinamento automatico completato. Verifica manualmente ogni SKU: non è una conferma di corrispondenza.')}
 async function goHome(){if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}currentUserProfile=null;['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';}
-async function enterClient(){
+function enterClient(){
  requestedAccessRole='client';
  document.getElementById('homeView').classList.add('hidden');
- document.getElementById('sellerAuthView').classList.add('hidden');
+ document.getElementById('clientView').classList.add('hidden');
  document.getElementById('sellerShopView').classList.add('hidden');
  document.getElementById('storeView').classList.add('hidden');
  document.getElementById('adminView').classList.add('hidden');
- document.getElementById('clientView').classList.remove('hidden');
- document.getElementById('homeBtn').style.display='inline-block';
- await startClientMode();
+ document.getElementById('sellerAuthView').classList.remove('hidden');
+ document.getElementById('homeBtn').style.display='none';
+ document.getElementById('sellerUsername').value='';
+ document.getElementById('sellerPassword').value='';
+ document.getElementById('sellerAuthMsg').textContent='Accesso cliente: inserisci le credenziali abilitate per il tablet.';
+ document.getElementById('sellerUsername').focus();
 }
 async function startSellerMode(){
  const sel=document.getElementById('sellerShopSelect'),msg=document.getElementById('sellerShopMsg');
  sel.innerHTML='<option value="">Caricamento negozi...</option>';msg.textContent='';
  const api=window.firebaseApi;
- try{
  const snap=await api.getDocs(api.collection(api.db,'shops'));
  const shops=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'it'));
  sel.innerHTML=shops.length?'<option value="">Seleziona un negozio...</option>'+shops.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+' ('+esc(x.id)+')</option>').join(''):'<option value="">Nessun negozio disponibile</option>';
  if(currentUserProfile?.shopId&&shops.some(x=>x.id===currentUserProfile.shopId))sel.value=currentUserProfile.shopId;
- }catch(e){msg.textContent='Errore nel caricamento dei negozi: '+e.message;}
 }
 function confirmSellerShop(){
  const id=document.getElementById('sellerShopSelect').value;
@@ -536,7 +537,7 @@ document.addEventListener('fullscreenchange',()=>{
  const active=!!document.fullscreenElement;
  btn.textContent=active?'×':'⛶';btn.setAttribute('aria-label',active?'Esci dallo schermo intero':'Attiva schermo intero');btn.title=active?'Esci':'Schermo intero';
 });
-async function startClientMode(){
+function startClientMode(){
  document.getElementById('sellerAuthView').classList.add('hidden');
  document.getElementById('clientView').classList.remove('hidden');
  document.getElementById('storeView').classList.add('hidden');
@@ -549,20 +550,11 @@ async function startClientMode(){
  document.querySelector('#clientView .hero').classList.add('hidden');
  document.querySelector('#clientView > .panel:not(#clientShopPanel)').classList.add('hidden');
  const api=window.firebaseApi;
- try{
  const snap=await api.getDocs(api.collection(api.db,'shops'));
  const shops=new Map();
  snap.docs.forEach(d=>{const x=d.data();if(x.active!==false)shops.set(d.id,x.name||d.id)});
  if(!shops.size)stock.forEach(x=>{if(x.shopId)shops.set(x.shopId,x.shop||x.shopId)});
  sel.innerHTML=shops.size?[...shops].sort((a,b)=>a[1].localeCompare(b[1],'it')).map(([id,name])=>'<option value="'+id+'">'+esc(name)+' ('+id+')</option>').join(''):'<option value="">Nessun negozio trovato: verifica importazione globale</option>';
- if(!shops.size)throw new Error('Nessun negozio disponibile per la modalità cliente.');
- }catch(e){
-  console.error('Avvio modalità cliente non riuscito:',e);
-  sel.innerHTML='<option value="">Errore caricamento negozi</option>';
-  const hint=panel.querySelector('.hint');if(hint)hint.textContent='Non riesco a caricare i negozi. Verifica la connessione e riprova.';
-  const retry=document.getElementById('clientRetry');if(retry)retry.remove();
-  const btn=document.createElement('button');btn.id='clientRetry';btn.className='primary';btn.textContent='Riprova';btn.onclick=()=>startClientMode();panel.querySelector('.actions')?.appendChild(btn);
- }
 }
 function confirmClientShop(){const id=document.getElementById('clientShopSelect').value;if(!id){alert('Seleziona un negozio.');return}currentShopId=id;document.getElementById('clientShopPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.remove('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel)').classList.remove('hidden');startClientWizard()}
 function startClientWizard(){
