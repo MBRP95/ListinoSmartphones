@@ -498,6 +498,7 @@ async function startSellerMode(){
  const sel=document.getElementById('sellerShopSelect'),msg=document.getElementById('sellerShopMsg');
  sel.innerHTML='<option value="">Caricamento negozi...</option>';msg.textContent='';
  const api=window.firebaseApi;
+ try{
  const snap=await api.getDocs(api.collection(api.db,'shops'));
  const shops=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'it'));
  sel.innerHTML=shops.length?'<option value="">Seleziona un negozio...</option>'+shops.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+' ('+esc(x.id)+')</option>').join(''):'<option value="">Nessun negozio disponibile</option>';
