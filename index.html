@@ -985,7 +985,7 @@ function renderCatalog(){
  const q=norm(document.getElementById('catalogSearch').value),b=document.getElementById('brandFilter').value;
  const selected=String(selectedShopFilter||'__all__').trim().toUpperCase();
  const rows=catalog.map((p,i)=>({p,i,stores:storeAvailabilityFor(i)}))
-  .filter(({p,stores})=>(!q||norm(p.name).includes(q))&&(!b||brandOf(p.name)===b)&&stores.length>0&&(selected==='__ALL__'||stores.some(s=>String(s.id||'').trim().toUpperCase()===selected)));
+  .filter(({p,stores})=>(!q||norm(p.name).includes(q))&&(!b||brandOf(p.name)===b));
  document.getElementById('catalogRows').innerHTML=rows.length?rows.map(({p,i,stores})=>{
   const shownStores=selected==='__ALL__'?stores:stores.filter(s=>String(s.id||'').trim().toUpperCase()===selected);
   const availability=shownStores.map(s=>(String(s.id||'').trim().toUpperCase()===selected?'★ ':'')+esc(s.name)+': '+s.qty).join(' · ');
