@@ -924,7 +924,7 @@ function generateProposalPdf(){
  w.addEventListener('resize',fit);
  w.addEventListener('beforeprint',()=>{const page=w.document.querySelector('.sheet'),stage=w.document.querySelector('.preview-stage');if(page&&stage){page.style.transform='none';stage.style.width='210mm';stage.style.height='297mm'}});
  w.addEventListener('afterprint',fit);
- if(isClientFlow){w.document.getElementById('restartProposal').addEventListener('click',()=>{w.close();restartClientFlow()})}else{w.document.getElementById('printProposal').addEventListener('click',()=>w.print());w.document.getElementById('closeProposal').addEventListener('click',()=>w.close())}
+ if(isClientFlow){w.document.getElementById('restartProposal').addEventListener('click',()=>{w.close();if(w.opener&&!w.opener.closed)w.opener.restartClientFlow()})}else{w.document.getElementById('printProposal').addEventListener('click',()=>w.print());w.document.getElementById('closeProposal').addEventListener('click',()=>w.close())}
  w.setTimeout(fit,80);
 }
 function restartClientFlow(){selectedDeviceIndex=-1;selectedDeviceSku='';selectedOfferIndex=0;answers={};step=0;document.getElementById('results').classList.add('hidden');document.getElementById('selectedDevicePanel').classList.add('hidden');document.getElementById('clientDirectPanel').classList.add('hidden');document.getElementById('clientStartPanel').classList.remove('hidden');document.querySelector('#clientView .hero').classList.add('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel):not(#clientStartPanel):not(#clientDirectPanel)').classList.add('hidden');document.getElementById('clientView').scrollIntoView({behavior:'smooth'})}
