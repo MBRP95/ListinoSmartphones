@@ -329,7 +329,7 @@ footer{color:#9d9182!important}
 </div>
 <div class="home-footnote"><span>DEVICE PROPOSER</span><span>SMARTPHONE SALES ASSISTANT</span></div>
 </section>
-<section id="clientView" class="hidden">
+<section id="clientView" class="hidden"><button id="clientFullscreenBtn" type="button" onclick="toggleClientFullscreen()" aria-label="Attiva schermo intero" title="Schermo intero">⛶</button>
 <div id="clientShopPanel" class="panel hidden" style="max-width:560px"><h2>Seleziona il negozio</h2><p class="hint">Scegli il punto vendita per visualizzare soltanto gli smartphone disponibili nelle sue giacenze.</p><div class="field"><label for="clientShopSelect">Negozio</label><select id="clientShopSelect"></select></div><div class="actions"><button class="primary" onclick="confirmClientShop()">Continua</button></div></div>
 <div class="hero"><div class="eyebrow">Consulenza guidata</div><h1>Troviamo lo smartphone giusto.</h1><p class="sub">Il cliente sceglie le proprie priorità; il sistema propone esclusivamente le varianti effettivamente disponibili nel negozio selezionato.</p></div>
 <div class="panel"><div class="stephead"><span id="stepLabel">PASSAGGIO 1 DI 3</span><span id="stepName">Budget</span></div><div class="progress"><span id="bar"></span></div><div id="wizard"></div><div class="actions"><button class="secondary" id="back" onclick="move(-1)" disabled>Indietro</button><button class="primary" id="next" onclick="move(1)">Continua</button></div></div>
@@ -470,7 +470,30 @@ function confirmSellerShop(){
  document.getElementById('storeView').classList.remove('hidden');
  renderAll();
 }
-async function startClientMode(){
+async function toggleClientFullscreen(){
+ const view=document.getElementById('clientView'),btn=document.getElementById('clientFullscreenBtn');
+ if(!view||!btn)return;
+ const active=!!document.fullscreenElement||document.body.classList.contains('client-kiosk');
+ if(active){
+  if(document.fullscreenElement&&document.exitFullscreen){document.exitFullscreen().catch(()=>{});}
+  document.body.classList.remove('client-kiosk');
+  btn.textContent='⛶';btn.setAttribute('aria-label','Attiva schermo intero');btn.title='Schermo intero';
+  return;
+ }
+ const req=view.requestFullscreen?view.requestFullscreen():null;
+ if(req&&typeof req.then==='function'){
+  req.then(()=>{btn.textContent='×';btn.setAttribute('aria-label','Esci dallo schermo intero');btn.title='Esci';})
+     .catch(()=>{document.body.classList.add('client-kiosk');btn.textContent='×';btn.setAttribute('aria-label','Esci dallo schermo intero');btn.title='Esci';});
+ }else{
+  document.body.classList.add('client-kiosk');btn.textContent='×';btn.setAttribute('aria-label','Esci dallo schermo intero');btn.title='Esci';
+ }
+}
+document.addEventListener('fullscreenchange',()=>{
+ const btn=document.getElementById('clientFullscreenBtn');if(!btn)return;
+ const active=!!document.fullscreenElement;
+ btn.textContent=active?'×':'⛶';btn.setAttribute('aria-label',active?'Esci dallo schermo intero':'Attiva schermo intero');btn.title=active?'Esci':'Schermo intero';
+});
+function startClientMode(){
  document.getElementById('sellerAuthView').classList.add('hidden');
  document.getElementById('clientView').classList.remove('hidden');
  document.getElementById('storeView').classList.add('hidden');
@@ -794,6 +817,7 @@ function generateProposalPdf(){
  if(!p||!o){alert('Seleziona prima uno smartphone e una delle sue offerte.');return}
  const amounts=o.amounts||[],method=o.method==='one shot'?'Pagamento in un’unica soluzione':o.method==='finanziato'?'Finanziamento':'Rateale';
  const allSpecs=getDeviceSpecs(p),match=deviceScore(p).reasons,keys=new Set();
+ const commercialDescription=allSpecs.find(([k])=>k==='Descrizione')?.[1]||p.description||'Tecnologia e prestazioni pensate per accompagnarti ogni giorno.';
  if(match.includes('Memoria adeguata'))['RAM','Memoria interna'].forEach(x=>keys.add(x));
  if(match.includes('Sistema operativo in linea con la preferenza'))keys.add('Sistema operativo');
  if(match.includes('Fotocamere coerenti con l’utilizzo'))['Fotocamera principale','Ultra-grandangolare','Teleobiettivo','Fotocamera frontale','Video'].forEach(x=>keys.add(x));
@@ -839,6 +863,19 @@ table{color:#f7f3ed!important}th{background:#211a14!important;color:#f4c66b!impo
 #detailBox .chip{font-size:13px;padding:7px 10px;color:#ffe0a0!important;background:#2a1d11!important}
 #detailBox table td,#detailBox table th{color:#f5eee4!important}
 #detailBox table th{color:#ffd27a!important}
+
+
+/* Customer tablet kiosk mode */
+#clientView{position:relative}
+#clientFullscreenBtn{position:fixed;z-index:9999;right:12px;top:12px;width:38px;height:38px;padding:0;border-radius:50%;background:#17130fdd;color:#ffd27a;border:1px solid #a66b2c;box-shadow:0 0 12px #ff9a2233;font-size:18px;line-height:1;opacity:.72}
+#clientFullscreenBtn:hover,#clientFullscreenBtn:focus{opacity:1}
+#clientView:fullscreen{width:100vw;height:100vh;overflow-y:auto;background:#050505;color:#f7f3ed;padding:18px max(14px,env(safe-area-inset-left));}
+#clientView:fullscreen .panel{max-width:1100px;margin-left:auto;margin-right:auto}
+body.client-kiosk{overflow:hidden}
+body.client-kiosk #clientView{position:fixed;inset:0;z-index:9998;display:block!important;overflow-y:auto;width:100%;height:100dvh;background:#050505;padding:18px 14px 28px}
+body.client-kiosk #clientFullscreenBtn{top:auto;right:7px;bottom:7px;width:25px;height:25px;font-size:13px;opacity:.22;background:#111;border-color:#776047}
+body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreenBtn:hover{opacity:.9}
+@media print{#clientFullscreenBtn{display:none!important}}
 
 </style></head><body onload="(function(){const p=document.querySelector(&quot;.sheet&quot;),s=document.querySelector(&quot;.preview-stage&quot;function phoneVisual(){return '<svg viewBox="0 0 120 190" role="img" aria-label="Illustrazione stilizzata di smartphone" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="screenGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#17120d"/><stop offset=".55" stop-color="#3a1b0d"/><stop offset="1" stop-color="#a52d16"/></linearGradient><linearGradient id="warmWave" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe05a"/><stop offset=".5" stop-color="#ff9a18"/><stop offset="1" stop-color="#ed3d22"/></linearGradient></defs><rect x="18" y="3" width="84" height="184" rx="18" fill="#090909" stroke="#ff9b22" stroke-width="2"/><rect x="23" y="9" width="74" height="172" rx="14" fill="#17120d" stroke="#ffd04a" stroke-width="1"/><rect x="27" y="14" width="66" height="162" rx="10" fill="url(#screenGlow)"/><path d="M27 112 Q60 70 93 103 V166 Q93 176 83 176 H37 Q27 176 27 166Z" fill="url(#warmWave)"/><circle cx="60" cy="31" r="3" fill="#ffd45a"/><rect x="47" y="20" width="26" height="3" rx="2" fill="#ffd45a"/><circle cx="60" cy="163" r="5" fill="#fff0c2"/><path d="M36 75 Q60 48 84 75" fill="none" stroke="#ffd45a" stroke-width="5" stroke-linecap="round"/><circle cx="60" cy="91" r="12" fill="#fff3d6" opacity=".9"/></svg>'}randline"><div class="brand">DEVICE PROPOSER ✦</div><div class="date">PROPOSTA · '+new Date().toLocaleDateString('it-IT')+'</div></div><div class="hero-copy"><div class="eyebrow">LA TUA PROSSIMA ESPERIENZA</div><h1>'+esc(p.name)+'</h1><p class="sub">Tecnologia, stile e prestazioni in un solo dispositivo.</p><div class="price-row"><div class="price">'+money(priceFor(p))+'</div><div class="price-note">PREZZO<br>SMARTPHONE</div></div></div><div class="device-orbit"><div class="art">'+phoneVisual()+'</div></div><div class="neon-tag">SCELTO PER TE ✦</div></header><div class="content">'+highlightHtml+'<section class="tech"><div class="tech-head"><h2>Le sue carte vincenti</h2><small>DATI TECNICI SELEZIONATI</small></div><div class="specs">'+(specHtml||'<div class="spec"><strong>Dettagli tecnici non disponibili</strong></div>')+'</div></section><section class="offer"><div class="offer-kicker">✦ LA TUA OFFERTA</div><div class="plan">'+esc(o.plan)+'</div>'+rows+'</section></div><div class="foot">Proposta informativa basata sui dati del listino caricato. Prezzi, disponibilità e condizioni sono da verificare al momento della sottoscrizione.</div><div class="page-mark">DEVICE PROPOSER · SMARTPHONE</div></main></div><div class="toolbar"><button class="primary" onclick="window.print()">Stampa / Salva in PDF</button><button onclick="window.close()">Chiudi anteprima</button></div></body></html>';
  w.document.write(html);w.document.close();
