@@ -44,7 +44,7 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <div class="hero"><div class="eyebrow">Accesso dipendenti</div><h1>Seleziona il negozio</h1><p class="sub">Scegli il punto vendita su cui lavorare. Potrai cambiare negozio anche dal gestionale.</p></div>
 <div class="panel" style="max-width:560px"><div class="field"><label for="sellerShopSelect">Negozio</label><select id="sellerShopSelect"></select></div><div id="sellerShopMsg" class="muted"></div><div class="actions"><button class="secondary" onclick="goHome()">Esci</button><button class="primary" onclick="confirmSellerShop()">Entra nel gestionale</button></div></div>
 </section>
-<section id="adminView" class="hidden"><div class="hero"><div class="eyebrow">Area amministratore</div><h1>Gestisci catalogo e magazzino.</h1><p class="sub">Catalogo e giacenze vengono salvati direttamente su Firebase.</p></div><div class="panel"><h2>Test gestione utenze</h2><p class="hint">Verifica in sola lettura il collegamento al servizio di gestione account.</p><button class="secondary" id="testUsersBtn" onclick="testUsersEndpoint()">Verifica elenco utenze</button><div id="testUsersMsg" class="muted" role="status" style="margin-top:10px"></div><pre id="testUsersResult" class="hidden" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre></div><div class="panel" id="individualUsersPanel"><h2>Account individuali dipendenti</h2><p class="hint">Crea un accesso personale e assegnalo a un negozio. Username non modificabile dopo la creazione.</p><div class="grid"><div class="field"><label for="newSellerRole">Tipo account</label><select id="newSellerRole" onchange="updateNewAccountRole()"><option value="seller">Dipendente</option><option value="admin">Amministratore</option></select></div><div class="field"><label for="newSellerUsername">Username</label><input id="newSellerUsername" autocomplete="off" placeholder="es. Modena01" maxlength="40"></div><div class="field"><label for="newSellerDisplayName">Nome visualizzato</label><input id="newSellerDisplayName" placeholder="Nome Cognome"></div><div class="field" id="newSellerShopField"><label for="newSellerShop">Negozio assegnato</label><select id="newSellerShop"><option value="">Caricamento negozi…</option></select></div><div class="field"><label for="newSellerPassword">Password iniziale</label><input id="newSellerPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128"></div></div><div class="actions"><button class="primary" id="createSellerBtn" onclick="createIndividualSeller()">Crea account dipendente</button><button class="secondary" onclick="loadIndividualSellers()">Aggiorna elenco</button></div><div id="individualUsersMsg" class="muted" role="status" style="margin-top:10px"></div><div id="individualUsersList" class="tablewrap" style="margin-top:14px"></div></div><div class="panel"><h2>Gestione password</h2><p class="hint">Reimposta la password degli account condivisi. Le password non vengono mostrate né salvate nell'app.</p><div class="grid"><div class="field"><label for="passwordTarget">Account</label><select id="passwordTarget"><option value="client">Cliente</option><option value="seller">Dipendenti</option><option value="admin">Amministratore</option></select></div><div class="field"><label for="newSharedPassword">Nuova password</label><input id="newSharedPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Almeno 8 caratteri"></div><div class="field"><label for="confirmSharedPassword">Conferma nuova password</label><input id="confirmSharedPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Ripeti la password"></div></div><div class="actions"><button class="primary" id="saveSharedPasswordBtn" onclick="resetSharedPassword()">Reimposta password</button></div><div id="sharedPasswordMsg" class="muted" role="status" style="margin-top:10px"></div></div><div class="panel"><h2>Importazione magazzino globale</h2><p class="hint">Carica l’esportazione completa Excel di tutti i negozi. Le nuove giacenze saranno pubblicate solo dopo il caricamento completo.</p><div class="toolbar"><div class="field"><label>Excel magazzino completo (.xlsx)</label><input id="globalStockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importGlobalStock()">Controlla e pubblica magazzino</button></div><div id="globalStockMsg" class="muted" style="margin-top:10px"></div></div><div class="panel"><h2>Aggiorna listino da PDF</h2><p class="hint">Carica il nuovo PDF retail. Il catalogo non cambia finché non controlli l'anteprima e confermi.</p><div class="toolbar"><div class="field"><label>Nuovo listino retail (.pdf)</label><input id="retailPdf" type="file" accept="application/pdf,.pdf"></div><button class="primary" onclick="previewRetailPdf()">Analizza PDF</button></div><div id="pdfMsg" class="muted" style="margin-top:9px"></div><div id="pdfPreview" class="hidden" style="margin-top:14px"><div class="stats"><div class="stat"><b id="pdfCount">0</b><span>varianti lette</span></div><div class="stat"><b id="pdfNew">0</b><span>nuove varianti</span></div><div class="stat"><b id="pdfChanged">0</b><span>prezzi modificati</span></div><div class="stat"><b id="pdfWarnings">0</b><span>anomalie</span></div></div><div class="notice">Schede tecniche, fotografie e abbinamenti SKU sono mantenuti quando la variante è riconosciuta. Il magazzino non viene modificato.</div><div class="tablewrap"><table><thead><tr><th>Variante</th><th>Prezzo attuale</th><th>Nuovo prezzo</th><th>Esito</th></tr></thead><tbody id="pdfRows"></tbody></table></div><div class="actions"><button class="secondary" onclick="cancelPdfImport()">Annulla</button><button class="primary" onclick="confirmPdfImport()">Conferma aggiornamento</button></div></div></div><div class="panel"><h2>Catalogo su Firebase</h2><p class="hint">Primo caricamento: trasferisce su Firestore il catalogo attualmente caricato. Le successive modifiche al PDF saranno salvate direttamente su Firebase.</p><button class="secondary" onclick="exportCatalogJSON()">Esporta catalogo JSON</button><button class="primary" onclick="publishCatalogToFirestore()">Pubblica catalogo su Firebase</button><div id="publishMsg" class="muted" style="margin-top:10px"></div></div><div class="panel"><h2>Importa schede tecniche (solo deviceModels)</h2><p class="hint">Carica un JSON di schede modello. L'anteprima controlla gli ID e mostra i documenti interessati. L'importazione scrive esclusivamente nella collezione deviceModels: non modifica devices, prezzi, offerte, SKU, stock o varianti.</p><div class="toolbar"><div class="field"><label for="modelImportFile">File JSON schede tecniche</label><input id="modelImportFile" type="file" accept="application/json,.json" onchange="previewModelImport()"></div><button class="secondary" onclick="previewModelImport()">Controlla file</button></div><div id="modelImportPreview" class="muted" style="margin-top:10px"></div><div class="actions"><button class="primary" id="modelImportBtn" onclick="importModelSpecs()" disabled>Importa solo deviceModels</button></div><div id="modelImportMsg" class="muted" role="status" style="margin-top:10px"></div></div><div class="panel"><h2>Importa fotografie in blocco (ZIP)</h2><p class="hint">Carica un unico ZIP con le immagini JPG, PNG o WEBP. Il nome del file deve identificare il modello, ad esempio <b>motorola-moto-g86-5g.jpg</b>. Il sistema associa l'immagine a tutte le varianti dello stesso modello, la pubblica su GitHub tramite il servizio già configurato e aggiorna Firestore.</p><div class="toolbar"><div class="field"><label for="modelImagesZip">Archivio immagini (.zip)</label><input id="modelImagesZip" type="file" accept=".zip,application/zip"></div><button class="primary" id="modelImagesZipBtn" onclick="importModelImagesZip()">Importa tutte le immagini</button></div><div id="modelImagesZipMsg" class="muted" role="status" style="margin-top:10px"></div><div id="modelImagesZipResults" class="tablewrap hidden" style="margin-top:12px"></div></div><div class="panel"><h2>Scheda tecnica del modello</h2><p class="hint">Le caratteristiche comuni vengono salvate una volta per modello. RAM e memoria restano proprietà della singola variante.</p>
+<section id="adminView" class="hidden"><div class="hero"><div class="eyebrow">Area amministratore</div><h1>Gestisci catalogo e magazzino.</h1><p class="sub">Catalogo e giacenze vengono salvati direttamente su Firebase.</p></div><div class="actions" style="justify-content:flex-start;margin:0 0 16px"><button class="primary" id="adminCatalogTab" onclick="switchAdminTab('catalog')">Catalogo e magazzino</button><button class="secondary" id="adminUsersTab" onclick="switchAdminTab('users')">Gestione utenze</button></div><div id="adminUsersSection" class="hidden"><div class="panel" id="individualUsersPanel"><h2>Account individuali dipendenti</h2><p class="hint">Crea un accesso personale e assegnalo a un negozio. Username non modificabile dopo la creazione.</p><div class="grid"><div class="field"><label for="newSellerRole">Tipo account</label><select id="newSellerRole" onchange="updateNewAccountRole()"><option value="seller">Dipendente</option><option value="admin">Amministratore</option></select></div><div class="field"><label for="newSellerUsername">Username</label><input id="newSellerUsername" autocomplete="off" placeholder="es. Modena01" maxlength="40"></div><div class="field"><label for="newSellerDisplayName">Nome visualizzato</label><input id="newSellerDisplayName" placeholder="Nome Cognome"></div><div class="field" id="newSellerShopField"><label for="newSellerShop">Negozio assegnato</label><select id="newSellerShop"><option value="">Caricamento negozi…</option></select></div><div class="field"><label for="newSellerPassword">Password iniziale</label><input id="newSellerPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128"></div></div><div class="actions"><button class="primary" id="createSellerBtn" onclick="createIndividualSeller()">Crea account dipendente</button><button class="secondary" onclick="loadIndividualSellers()">Aggiorna elenco</button></div><div id="individualUsersMsg" class="muted" role="status" style="margin-top:10px"></div><div id="individualUsersList" class="tablewrap" style="margin-top:14px"></div></div><div class="panel"><h2>Gestione password</h2><p class="hint">Reimposta la password degli account condivisi. Le password non vengono mostrate né salvate nell'app.</p><div class="grid"><div class="field"><label for="passwordTarget">Account</label><select id="passwordTarget"><option value="client">Cliente</option><option value="seller">Dipendenti</option><option value="admin">Amministratore</option></select></div><div class="field"><label for="newSharedPassword">Nuova password</label><input id="newSharedPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Almeno 8 caratteri"></div><div class="field"><label for="confirmSharedPassword">Conferma nuova password</label><input id="confirmSharedPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Ripeti la password"></div></div><div class="actions"><button class="primary" id="saveSharedPasswordBtn" onclick="resetSharedPassword()">Reimposta password</button></div><div id="sharedPasswordMsg" class="muted" role="status" style="margin-top:10px"></div></div></div><div id="adminCatalogSection"><div class="panel"><h2>Importazione magazzino globale</h2><p class="hint">Carica l’esportazione completa Excel di tutti i negozi. Le nuove giacenze saranno pubblicate solo dopo il caricamento completo.</p><div class="toolbar"><div class="field"><label>Excel magazzino completo (.xlsx)</label><input id="globalStockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importGlobalStock()">Controlla e pubblica magazzino</button></div><div id="globalStockMsg" class="muted" style="margin-top:10px"></div></div><div class="panel"><h2>Aggiorna listino da PDF</h2><p class="hint">Carica il nuovo PDF retail. Il catalogo non cambia finché non controlli l'anteprima e confermi.</p><div class="toolbar"><div class="field"><label>Nuovo listino retail (.pdf)</label><input id="retailPdf" type="file" accept="application/pdf,.pdf"></div><button class="primary" onclick="previewRetailPdf()">Analizza PDF</button></div><div id="pdfMsg" class="muted" style="margin-top:9px"></div><div id="pdfPreview" class="hidden" style="margin-top:14px"><div class="stats"><div class="stat"><b id="pdfCount">0</b><span>varianti lette</span></div><div class="stat"><b id="pdfNew">0</b><span>nuove varianti</span></div><div class="stat"><b id="pdfChanged">0</b><span>prezzi modificati</span></div><div class="stat"><b id="pdfWarnings">0</b><span>anomalie</span></div></div><div class="notice">Schede tecniche, fotografie e abbinamenti SKU sono mantenuti quando la variante è riconosciuta. Il magazzino non viene modificato.</div><div class="tablewrap"><table><thead><tr><th>Variante</th><th>Prezzo attuale</th><th>Nuovo prezzo</th><th>Esito</th></tr></thead><tbody id="pdfRows"></tbody></table></div><div class="actions"><button class="secondary" onclick="cancelPdfImport()">Annulla</button><button class="primary" onclick="confirmPdfImport()">Conferma aggiornamento</button></div></div></div><div class="panel"><h2>Catalogo su Firebase</h2><p class="hint">Primo caricamento: trasferisce su Firestore il catalogo attualmente caricato. Le successive modifiche al PDF saranno salvate direttamente su Firebase.</p><button class="secondary" onclick="exportCatalogJSON()">Esporta catalogo JSON</button><button class="primary" onclick="publishCatalogToFirestore()">Pubblica catalogo su Firebase</button><div id="publishMsg" class="muted" style="margin-top:10px"></div></div><div class="panel"><h2>Importa schede tecniche (solo deviceModels)</h2><p class="hint">Carica un JSON di schede modello. L'anteprima controlla gli ID e mostra i documenti interessati. L'importazione scrive esclusivamente nella collezione deviceModels: non modifica devices, prezzi, offerte, SKU, stock o varianti.</p><div class="toolbar"><div class="field"><label for="modelImportFile">File JSON schede tecniche</label><input id="modelImportFile" type="file" accept="application/json,.json" onchange="previewModelImport()"></div><button class="secondary" onclick="previewModelImport()">Controlla file</button></div><div id="modelImportPreview" class="muted" style="margin-top:10px"></div><div class="actions"><button class="primary" id="modelImportBtn" onclick="importModelSpecs()" disabled>Importa solo deviceModels</button></div><div id="modelImportMsg" class="muted" role="status" style="margin-top:10px"></div></div><div class="panel"><h2>Scheda tecnica del modello</h2><p class="hint">Le caratteristiche comuni vengono salvate una volta per modello. RAM e memoria restano proprietà della singola variante.</p>
 <div class="field"><label>Modello</label><select id="editDevice" onchange="loadEditor()"></select></div>
 <h3>Varianti</h3><div class="tablewrap"><table><thead><tr><th>Variante</th><th>RAM</th><th>Memoria</th></tr></thead><tbody id="variantRows"></tbody></table></div>
 <h3 style="margin-top:18px">Specifiche condivise</h3><div class="grid">
@@ -69,11 +69,8 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <div class="field"><label>RAM (GB)</label><input id="fRam" placeholder="8"></div>
 <div class="field"><label>Memoria interna (GB)</label><input id="fStorage" placeholder="256"></div>
 </div>
-<div class="grid" style="grid-template-columns:minmax(220px,1fr) minmax(220px,1fr);align-items:end">
-<div class="field"><label>Fotografia dispositivo</label><input id="fImage" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewDeviceImage()"><div class="muted">JPG, PNG o WEBP · massimo 8 MB · repository GitHub.</div></div>
-<div class="field"><img id="imagePreview" style="display:none;max-width:180px;max-height:140px;object-fit:contain;border:1px solid var(--line);border-radius:10px;padding:5px"><div id="imagePath" class="muted"></div></div>
-</div><div class="actions"><button class="secondary" onclick="clearEditor()">Annulla modifiche</button><button class="primary" onclick="saveEditor()">Salva scheda su Firebase</button></div><div id="editorMsg" class="muted" style="margin-top:8px"></div></div>
-<div class="notice">Questa password protegge soltanto l'interfaccia: in un sito statico è leggibile nel codice pubblico. Anche il token è esposto al browser durante l'operazione.</div></section>
+<div class="actions"><button class="secondary" onclick="clearEditor()">Annulla modifiche</button><button class="primary" onclick="saveEditor()">Salva scheda su Firebase</button></div><div id="editorMsg" class="muted" style="margin-top:8px"></div></div>
+</div><div class="notice">Questa password protegge soltanto l'interfaccia: in un sito statico è leggibile nel codice pubblico. Anche il token è esposto al browser durante l'operazione.</div></section>
 <section id="storeView" class="hidden">
 <div class="hero"><div class="eyebrow">Area negozio</div><h1>Catalogo, listino e magazzino.</h1><p class="sub">Il catalogo retail si aggiorna caricando il PDF. Importa il file Excel aggiornato per riallineare disponibilità e quantità del negozio.</p></div>
 
@@ -273,28 +270,13 @@ async function publishCatalogToFirestore(){
  finally{btn.disabled=false}
 }
 
-async function testUsersEndpoint(){
- const msg=document.getElementById('testUsersMsg');
- const resultBox=document.getElementById('testUsersResult');
- const btn=document.getElementById('testUsersBtn');
- const user=window.firebaseApi?.auth?.currentUser;
- if(currentUserProfile?.role!=='admin'){msg.textContent='Operazione consentita soltanto all’amministratore.';return}
- if(!user){msg.textContent='Sessione non valida. Accedi nuovamente.';return}
- btn.disabled=true;msg.textContent='Verifica autenticazione e permessi in corso…';resultBox.classList.add('hidden');resultBox.textContent='';
- try{
-  const token=await user.getIdToken(true);
-  const response=await fetch('https://device-proposer-admin.mariab-ragucci.workers.dev/verify-admin',{
-   method:'POST',
-   headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-   body:JSON.stringify({})
-  });
-  const data=await response.json().catch(()=>({}));
-  if(!response.ok||!data.success)throw new Error(data.error||('Errore HTTP '+response.status));
-  msg.textContent='Verifica completata: autenticazione amministratore e lettura Firestore funzionanti.';
-  resultBox.textContent='Account amministratore verificato. UID e dati personali non vengono mostrati.';
-  resultBox.classList.remove('hidden');
- }catch(e){msg.textContent='Verifica non riuscita: '+e.message}
- finally{btn.disabled=false}
+function switchAdminTab(tab){
+ const users=tab==='users';
+ document.getElementById('adminUsersSection').classList.toggle('hidden',!users);
+ document.getElementById('adminCatalogSection').classList.toggle('hidden',users);
+ document.getElementById('adminUsersTab').className=users?'primary':'secondary';
+ document.getElementById('adminCatalogTab').className=users?'secondary':'primary';
+ if(users)loadIndividualSellers();
 }
 
 async function callUserAdminApi(path,payload={}){
@@ -761,30 +743,9 @@ function loadEditor(){
  document.getElementById('fRam').value=p.ram??'';
  document.getElementById('fStorage').value=p.storage??'';
  document.getElementById('variantRows').innerHTML=variants.map(v=>'<tr><td>'+esc(v.name)+'</td><td>'+esc(variantRamLabel(v))+'</td><td>'+esc(variantMemoryLabel(v))+'</td></tr>').join('');
- const image=shared.image||p.image||'';
- const preview=document.getElementById('imagePreview');
- preview.style.display=image?'block':'none';preview.src=image;
- document.getElementById('imagePath').textContent=image;
- document.getElementById('fImage').value='';
  document.getElementById('editorMsg').textContent='';
 }
 function clearEditor(){loadEditor();}
-function previewDeviceImage(){
- const file=document.getElementById('fImage').files[0];if(!file)return;
- if(!['image/jpeg','image/png','image/webp'].includes(file.type)){alert('Usa un’immagine JPG, PNG o WEBP.');return;}
- if(file.size>8*1024*1024){alert('Immagine troppo grande: massimo 8 MB.');return;}
- const url=URL.createObjectURL(file),preview=document.getElementById('imagePreview');
- preview.src=url;preview.style.display='block';
- document.getElementById('imagePath').textContent='Nuova immagine: '+file.name;
-}
-async function fileToBase64(file){
- return new Promise((resolve,reject)=>{
-  const reader=new FileReader();
-  reader.onload=()=>resolve(String(reader.result).split(',')[1]||'');
-  reader.onerror=()=>reject(new Error('Lettura immagine non riuscita.'));
-  reader.readAsDataURL(file);
- });
-}
 const embeddedModelBatch = {"formatVersion":1,"project":"deviceproposer","collection":"deviceModels","writePolicy":"CREATE_OR_UPDATE_DEVICE_MODELS_ONLY","models":[{"modelId":"apple-iphone-16e","displayName":"Apple iPhone 16e","verification":"partial_official","sources":["https://support.apple.com/it-it/122208"],"specs":{"displayTech":"Super Retina XDR OLED","displaySize":"6,1 pollici","resolution":"2532 × 1170 pixel, 460 ppi","cpu":"Apple A18","cameraMain":"48 MP Fusion con stabilizzazione ottica; teleobiettivo 2x di qualità ottica","os":"iOS","description":"Display OLED Super Retina XDR e chip A18. Resistenza IP68."}},{"modelId":"apple-iphone-17","displayName":"Apple iPhone 17","verification":"official","sources":["https://www.apple.com/it/iphone-17/specs/"],"specs":{"displayTech":"Super Retina XDR OLED","displaySize":"6,3 pollici","resolution":"2622 × 1206 pixel, 460 ppi","refreshRate":"Fino a 120 Hz ProMotion","cpu":"Apple A19","battery":"3692 mAh nominali; fino a 30 ore di riproduzione video","charging":"Ricarica rapida fino al 50% in 20 minuti con alimentatore da 40 W o superiore; MagSafe/Qi2 fino a 25 W","cameraMain":"48 MP Fusion con stabilizzazione ottica","cameraUltra":"48 MP Fusion ultra-grandangolare","cameraTele":"12 MP 2x di qualità ottica","cameraMacro":"Macro da 48 MP","cameraFront":"18 MP Center Stage","video":"4K Dolby Vision fino a 60 fps","os":"iOS","description":"Display OLED ProMotion a 120 Hz, sistema a doppia fotocamera Fusion e protezione IP68."}},{"modelId":"apple-iphone-air","displayName":"Apple iPhone Air","verification":"official","sources":["https://www.apple.com/it/iphone-air/specs/"],"specs":{"displayTech":"Super Retina XDR OLED","displaySize":"6,5 pollici","resolution":"2736 × 1260 pixel, 460 ppi","refreshRate":"Fino a 120 Hz ProMotion","cpu":"Apple A19 Pro","battery":"3149 mAh nominali; fino a 27 ore di riproduzione video","cameraMain":"48 MP Fusion con stabilizzazione ottica; teleobiettivo 2x di qualità ottica","cameraFront":"18 MP Center Stage","video":"4K Dolby Vision fino a 60 fps","os":"iOS","description":"Design in titanio molto sottile, display OLED ProMotion e fotocamera Fusion da 48 MP. Protezione IP68."}},{"modelId":"apple-iphone-17e","displayName":"Apple iPhone 17e","verification":"official","sources":["https://support.apple.com/it-it/126470"],"specs":{"displayTech":"Super Retina XDR OLED","displaySize":"6,1 pollici","resolution":"2532 × 1170 pixel, 460 ppi","cpu":"Apple A19","battery":"Fino a 26 ore di riproduzione video","charging":"Ricarica rapida fino al 50% in 30 minuti con alimentatore da 20 W o superiore; MagSafe/Qi2 fino a 15 W","cameraMain":"48 MP Fusion con stabilizzazione ottica; teleobiettivo 2x","cameraFront":"12 MP TrueDepth","video":"4K Dolby Vision fino a 60 fps","os":"iOS","description":"iPhone 17e con chip A19, display OLED da 6,1 pollici e fotocamera Fusion da 48 MP. Protezione IP68."}},{"modelId":"apple-iphone-18-pro","displayName":"Apple iPhone 18 Pro","verification":"partial_official","sources":["https://www.apple.com/it/iphone-18-pro/specs/"],"specs":{"displayTech":"Super Retina XDR OLED","displaySize":"6,3 pollici","resolution":"2622 × 1206 pixel, 460 ppi","refreshRate":"Fino a 120 Hz ProMotion adattivo","cameraFront":"18 MP Center Stage","os":"iOS","description":"Display OLED ProMotion da 6,3 pollici. Completare chip, fotocamere posteriori e batteria."}},{"modelId":"apple-iphone-18-pro-max","displayName":"Apple iPhone 18 Pro Max","verification":"partial_official","sources":["https://www.apple.com/it/iphone-18-pro/specs/"],"specs":{"displayTech":"Super Retina XDR OLED","displaySize":"6,9 pollici","resolution":"2868 × 1320 pixel, 460 ppi","refreshRate":"Fino a 120 Hz ProMotion adattivo","cameraFront":"18 MP Center Stage","os":"iOS","description":"Display OLED ProMotion da 6,9 pollici. Completare chip, fotocamere posteriori e batteria."}},{"modelId":"samsung-galaxy-s26-5g","displayName":"Samsung Galaxy S26","verification":"partial_official","sources":["https://www.samsung.com/it/smartphones/galaxy-s26/"],"specs":{"displaySize":"6,3 pollici","battery":"4300 mAh","cameraMain":"50 MP grandangolare","cameraUltra":"12 MP ultra-grandangolare","cameraTele":"10 MP teleobiettivo, zoom ottico 3x","cameraFront":"12 MP","os":"Android","description":"Display da 6,3 pollici; sistema posteriore triplo da 50 + 12 + 10 MP. Completare risoluzione, tecnologia display, chipset e ricarica."}},{"modelId":"samsung-galaxy-s26-plus-5g","displayName":"Samsung Galaxy S26+","verification":"partial_official","sources":["https://www.samsung.com/it/smartphones/galaxy-s26/"],"specs":{"displaySize":"6,7 pollici","battery":"4900 mAh","cameraMain":"50 MP grandangolare","cameraUltra":"12 MP ultra-grandangolare","cameraTele":"10 MP teleobiettivo, zoom ottico 3x","cameraFront":"12 MP","os":"Android","description":"Display da 6,7 pollici; sistema posteriore triplo da 50 + 12 + 10 MP. Completare risoluzione, tecnologia display, chipset e ricarica."}},{"modelId":"samsung-galaxy-s26-ultra-5g","displayName":"Samsung Galaxy S26 Ultra","verification":"partial_official","sources":["https://www.samsung.com/it/smartphones/galaxy-s26-ultra/"],"specs":{"displaySize":"6,9 pollici","battery":"5000 mAh","cameraMain":"200 MP grandangolare","cameraUltra":"50 MP ultra-grandangolare","cameraTele":"50 MP teleobiettivo 5x e 10 MP teleobiettivo 3x","cameraFront":"12 MP","os":"Android","description":"Display da 6,9 pollici e sistema posteriore quad-camera con sensore principale da 200 MP. Completare risoluzione, tecnologia display, chipset e ricarica."}},{"modelId":"oppo-a6-pro-5g","displayName":"OPPO A6 Pro 5G","verification":"official","sources":["https://www.oppo.com/it/smartphones/series-a/a6-pro-5g/specs/"],"specs":{"displayTech":"AMOLED","displaySize":"6,57 pollici","resolution":"2372 × 1080 pixel","refreshRate":"Fino a 120 Hz","cpu":"MediaTek Dimensity 6300","battery":"6500 mAh tipici","charging":"80 W SUPERVOOC","cameraMain":"50 MP","cameraDepth":"2 MP monocromatica","cameraFront":"16 MP","video":"1080p fino a 60 fps","os":"ColorOS (Android)","description":"AMOLED FHD+ a 120 Hz, batteria da 6500 mAh e ricarica SUPERVOOC da 80 W. Protezione IP68."}},{"modelId":"oppo-reno15-f","displayName":"OPPO Reno15 F 5G","verification":"partial_official","sources":["https://www.oppo.com/it/smartphones/series-reno/reno15-f/specs/"],"specs":{"displayTech":"AMOLED","displaySize":"6,57 pollici","resolution":"2372 × 1080 pixel","refreshRate":"Fino a 120 Hz","cpu":"Qualcomm Snapdragon 6 Gen 1","cameraMain":"50 MP","cameraUltra":"8 MP","cameraMacro":"2 MP","cameraFront":"50 MP","os":"ColorOS (Android)","description":"AMOLED FHD+ a 120 Hz con fotocamere posteriori da 50 + 8 + 2 MP. Completare batteria, ricarica e video."}},{"modelId":"samsung-galaxy-a17-5g","displayName":"Samsung Galaxy A17 5G","verification":"official","sources":["https://www.samsung.com/it/smartphones/galaxy-a/galaxy-a17-5g-black-256gb-sm-a176bzkdeue/"],"specs":{"displayTech":"Super AMOLED","displaySize":"6,7 pollici","resolution":"2340 × 1080 pixel (FHD+)","refreshRate":"90 Hz","cpu":"Octa-Core, frequenze fino a 2,4 GHz","battery":"5000 mAh (tipica)","cameraMain":"50 MP con stabilizzazione ottica OIS","cameraUltra":"5 MP","cameraMacro":"2 MP","cameraFront":"13 MP","video":"UHD 4K (3840 × 2160) fino a 30 fps","description":"Display Super AMOLED FHD+ da 6,7 pollici a 90 Hz, tripla fotocamera da 50 MP con OIS e batteria da 5000 mAh."}},{"modelId":"samsung-galaxy-a27-5g","displayName":"Samsung Galaxy A27 5G","verification":"official","sources":["https://www.samsung.com/it/smartphones/galaxy-a/galaxy-a27-5g-blue-256gb-sm-a276bzbceue/"],"specs":{"displayTech":"Super AMOLED","displaySize":"6,7 pollici","resolution":"2340 × 1080 pixel (FHD+)","refreshRate":"120 Hz","cpu":"Qualcomm Snapdragon 6 Gen 3","battery":"5000 mAh (tipica)","charging":"Ricarica Super Rapida; fino al 45% in 30 minuti (dato Samsung)","cameraMain":"50 MP con stabilizzazione ottica OIS","cameraUltra":"5 MP","cameraMacro":"2 MP","cameraFront":"12 MP","video":"UHD 4K (3840 × 2160) fino a 30 fps","description":"Display Super AMOLED FHD+ da 6,7 pollici a 120 Hz, Snapdragon 6 Gen 3, tripla fotocamera da 50 MP e batteria da 5000 mAh."}},{"modelId":"samsung-galaxy-a37-5g","displayName":"Samsung Galaxy A37 5G","verification":"official","sources":["https://www.samsung.com/it/smartphones/galaxy-a/galaxy-a37-5g-awesome-charcoal-256gb-sm-a376bzageue/","https://www.samsung.com/it/smartphones/galaxy-a/galaxy-a37-5g-awesome-graygreen-128gb-sm-a376bdgbeue/"],"specs":{"displayTech":"Super AMOLED","displaySize":"6,7 pollici","resolution":"2340 × 1080 pixel (FHD+)","refreshRate":"120 Hz","cpu":"Processore Octa-Core, frequenze fino a 2,75 GHz e 2 GHz","battery":"5000 mAh (tipica)","charging":"Ricarica Ultra Rapida 2.0 fino a 45 W","cameraMain":"50 MP con stabilizzazione ottica OIS","cameraUltra":"8 MP","cameraMacro":"5 MP","cameraFront":"12 MP","video":"UHD 4K (3840 × 2160) fino a 60 fps","description":"Display Super AMOLED FHD+ da 6,7 pollici a 120 Hz, tripla fotocamera da 50 MP con OIS, batteria da 5000 mAh e ricarica fino a 45 W."}}]};
 let pendingModelImport=null;
 async function previewModelImport(){
@@ -823,81 +784,6 @@ async function importModelSpecs(){
   pendingModelImport=null;document.getElementById('modelImportFile').value='';document.getElementById('modelImportPreview').textContent='';
  }catch(e){msg.textContent='Importazione non riuscita: '+e.message;btn.disabled=false;}
 }
-async function importModelImagesZip(){
- const input=document.getElementById('modelImagesZip'),btn=document.getElementById('modelImagesZipBtn');
- const msg=document.getElementById('modelImagesZipMsg'),results=document.getElementById('modelImagesZipResults');
- const file=input.files?.[0];
- if(!file){msg.textContent='Seleziona prima un archivio ZIP.';return;}
- if(currentUserProfile?.role!=='admin'){msg.textContent='Operazione consentita soltanto all’amministratore.';return;}
- if(!window.JSZip){msg.textContent='Libreria ZIP non caricata. Ricarica la pagina e riprova.';return;}
- const api=window.firebaseApi;
- if(!api?.db||!api.auth?.currentUser){msg.textContent='Sessione Firebase non valida. Accedi di nuovo.';return;}
- btn.disabled=true;results.classList.add('hidden');results.innerHTML='';
- const rows=[];let done=0,failed=0,skipped=0;
- try{
-  const zip=await JSZip.loadAsync(file);
-  const groups=new Map();
-  const modelDocsSnap=await api.getDocs(api.collection(api.db,'deviceModels'));
-  const modelDocIdsByKey=new Map();
-  modelDocsSnap.docs.forEach(d=>{
-   const data=d.data()||{};
-   const label=data.displayName||data.name||data.modelName||d.id;
-   const key=technicalModelKey(label);
-   if(!modelDocIdsByKey.has(key))modelDocIdsByKey.set(key,[]);
-   modelDocIdsByKey.get(key).push(d.id);
-  });
-  catalog.forEach(v=>{
-   if(!isTechnicalSmartphone(v.name))return;
-   const key=technicalModelKey(v.name);
-   if(!groups.has(key))groups.set(key,[]);
-   groups.get(key).push(v);
-  });
-  const entries=Object.values(zip.files).filter(x=>!x.dir&&!x.name.startsWith('__MACOSX/'));
-  const images=entries.filter(x=>/\.(jpe?g|png|webp)$/i.test(x.name));
-  if(!images.length)throw new Error('Nello ZIP non trovo immagini JPG, PNG o WEBP.');
-  const seen=new Set();
-  for(const entry of images){
-   const base=entry.name.split('/').pop().replace(/\.[^.]+$/,'');
-   const modelId=modelDocumentId(base),key=technicalModelKey(base),variants=groups.get(key);
-   if(!variants?.length){skipped++;rows.push({name:entry.name,status:'Modello non trovato nel catalogo'});continue;}
-   if(seen.has(modelId)){failed++;rows.push({name:entry.name,status:'Doppia immagine per lo stesso modello'});continue;}
-   seen.add(modelId);
-   try{
-    const ext=base.toLowerCase().endsWith('.jpeg')?'jpg':entry.name.toLowerCase().match(/\.(jpg|jpeg|png|webp)$/)?.[1]?.replace('jpeg','jpg');
-    const contentType=ext==='png'?'image/png':ext==='webp'?'image/webp':'image/jpeg';
-    const blob=await entry.async('blob');
-    if(blob.size>8*1024*1024)throw new Error('File oltre 8 MB');
-    const idToken=await api.auth.currentUser.getIdToken();
-    const response=await fetch('https://device-proposer-admin.mariab-ragucci.workers.dev/images/upload',{
-     method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
-     body:JSON.stringify({modelId,fileName:modelId+'.'+ext,contentType,contentBase64:await fileToBase64(blob)})
-    });
-    const uploaded=await response.json().catch(()=>({}));
-    if(!response.ok||!uploaded.success)throw new Error(uploaded.error||'Upload GitHub non riuscito');
-    const matchingDocIds=[...new Set([modelId,...(modelDocIdsByKey.get(key)||[])])];
-    const sharedById={};
-    for(const docId of matchingDocIds){
-     const existing=window.currentModelSpecs?.[docId]||modelDocsSnap.docs.find(d=>d.id===docId)?.data()||{};
-     sharedById[docId]={...existing,modelId:docId,image:uploaded.imageUrl,updatedAt:new Date().toISOString()};
-    }
-    const shared=sharedById[modelId]||{modelId,image:uploaded.imageUrl,updatedAt:new Date().toISOString()};
-    const batch=api.writeBatch(api.db);
-    matchingDocIds.forEach(docId=>batch.set(api.doc(api.db,'deviceModels',docId),sharedById[docId]||{modelId:docId,image:uploaded.imageUrl,updatedAt:new Date().toISOString()},{merge:true}));
-    variants.forEach(v=>batch.set(api.doc(api.db,'devices',catalogDocId(v)),{...v,modelId,modelSpecs:shared,image:uploaded.imageUrl},{merge:true}));
-    await batch.commit();
-    window.currentModelSpecs=window.currentModelSpecs||{};Object.entries(sharedById).forEach(([docId,data])=>window.currentModelSpecs[docId]=data);
-    variants.forEach(v=>{v.modelId=modelId;v.modelSpecs=shared;v.image=uploaded.imageUrl;});
-    done++;rows.push({name:entry.name,status:'Caricata · '+variants.length+' varianti e '+matchingDocIds.length+' schede modello aggiornate'});
-   }catch(e){failed++;rows.push({name:entry.name,status:'Errore: '+e.message});}
-   msg.textContent='Elaborazione: '+(done+failed+skipped)+' / '+images.length+' immagini · '+done+' caricate · '+failed+' errori · '+skipped+' non abbinate';
-  }
-  results.innerHTML='<table><thead><tr><th>File</th><th>Esito</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+esc(r.status)+'</td></tr>').join('')+'</tbody></table>';
-  results.classList.remove('hidden');
-  msg.textContent='Importazione terminata: '+done+' modelli caricati, '+failed+' errori, '+skipped+' file non abbinati.';
-  if(done)renderCatalog();
- }catch(e){msg.textContent='Importazione non riuscita: '+e.message;}
- finally{btn.disabled=false;}
-}
 async function saveEditor(){
  const variants=modelVariants(),p=variants[0],msg=document.getElementById('editorMsg');
  if(!p)return;
@@ -907,27 +793,11 @@ async function saveEditor(){
  const modelId=modelDocumentId(p.name);
  const shared={modelId};
  Object.entries(sharedEditorFields).forEach(([key,id])=>shared[key]=document.getElementById(id).value.trim());
- const imageFile=document.getElementById('fImage').files[0];
  const saveButton=document.querySelector('button[onclick="saveEditor()"]');
- saveButton.disabled=true;msg.textContent='Salvataggio su GitHub e Firebase in corso…';
+ saveButton.disabled=true;msg.textContent='Salvataggio su Firebase in corso…';
  try{
   const previous=window.currentModelSpecs?.[modelId]||p.modelSpecs||{};
-  shared.image=previous.image||p.image||'';
-  if(imageFile){
-   if(!['image/jpeg','image/png','image/webp'].includes(imageFile.type))throw new Error('Usa un’immagine JPG, PNG o WEBP.');
-   if(imageFile.size>8*1024*1024)throw new Error('Immagine troppo grande: massimo 8 MB.');
-   const ext=imageFile.type==='image/jpeg'?'jpg':imageFile.type==='image/png'?'png':'webp';
-   const fileName=modelId+'.'+ext;
-   const idToken=await api.auth.currentUser.getIdToken();
-   const response=await fetch('https://device-proposer-admin.mariab-ragucci.workers.dev/images/upload',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+idToken},
-    body:JSON.stringify({modelId,fileName,contentType:imageFile.type,contentBase64:await fileToBase64(imageFile)})
-   });
-   const result=await response.json().catch(()=>({}));
-   if(!response.ok||!result.success)throw new Error(result.error||'Caricamento immagine su GitHub non riuscito.');
-   shared.image=result.imageUrl;
-  }
+  if(previous.image||p.image)shared.image=previous.image||p.image;
   shared.updatedAt=new Date().toISOString();
   const batch=api.writeBatch(api.db);
   batch.set(api.doc(api.db,'deviceModels',modelId),shared);
