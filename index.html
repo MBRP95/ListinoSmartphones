@@ -1,6 +1,6 @@
 <!-- Device Proposer: dati caricati da devices.json e stock.json nella stessa directory. -->
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-06-budget-lowest-device-offer-price">
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="device-proposer-build" content="2026-11-06-financing-monthly-payment-derived-from-total">
 <title>Device Proposer</title>
 <style>
 :root{--ink:#172033;--muted:#667085;--line:#e5e9f0;--bg:#f4f6fa;--blue:#2457d6;--green:#087b57;--amber:#8a5b08}
@@ -1027,6 +1027,18 @@ function selectDevice(index,sku){
  else renderPromoSelection('offerChoices',index,'client');
  panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
+function offerInstallmentCount(offer){
+ const raw=String(offer?.installments??'');
+ return Number.parseInt(raw.match(/\d+/)?.[0]||'0',10);
+}
+function offerDeviceTotal(offer,p){
+ const raw=Array.isArray(offer?.amounts)?Number(offer.amounts[0]):NaN;
+ return Number.isFinite(raw)&&raw>0?raw:priceFor(p);
+}
+function offerMonthlyPayment(offer,p){
+ const count=offerInstallmentCount(offer),total=offerDeviceTotal(offer,p);
+ return count>0&&Number.isFinite(total)?total/count:null;
+}
 function offerMethod(offer){
  const raw=String(offer?.method||offer?.paymentMethod||offer?.paymentType||offer?.type||offer?.kind||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
  const installmentCount=Number.parseInt(String(offer?.installments??'').match(/\d+/)?.[0]||'0',10);
@@ -1063,9 +1075,10 @@ function showPromoRates(deviceIndex,groupIndex,mode){
  const title='<div class="promo-rate-head"><button type="button" class="secondary" id="changePromo">← Cambia promozione</button><div><span class="offer-kicker">PROMO SIM SELEZIONATA</span><h3>'+esc(group.plan)+'</h3></div></div>';
  const options=group.items.map(({offer,index})=>{
   const a=offer.amounts||[],devicePrice=a[0]!=null?money(a[0]):money(priceFor(p));
-  const method=offerMethod(offer),installments=Number(offer.installments)||0;
+  const method=offerMethod(offer),installments=offerInstallmentCount(offer);
+  const monthly=method==='finanziato'?offerMonthlyPayment(offer,p):null;
   const detail=method==='finanziato'
-   ? (installments?installments+' rate':'Finanziamento')+' · '+(a[1]!=null?'rata '+money(a[1])+'/mese':'rata non indicata')+' · totale dispositivo '+devicePrice
+   ? (installments?installments+' rate':'Finanziamento')+' · '+(monthly!==null?'rata '+money(monthly)+'/mese':'rata non calcolabile')+' · totale dispositivo '+devicePrice
    : method==='one shot'?'Pagamento unico · totale '+devicePrice:'Rateale · '+a.map(money).join(' · ');
   if(mode==='seller')return '<div class="seller-offer-option"><span><b>'+(method==='finanziato'?'Finanziamento':method==='one shot'?'Pagamento unico':'Rateale')+'</b><small>'+esc(detail)+'</small></span><button class="primary" onclick="sellerGenerateOffer('+deviceIndex+','+index+')">Conferma</button></div>';
   return '<button type="button" class="device choice offer-choice" data-offer-index="'+index+'"><span class="offer-kicker">'+(method==='finanziato'?'FINANZIAMENTO':method==='one shot'?'PAGAMENTO UNICO':'RATEALE')+'</span><b>'+(installments?installments+' rate':method==='one shot'?'Pagamento unico':'Modalità rateale')+'</b><strong>'+esc(detail)+'</strong></button>';
@@ -1086,7 +1099,7 @@ function selectOffer(index){
  const p=catalog[selectedDeviceIndex],o=p?.offers?.[index];if(!o)return;
  selectedOfferIndex=index;
  const a=o.amounts||[],method=offerMethod(o);
- const detail=method==='one shot'?'Totale: '+money(a[0]!=null?a[0]:priceFor(p)):method==='finanziato'?(Number(o.installments)||'—')+' rate · '+(a[1]!=null?money(a[1])+'/mese':'rata non indicata')+' · totale dispositivo '+money(a[0]!=null?a[0]:priceFor(p)):a.map(money).join(' · ');
+ const detail=method==='one shot'?'Totale: '+money(offerDeviceTotal(o,p)):method==='finanziato'?(offerInstallmentCount(o)||'—')+' rate · '+(offerMonthlyPayment(o,p)!==null?money(offerMonthlyPayment(o,p))+'/mese':'rata non calcolabile')+' · totale dispositivo '+money(offerDeviceTotal(o,p)):a.map(money).join(' · ');
  const summary=document.getElementById('offerSummary');if(summary)summary.textContent=o.plan+' — '+detail;
 }
 function generateProposalPdf(){
@@ -1105,9 +1118,11 @@ function generateProposalPdf(){
  const preferredSpecs=isClientFlow&&keys.size?validSpecs.filter(([k])=>keys.has(k)):validSpecs;
  const specs=[...preferredSpecs,...validSpecs.filter(([k])=>!keys.has(k))].filter((item,i,arr)=>arr.findIndex(x=>x[0]===item[0])===i).slice(0,isClientFlow?6:12);
  const specHtml=specs.map(([k,v])=>'<div class="spec"><span>'+esc(k)+'</span><strong>'+esc(v)+'</strong></div>').join('');
- const deviceTotalValue=amounts[0]!=null?Number(amounts[0]):priceFor(p);
+ const deviceTotalValue=offerDeviceTotal(o,p);
  const deviceTotal=money(deviceTotalValue);
- const rows=[['Piano tariffario',o.plan],['Modalità',method],...(offerType==='finanziato'?[['Totale dispositivo',deviceTotal],['Rata mensile',amounts[1]!=null?money(amounts[1]):'Non indicata'],['Durata',o.installments?(o.installments+' rate'):'Non indicata']]:[['Totale da pagare',deviceTotal]])].filter(x=>x[1]&&x[1]!=='—').map(([k,v])=>'<div class="offer-row"><span>'+esc(k)+'</span><strong>'+esc(v)+'</strong></div>').join('');
+ const monthlyPayment=offerMonthlyPayment(o,p);
+ const installmentCount=offerInstallmentCount(o);
+ const rows=[['Piano tariffario',o.plan],['Modalità',method],...(offerType==='finanziato'?[['Totale dispositivo',deviceTotal],['Rata mensile',monthlyPayment!==null?money(monthlyPayment):'Non calcolabile'],['Durata',installmentCount?(installmentCount+' rate'):'Non indicata']]:[['Totale da pagare',deviceTotal]])].filter(x=>x[1]&&x[1]!=='—').map(([k,v])=>'<div class="offer-row"><span>'+esc(k)+'</span><strong>'+esc(v)+'</strong></div>').join('');
  const highlights=match.filter(x=>x!=='Nel budget indicato');
  const highlightHtml=highlights.length?'<section class="highlights"><div class="section-title"><span>01</span><h2>Quello che cercavi</h2></div><div class="highlight-grid">'+highlights.map(x=>'<div class="highlight"><b>✦</b><span>'+esc(x)+'</span></div>').join('')+'</div></section>':'';
  const existing=document.getElementById('proposalOverlay');if(existing)existing.remove();
@@ -1579,8 +1594,8 @@ function renderOfferEditor(){
  host.innerHTML=offers.map((o,i)=>{
   const a=Array.isArray(o.amounts)?o.amounts:[];
   const financed=offerMethod(o)==='finanziato';
-  const total=a[0]??priceFor(p),monthly=financed?(a[1]??''):'';
-  return '<div class="offer-value-row" style="border:1px solid #62472b;border-radius:12px;padding:14px;margin:10px 0;background:#171411"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><strong>'+esc(o.plan||'Promozione')+'</strong><span class="chip">'+(financed?'Finanziamento':offerMethod(o)==='one shot'?'Pagamento unico':'Rateale')+(o.installments?' · '+esc(o.installments)+' rate':'')+'</span></div><div class="grid"><div class="field"><label>Totale dispositivo (€)</label><input type="number" min="0" step="0.01" data-offer-index="'+i+'" data-amount-index="0" value="'+esc(total)+'"></div>'+(financed?'<div class="field"><label>Rata mensile (€)</label><input type="number" min="0" step="0.01" data-offer-index="'+i+'" data-amount-index="1" value="'+esc(monthly)+'"></div>':'')+'</div></div>';
+  const total=a[0]??priceFor(p),monthly=financed?offerMonthlyPayment(o,p):null,count=offerInstallmentCount(o);
+  return '<div class="offer-value-row" style="border:1px solid #62472b;border-radius:12px;padding:14px;margin:10px 0;background:#171411"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><strong>'+esc(o.plan||'Promozione')+'</strong><span class="chip">'+(financed?'Finanziamento':offerMethod(o)==='one shot'?'Pagamento unico':'Rateale')+(count?' · '+count+' rate':'')+'</span></div><div class="grid"><div class="field"><label>Totale dispositivo (€)</label><input type="number" min="0" step="0.01" data-offer-index="'+i+'" data-amount-index="0" value="'+esc(total)+'"></div>'+(financed?'<div class="field"><label>Rata mensile (calcolata)</label><div class="input-like" style="padding:12px;border:1px solid #62472b;border-radius:9px;color:#fff1d6;background:#100e0c">'+(monthly!==null?money(monthly):'Numero rate non valido')+'</div><small class="muted">Totale dispositivo ÷ numero rate</small></div>':'')+'</div></div>';
  }).join('');
  const msg=document.getElementById('offerValuesMsg');if(msg)msg.textContent='';
 }
@@ -1599,6 +1614,12 @@ async function saveOfferValues(){
     const parsed=Number(value);
     if(!Number.isFinite(parsed)||parsed<0)throw new Error('Inserisci importi validi e non negativi.');
     nextOffers[offerIndex].amounts[amountIndex]=parsed;
+   }
+  });
+  nextOffers.forEach(o=>{
+   if(offerMethod(o)==='finanziato'){
+    const count=offerInstallmentCount(o),total=offerDeviceTotal(o,p);
+    if(count>0&&Number.isFinite(total))o.amounts[1]=Number((total/count).toFixed(2));
    }
   });
  }catch(e){msg.textContent=e.message;return}
