@@ -502,6 +502,7 @@ async function startSellerMode(){
  const shops=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'it'));
  sel.innerHTML=shops.length?'<option value="">Seleziona un negozio...</option>'+shops.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+' ('+esc(x.id)+')</option>').join(''):'<option value="">Nessun negozio disponibile</option>';
  if(currentUserProfile?.shopId&&shops.some(x=>x.id===currentUserProfile.shopId))sel.value=currentUserProfile.shopId;
+ }catch(e){msg.textContent='Errore nel caricamento dei negozi: '+e.message;}
 }
 function confirmSellerShop(){
  const id=document.getElementById('sellerShopSelect').value;
