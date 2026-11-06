@@ -483,16 +483,22 @@ function matchScore(a,b){
 function autoMatch(s){let ranked=catalog.map((p,i)=>({i,score:matchScore(s.description,p.name)})).sort((a,b)=>b.score-a.score);return ranked[0]?.score>=.48?ranked[0].i:-1}
 function autoMatchAll(){stock.forEach(s=>{if(mapped(s)<0){const i=autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}}});renderAll();alert('Abbinamento automatico completato. Verifica manualmente ogni SKU: non è una conferma di corrispondenza.')}
 async function goHome(){if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}currentUserProfile=null;['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';}
-async function enterClient(){
+function enterClient(){
  requestedAccessRole='client';
  document.getElementById('homeView').classList.add('hidden');
- document.getElementById('sellerAuthView').classList.add('hidden');
+ document.getElementById('clientView').classList.add('hidden');
  document.getElementById('sellerShopView').classList.add('hidden');
  document.getElementById('storeView').classList.add('hidden');
  document.getElementById('adminView').classList.add('hidden');
- document.getElementById('clientView').classList.remove('hidden');
- document.getElementById('homeBtn').style.display='inline-block';
- await startClientMode();
+ document.getElementById('sellerAuthView').classList.remove('hidden');
+ document.getElementById('homeBtn').style.display='none';
+ document.querySelector('#sellerAuthView .eyebrow').textContent='Accesso cliente';
+ document.querySelector('#sellerAuthView h1').textContent='Benvenuto.';
+ document.querySelector('#sellerAuthView .sub').textContent='Inserisci le credenziali cliente per avviare la consulenza.';
+ document.getElementById('sellerPassword').value='';
+ document.getElementById('sellerUsername').value='';
+ document.getElementById('sellerAuthMsg').textContent='Accesso riservato alla modalità Cliente.';
+ document.getElementById('sellerUsername').focus();
 }
 async function startSellerMode(){
  const sel=document.getElementById('sellerShopSelect'),msg=document.getElementById('sellerShopMsg');
@@ -568,6 +574,9 @@ function startClientWizard(){
 }
 function requestSellerAccess(){
  requestedAccessRole='staff';
+ document.querySelector('#sellerAuthView .eyebrow').textContent='Accesso riservato';
+ document.querySelector('#sellerAuthView h1').textContent='Area riservata';
+ document.querySelector('#sellerAuthView .sub').textContent='Inserisci le credenziali previste per la modalità scelta.';
  document.getElementById('homeView').classList.add('hidden');
  document.getElementById('clientView').classList.add('hidden');
  document.getElementById('sellerShopView').classList.add('hidden');
