@@ -142,6 +142,87 @@ footer{max-width:1180px;margin:28px auto 40px;padding:0 22px;color:#8a96a9;font-
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
+
+/* DEVICE PROPOSER — INTERFACE REDESIGN */
+:root{--ink:#17243b;--muted:#718099;--line:#e4eaf2;--blue:#315fda;--navy:#101c33}
+body{background:#f4f6fa}
+header{min-height:76px;padding:15px max(24px,calc((100% - 1240px)/2));background:#101c33;box-shadow:0 8px 26px #0d1b3218}
+.brand{display:flex;align-items:center;gap:12px;font-size:16px;letter-spacing:1.3px}
+.brand:before{content:"D";display:grid;place-items:center;width:37px;height:37px;border:1px solid #ffffff35;border-radius:11px;background:linear-gradient(145deg,#4779ed,#2349ae);color:white;font-size:19px;font-weight:900}
+.brand small{font-size:9px;letter-spacing:2px}
+main{max-width:1240px;margin:38px auto 54px}
+.hero h1{letter-spacing:-1.7px}
+.panel{box-shadow:0 5px 22px #15274408}
+.home-dashboard{padding:8px 0 0}
+.home-intro{position:relative;display:grid;grid-template-columns:1.15fr .85fr;min-height:330px;overflow:hidden;border-radius:25px;background:linear-gradient(115deg,#101c33 0%,#172c50 65%,#203d70 100%);color:#fff;box-shadow:0 20px 45px #10234420}
+.home-copy{position:relative;z-index:2;padding:48px 52px;align-self:center}
+.home-copy .eyebrow{color:#9db9ff;font-size:10px;letter-spacing:2px}
+.home-copy h1{margin:17px 0 14px;color:#fff;font-size:clamp(38px,5vw,57px);line-height:1.03;letter-spacing:-2.5px}
+.home-copy .sub{max-width:510px;color:#c2cee2;font-size:15px;line-height:1.75}
+.home-status{display:inline-flex;align-items:center;gap:9px;margin-top:20px;padding:8px 12px;border:1px solid #ffffff25;border-radius:30px;color:#dce7ff;font-size:11px;font-weight:700}
+.home-status i{width:7px;height:7px;border-radius:50%;background:#62d6a5;box-shadow:0 0 0 4px #62d6a522}
+.home-art{position:relative;min-height:300px;display:grid;place-items:center}
+.art-orbit{position:absolute;width:265px;height:265px;border:1px solid #ffffff20;border-radius:50%}
+.orbit-two{width:205px;height:205px;border-color:#ffffff30}
+.art-phone{position:relative;width:112px;height:218px;border:5px solid #cbd8f2;border-radius:25px;background:linear-gradient(145deg,#436fbd,#152c57);box-shadow:0 24px 50px #07152d80;transform:rotate(9deg)}
+.art-phone:before{content:"";position:absolute;inset:7px;border:1px solid #ffffff45;border-radius:17px;background:radial-gradient(circle at 70% 28%,#91b7ff88,transparent 30%),linear-gradient(145deg,#355c9e,#172b50)}
+.art-phone span{position:absolute;z-index:2;top:9px;left:36px;width:30px;height:6px;border-radius:8px;background:#101c33}
+.art-phone b{position:absolute;z-index:2;top:22px;left:14px;width:17px;height:17px;border:3px solid #b9d0fa;border-radius:50%;background:#263f70}
+.art-phone i{position:absolute;z-index:2;top:22px;left:38px;width:17px;height:17px;border:3px solid #b9d0fa;border-radius:50%;background:#263f70}
+.art-chip{position:absolute;right:9%;bottom:48px;padding:12px 15px;border:1px solid #ffffff30;border-radius:12px;background:#ffffff12;color:#e5edff;font-size:10px;font-weight:850;letter-spacing:1.5px;line-height:1.6;backdrop-filter:blur(8px)}
+.home-section-head{display:flex;justify-content:space-between;align-items:end;margin:38px 0 16px}
+.home-section-head .eyebrow{color:#7185a6;font-size:10px;letter-spacing:1.7px}
+.home-section-head h2{margin:5px 0 0;font-size:24px;letter-spacing:-.7px}
+.home-caption{padding-bottom:5px;color:#9aa6b8;font-size:9px;font-weight:850;letter-spacing:1.5px}
+.home-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+.home-choice{display:flex;align-items:flex-start;gap:20px;min-height:190px;padding:27px 25px;text-align:left;border:1px solid #e3e9f2;border-radius:19px;background:#fff;box-shadow:0 7px 22px #14274408;transition:transform .2s,border-color .2s,box-shadow .2s}
+.home-choice:hover{transform:translateY(-4px);border-color:#b9cafa;box-shadow:0 16px 32px #18376c12}
+.choice-icon{flex:0 0 48px;width:48px;height:48px;display:grid;place-items:center;border-radius:14px;background:#edf3ff;color:#315fda;font-size:13px;font-weight:900;letter-spacing:.5px}
+.staff-choice .choice-icon{background:#edf1f6;color:#31425e}
+.choice-content{display:flex;flex-direction:column;align-items:flex-start;min-height:130px}
+.choice-content b{font-size:19px;letter-spacing:-.4px}
+.choice-content small{max-width:390px;margin-top:8px;color:#718099;font-size:13px;font-weight:500;line-height:1.65}
+.choice-content strong{display:flex;gap:13px;align-items:center;margin-top:auto;padding-top:17px;color:#315fda;font-size:12px}
+.choice-content em{font-size:18px;font-style:normal}
+.home-footnote{display:flex;justify-content:space-between;margin-top:34px;padding-top:15px;border-top:1px solid #e5eaf1;color:#9aa6b8;font-size:9px;font-weight:800;letter-spacing:1.5px}
+#storeView>.hero,#adminView>.hero{padding:8px 0 23px;border-bottom:1px solid #e5eaf1;margin-bottom:22px}
+#storeView>.hero h1,#adminView>.hero h1{font-size:clamp(29px,3.6vw,39px)}
+#storeView .panel,#adminView .panel{border-radius:16px}
+#storeView .panel>h2,#adminView .panel>h2{display:flex;align-items:center;gap:10px}
+#storeView .panel>h2:before,#adminView .panel>h2:before{content:"";width:4px;height:19px;border-radius:5px;background:#315fda}
+#storeView .panel .hint,#adminView .panel .hint{max-width:850px}
+#storeView .panel.admin-only{border-left:3px solid #dce6fb}
+#adminView>.actions{padding:5px;background:#e9eef6;border-radius:13px;width:max-content;max-width:100%}
+#adminView>.actions button{min-height:39px}
+#adminView .panel{box-shadow:0 5px 22px #15274408}
+#sellerShopView .panel{box-shadow:0 12px 32px #1427440d}
+@media(max-width:760px){
+ main{margin:22px auto 34px}
+ .home-intro{grid-template-columns:1fr;min-height:0}
+ .home-copy{padding:34px 25px 12px}
+ .home-copy h1{font-size:40px}
+ .home-copy .sub{font-size:13px}
+ .home-art{min-height:205px}
+ .art-orbit{width:190px;height:190px}.orbit-two{width:145px;height:145px}
+ .art-phone{width:82px;height:160px;border-width:4px;border-radius:20px}
+ .art-phone:before{inset:5px;border-radius:14px}
+ .art-phone span{left:26px;width:22px;height:5px}
+ .art-phone b{top:19px;left:10px;width:13px;height:13px}
+ .art-phone i{top:19px;left:29px;width:13px;height:13px}
+ .art-chip{right:7%;bottom:22px;font-size:8px}
+ .home-section-head{margin:29px 0 13px}
+ .home-section-head h2{font-size:21px}
+ .home-caption{display:none}
+ .home-choices{grid-template-columns:1fr;gap:12px}
+ .home-choice{min-height:155px;padding:20px 17px;gap:14px}
+ .choice-icon{width:42px;height:42px;flex-basis:42px}
+ .choice-content{min-height:115px}
+ .choice-content b{font-size:17px}
+ .home-footnote{margin-top:25px;font-size:8px}
+ #adminView>.actions{width:100%}
+}
+@media(prefers-reduced-motion:reduce){.home-choice{transition:none}}
+
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head><body>
@@ -155,12 +236,18 @@ footer{max-width:1180px;margin:28px auto 40px;padding:0 22px;color:#8a96a9;font-
 <div class="actions"><button class="secondary" onclick="goHome()">Indietro</button><button class="primary" onclick="verifySellerPassword()">Accedi</button></div>
 </div></section>
 
-<section id="homeView">
-<div class="hero"><div class="eyebrow">Benvenuto</div><h1>Device Proposer</h1><p class="sub">Scegli come vuoi utilizzare lo strumento.</p></div>
-<div class="grid">
-<button class="choice" style="min-height:150px" onclick="enterClient()"><b>Modalità Cliente</b><small>Consulenza guidata per trovare lo smartphone più adatto.</small></button>
-<button class="choice" style="min-height:150px" onclick="requestSellerAccess()"><b>Area riservata</b><small>Accesso a catalogo, magazzino o amministrazione tramite password.</small></button>
-</div></section>
+<section id="homeView" class="home-dashboard">
+<div class="home-intro">
+ <div class="home-copy"><div class="eyebrow">SMARTPHONE · CONSULENZA · GESTIONE</div><h1>La scelta giusta,<br>parte da qui.</h1><p class="sub">Uno spazio unico per guidare il cliente verso il dispositivo più adatto e gestire catalogo, prezzi e disponibilità del punto vendita.</p><span class="home-status"><i></i> Piattaforma operativa</span></div>
+ <div class="home-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-phone"><span></span><b></b><i></i></div><div class="art-chip">DEVICE<br>PROPOSER</div></div>
+</div>
+<div class="home-section-head"><div><div class="eyebrow">SCEGLI IL TUO PERCORSO</div><h2>Come vuoi iniziare?</h2></div><span class="home-caption">ACCESSO RAPIDO</span></div>
+<div class="home-choices">
+<button class="choice home-choice client-choice" onclick="enterClient()"><span class="choice-icon">01</span><span class="choice-content"><b>Modalità Cliente</b><small>Una consulenza guidata, semplice e intuitiva, per individuare lo smartphone più adatto alle esigenze del cliente.</small><strong>Avvia la consulenza <em>↗</em></strong></span></button>
+<button class="choice home-choice staff-choice" onclick="requestSellerAccess()"><span class="choice-icon">02</span><span class="choice-content"><b>Area riservata</b><small>Accedi agli strumenti di lavoro: catalogo, listino, magazzino e gestione amministrativa.</small><strong>Accedi al gestionale <em>↗</em></strong></span></button>
+</div>
+<div class="home-footnote"><span>DEVICE PROPOSER</span><span>SMARTPHONE SALES ASSISTANT</span></div>
+</section>
 <section id="clientView" class="hidden">
 <div id="clientShopPanel" class="panel hidden" style="max-width:560px"><h2>Seleziona il negozio</h2><p class="hint">Scegli il punto vendita per visualizzare soltanto gli smartphone disponibili nelle sue giacenze.</p><div class="field"><label for="clientShopSelect">Negozio</label><select id="clientShopSelect"></select></div><div class="actions"><button class="primary" onclick="confirmClientShop()">Continua</button></div></div>
 <div class="hero"><div class="eyebrow">Consulenza guidata</div><h1>Troviamo lo smartphone giusto.</h1><p class="sub">Il cliente sceglie le proprie priorità; il sistema propone esclusivamente le varianti effettivamente disponibili nel negozio selezionato.</p></div>
