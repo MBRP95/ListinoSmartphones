@@ -1615,15 +1615,18 @@ function renderOfferEditor(){
  if(!p){host.innerHTML='<div class="notice">Nessuna variante disponibile.</div>';return}
  const offers=p.offers||[];
  if(!offers.length){host.innerHTML='<div class="notice">Questa variante non ha offerte configurate.</div>';return}
- host.innerHTML=getOfferPromoGroups(index).map((g,gi)=>{
-  const first=g.items[0]?.offer,advance=first?offerAdvance(first,p):priceFor(p),groupMethod=first?offerMethod(first,p):'one shot';
+ host.innerHTML=getOfferPromoGroups(index).map(g=>{
   const options=g.items.map(({offer,index:oi})=>{
-   const method=offerMethod(offer,p),count=offerInstallmentCount(offer),monthly=offerMonthlyPayment(offer,p);
+   const method=offerMethod(offer,p),count=offerInstallmentCount(offer),advance=offerAdvance(offer,p),monthly=offerMonthlyPayment(offer,p);
    const total=offerDeviceTotal(offer,p);
-   return '<div style="border-top:1px solid #493b2c;padding:12px 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><strong>'+(method==='finanziato'?'Finanziamento':method==='one shot'?'Pagamento unico':'Rateale')+'</strong><span class="chip">'+(count?count+' rate':'Importo unico')+'</span></div>'+(method==='rateale'?'<div class="field"><label>Rata mensile (€)</label><input type="number" min="0" step="0.01" data-offer-monthly-index="'+oi+'" value="'+(monthly!==null?esc(monthly):'')+'"></div>':method==='finanziato'?'<small class="muted">Rata calcolata: '+(monthly!==null?money(monthly):'da configurare')+' · totale '+(Number.isFinite(total)?money(total):'da configurare')+'</small>':'<small class="muted">Pagamento unico: '+money(total)+'</small>')+'</div>';
+   const title=method==='one shot'?'Pagamento unico':method==='rateale'?'Rateale':'Finanziamento';
+   const amountLabel=method==='one shot'?'Importo totale (€)':method==='rateale'?'Anticipo (€)':'Totale dispositivo (€)';
+   const amountInput='<div class="field"><label>'+amountLabel+'</label><input type="number" min="0" step="0.01" data-offer-amount-index="'+oi+'" value="'+esc(advance)+'"></div>';
+   const monthlyInput=method==='rateale'?'<div class="field"><label>Rata mensile (€)</label><input type="number" min="0" step="0.01" data-offer-monthly-index="'+oi+'" value="'+(monthly!==null?esc(monthly):'')+'"></div>':'';
+   const detail=method==='rateale'?'Totale: '+(Number.isFinite(total)?money(total):'da configurare')+' · '+(count||24)+' rate':method==='finanziato'?'Rata calcolata: '+(monthly!==null?money(monthly):'da configurare')+' · '+(count||'—')+' rate':'Importo complessivo: '+money(total);
+   return '<div style="border-top:1px solid #493b2c;padding:12px 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><strong>'+title+'</strong><span class="chip">'+(count?count+' rate':'Importo unico')+'</span></div><div class="grid">'+amountInput+monthlyInput+'</div><small class="muted">'+detail+'</small></div>';
   }).join('');
-  const amountLabel=groupMethod==='finanziato'?'Totale dispositivo (€)':groupMethod==='one shot'?'Importo totale (€)':'Anticipo (€)';
-  return '<section class="offer-value-row" style="border:1px solid #62472b;border-radius:12px;padding:14px;margin:10px 0;background:#171411"><div style="margin-bottom:10px"><strong>'+esc(g.plan)+'</strong></div><div class="field"><label>'+amountLabel+'</label><input type="number" min="0" step="0.01" data-promo-advance-index="'+gi+'" value="'+esc(advance)+'"></div><small class="muted">Importo condiviso da tutte le opzioni della stessa promo SIM.</small>'+options+'</section>';
+  return '<section class="offer-value-row" style="border:1px solid #62472b;border-radius:12px;padding:14px;margin:10px 0;background:#171411"><div style="margin-bottom:10px"><strong>'+esc(g.plan)+'</strong></div>'+options+'</section>';
  }).join('');
  const msg=document.getElementById('offerValuesMsg');if(msg)msg.textContent='';
 }
@@ -1634,23 +1637,25 @@ async function saveOfferValues(){
  if(!p||!host)return;
  const nextOffers=(p.offers||[]).map(o=>({...o,amounts:Array.isArray(o.amounts)?[...o.amounts]:[]}));
  try{
-  host.querySelectorAll('input[data-promo-advance-index]').forEach(input=>{
-   const group=getOfferPromoGroups(index)[Number(input.dataset.promoAdvanceIndex)],value=String(input.value).trim();
-   if(value==='')throw new Error('Inserisci l’anticipo o l’importo iniziale per ogni promo.');
+  host.querySelectorAll('input[data-offer-amount-index]').forEach(input=>{
+   const offerIndex=Number(input.dataset.offerAmountIndex),value=String(input.value).trim();
+   if(!nextOffers[offerIndex])return;
+   if(value==='')throw new Error('Inserisci l’importo per ogni modalità.');
    const parsed=Number(value);
    if(!Number.isFinite(parsed)||parsed<0)throw new Error('Inserisci importi validi e non negativi.');
-   group?.items.forEach(({index:offerIndex})=>{nextOffers[offerIndex].amounts[0]=parsed});
+   nextOffers[offerIndex].amounts[0]=parsed;
   });
   host.querySelectorAll('input[data-offer-monthly-index]').forEach(input=>{
    const offerIndex=Number(input.dataset.offerMonthlyIndex),value=String(input.value).trim();
    if(!nextOffers[offerIndex])return;
-   if(value==='')throw new Error('Inserisci la rata mensile per ogni finanziamento.');
+   if(value==='')throw new Error('Inserisci la rata mensile per ogni rateale.');
    const parsed=Number(value);
    if(!Number.isFinite(parsed)||parsed<0)throw new Error('Inserisci rate valide e non negative.');
    nextOffers[offerIndex].amounts[1]=parsed;
   });
   nextOffers.forEach(o=>{
    if(offerMethod(o,p)!=='one shot'&&offerInstallmentCount(o)<=0)throw new Error('Durata non valida per una delle opzioni rateali o di finanziamento.');
+   if(offerMethod(o,p)==='rateale'&&(!Number.isFinite(Number(o.amounts[0]))||!Number.isFinite(Number(o.amounts[1]))))throw new Error('Per il rateale servono sia anticipo sia rata mensile.');
   });
  }catch(e){msg.textContent=e.message;return}
  btn.disabled=true;msg.textContent='Salvataggio su Firebase in corso…';
@@ -1660,7 +1665,7 @@ async function saveOfferValues(){
   Object.assign(p,updated);
   await window.firebaseApi.setDoc(window.firebaseApi.doc(window.firebaseApi.db,'settings','catalog'),{updatedAt:window.firebaseApi.serverTimestamp(),deviceCount:catalog.length,updatedBy:window.firebaseApi.auth.currentUser?.uid||''},{merge:true});
   catalogUpdatedAt=new Date();renderDataFreshness();renderOfferEditor();renderCatalog();
-  msg.textContent='Importi salvati. Rate e totali sono calcolati in base alla modalità della promo.';
+  msg.textContent='Importi salvati separatamente per ogni modalità.';
  }catch(e){msg.textContent='Salvataggio non riuscito: '+e.message}
  finally{btn.disabled=false}
 }
