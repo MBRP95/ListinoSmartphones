@@ -1146,7 +1146,8 @@ function generateProposalPdf(){
  const deviceTotal=money(deviceTotalValue);
  const monthlyPayment=offerMonthlyPayment(o,p);
  const installmentCount=offerInstallmentCount(o);
- const rows=[['Piano tariffario',o.plan],['Modalità',method],...(offerType==='finanziato'?[['Totale dispositivo',deviceTotal],['Rata mensile',monthlyPayment!==null?money(monthlyPayment):'Non calcolabile'],['Durata',installmentCount?(installmentCount+' rate'):'Non indicata']]:[['Totale da pagare',deviceTotal]])].filter(x=>x[1]&&x[1]!=='—').map(([k,v])=>'<div class="offer-row"><span>'+esc(k)+'</span><strong>'+esc(v)+'</strong></div>').join('');
+ const advanceValue=offerAdvance(o,p);
+ const rows=[['Piano tariffario',o.plan],['Modalità',method],...(offerType==='rateale'?[['Anticipo',money(advanceValue)],['Rata mensile',monthlyPayment!==null?money(monthlyPayment):'Non configurata'],['Durata',(installmentCount||24)+' rate'],['Totale da pagare',deviceTotal]]:offerType==='finanziato'?[['Totale dispositivo',deviceTotal],['Rata mensile',monthlyPayment!==null?money(monthlyPayment):'Non calcolabile'],['Durata',installmentCount?(installmentCount+' rate'):'Non indicata']]:[['Totale da pagare',deviceTotal]])].filter(x=>x[1]&&x[1]!=='—').map(([k,v])=>'<div class="offer-row"><span>'+esc(k)+'</span><strong>'+esc(v)+'</strong></div>').join('');
  const highlights=match.filter(x=>x!=='Nel budget indicato');
  const highlightHtml=highlights.length?'<section class="highlights"><div class="section-title"><span>01</span><h2>Quello che cercavi</h2></div><div class="highlight-grid">'+highlights.map(x=>'<div class="highlight"><b>✦</b><span>'+esc(x)+'</span></div>').join('')+'</div></section>':'';
  const existing=document.getElementById('proposalOverlay');if(existing)existing.remove();
