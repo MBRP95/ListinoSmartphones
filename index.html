@@ -259,7 +259,52 @@ main{max-width:1240px;margin:38px auto 54px}
 .client-reasons span{padding:5px 8px;border-radius:20px;background:#eef7f3;color:#167454;font-size:10px;font-weight:750}
 @media(max-width:650px){#clientView>.panel:not(#clientShopPanel){padding:19px 15px}.client-answer-grid{grid-template-columns:1fr}.client-answer{min-height:72px;padding:13px}.client-question-top{margin-bottom:14px}#clientView .actions button{min-width:0}}
 
-.client-reasons span.client-unmet{background:#fff0f0!important;color:#b42318!important;border:1px solid #f4c7c7!important}</style>
+.client-reasons span.client-unmet{background:#fff0f0!important;color:#b42318!important;border:1px solid #f4c7c7!important}
+/* UNIFIED DEVICE PROPOSER — BLACK / AMBER / ORANGE / RED */
+:root{--ink:#f5f1e9;--muted:#b7afa2;--line:#39312a;--bg:#080808;--blue:#ffb52e;--green:#e4a52c;--amber:#ff8a00;--navy:#050505;--surface:#11100e;--shadow:0 12px 34px #0008}
+html,body{background:#080808!important;color:#f5f1e9}
+body{background:radial-gradient(ellipse at 50% -15%,#2b170b 0,transparent 46%),#080808!important}
+header{background:#050505!important;border-bottom:1px solid #5a3218;box-shadow:0 8px 28px #000}
+.brand:before{background:linear-gradient(145deg,#ffbd2e,#e54824)!important;color:#080808;border:1px solid #ffcc5c}
+.brand small{color:#c9b49b}
+main{color:#f5f1e9}
+h1,h2,h3,.hero h1,.home-copy h1{color:#fff!important}
+.eyebrow{color:#ffbd36!important}
+.sub,.hint,.muted{color:#b7afa2!important}
+.panel,.device,.home-choice,#clientView>.panel:not(#clientShopPanel),#sellerAuthView .panel,#sellerShopView .panel,#adminView .panel,#storeView .panel{background:#11100f!important;color:#f5f1e9!important;border:1px solid #493322!important;box-shadow:0 8px 28px #0008!important}
+.choice,.client-answer,input,select,textarea{background:#171513!important;color:#f5f1e9!important;border-color:#51402f!important}
+.choice:hover,.choice.selected,.client-answer.selected{background:#281a10!important;border-color:#ff9a22!important;box-shadow:inset 0 0 0 1px #ff9a22!important}
+.choice small,.answer-copy small,label{color:#b7afa2!important}
+.primary,.actions .primary{background:linear-gradient(110deg,#ffb52e,#ef6b1d 58%,#d83a24)!important;color:#170d06!important;box-shadow:0 5px 18px #e75b1d33!important}
+.secondary{background:#29221b!important;color:#f5e8d4!important;border:1px solid #57402b!important}
+.progress{background:#30271e!important}.progress span{background:linear-gradient(90deg,#ffd34c,#ff8a00,#e13e24)!important}
+.client-question-icon,.choice-icon{background:#2a1b10!important;color:#ffc13a!important}
+.client-match b,.card-cta,.choice-content strong{color:#ffb52e!important}
+.client-match-bar{background:#332b24!important}.client-match-bar i{background:linear-gradient(90deg,#ffd34c,#ff8a00,#e13e24)!important}
+.client-reasons span{background:#2a2114!important;color:#ffd27a!important;border:1px solid #76501d}
+.client-reasons span.client-unmet{background:#351512!important;color:#ff8b72!important;border-color:#8e3525!important}
+.stock{background:#2b2112!important;color:#ffd27a!important}
+.chip{background:#2b2115!important;color:#ffd27a!important}
+.notice{background:#2c1c0e!important;color:#ffd58a!important;border-color:#81501f!important}
+.home-intro{background:radial-gradient(ellipse at 80% 50%,#4a210d 0,#1c1009 42%,#050505 85%)!important;border:1px solid #69401e}
+.home-copy .eyebrow,.home-section-head .eyebrow{color:#ffbd36!important}
+.home-copy .sub{color:#d1c3b2!important}
+.home-status{border-color:#74451f;color:#ffd58a}.home-status i{background:#ffad24;box-shadow:0 0 0 4px #ffad2422}
+.art-orbit{border-color:#ff9b2444}.orbit-two{border-color:#ff4c2444}
+.art-phone{border-color:#ffb52e!important;background:linear-gradient(145deg,#3a1b0b,#100b08)!important;box-shadow:0 0 28px #f36b2180!important}
+.art-phone:before{background:linear-gradient(145deg,#2a160c,#100b08)!important;border-color:#ff9a2255}
+.art-phone span{background:#ffbd36!important}.art-phone b,.art-phone i{border-color:#ffbd36!important;background:#a83b1d!important}
+.art-chip{border-color:#ff9a2266;background:#1b100bcc;color:#ffd27a}
+.home-choice{border-color:#493322!important}.home-choice:hover{border-color:#ff9a22!important;box-shadow:0 14px 30px #e95b1d18!important}
+.home-footnote{border-color:#493322;color:#9d8d7c}
+#adminView>.actions{background:#20170f!important}
+#adminView>.actions button{color:#f5e8d4}
+#storeView>.hero,#adminView>.hero{border-color:#493322!important}
+#storeView .panel>h2:before,#adminView .panel>h2:before{background:linear-gradient(#ffd34c,#e54824)!important}
+table{color:#f5f1e9}th{background:#211a13!important;color:#d7b98e!important}td{border-color:#39312a!important}
+input::placeholder{color:#84796c}
+footer{color:#9d9182!important}
+</style>
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head><body>
 <header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav><button id="homeBtn" onclick="goHome()" style="display:none">Indietro</button></nav></header>
@@ -685,7 +730,7 @@ function storageGb(p){const n=String(p.name||'');const specs=Object.fromEntries(
 function deviceFeatureText(p){return getDeviceSpecs(p).map(x=>x.join(' ')).join(' ').toLowerCase()}
 function deviceScore(p){
  const a=answers,price=priceFor(p),text=deviceFeatureText(p),specs=Object.fromEntries(getDeviceSpecs(p).map(x=>[x[0],String(x[1])]));let score=0,max=0,reasons=[];
- const unmet=[];const add=(weight,points,reason,miss)=>{max+=weight;score+=points;if(points>=weight*.72&&reason)reasons.push(reason);else if(miss)unmet.push(miss)};
+ const unmet=[];const add=(weight,points,reason,miss)=>{max+=weight;score+=points;if(points>=weight*.45&&reason)reasons.push(reason);else if(miss&&points<=weight*.25)unmet.push(miss)};
  if(a.budget&&a.budget!=='any'){const cap=a.budget==='over800'?800:Number(a.budget);const ok=a.budget==='over800'?price>800:price<=cap;add(20,ok?20:0,ok?'Nel budget indicato':'','Fuori budget');}
  if(a.storage&&a.storage!=='any'){const cap=storageGb(p),need=Number(a.storage);const ok=cap!==null&&cap>=need;add(10,ok?10:0,ok?'Memoria adeguata':'',cap===null?'Memoria non verificata':'Memoria inferiore a quella richiesta');}
  if(a.system&&a.system!=='any'){const apple=brandOf(p.name)==='apple',match=a.system==='iOS'?apple:!apple;add(12,match?12:0,match?'Sistema operativo in linea con la preferenza':'','Sistema operativo diverso');}
@@ -765,7 +810,7 @@ function generateProposalPdf(){
  const html='<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>La tua proposta smartphone</title><style>'+css+'</style></head><body onload="(function(){const p=document.querySelector(&quot;.sheet&quot;),s=document.querySelector(&quot;.preview-stage&quot;);function fit(){if(!p||!s)return;const z=Math.min(1,(window.innerWidth-16)/793.7);if(window.matchMedia(&quot;print&quot;).matches){p.style.transform=&quot;none&quot;;s.style.width=&quot;210mm&quot;;s.style.height=&quot;297mm&quot;;return}p.style.transform=&quot;scale(&quot;+z+&quot;)&quot;;s.style.width=(793.7*z)+&quot;px&quot;;s.style.height=(1122.5*z)+&quot;px&quot;}fit();window.addEventListener(&quot;resize&quot;,fit);window.addEventListener(&quot;beforeprint&quot;,()=>{p.style.transform=&quot;none&quot;;s.style.width=&quot;210mm&quot;;s.style.height=&quot;297mm&quot;});window.addEventListener(&quot;afterprint&quot;,fit)})()"><div class="preview-stage"><main class="sheet"><header class="hero"><div class="tunnel"><div class="tunnel-lines"></div></div><div class="top-shade"></div><div class="brandline"><div class="brand">DEVICE PROPOSER ✦</div><div class="date">PROPOSTA · '+new Date().toLocaleDateString('it-IT')+'</div></div><div class="hero-copy"><div class="eyebrow">LA TUA PROSSIMA ESPERIENZA</div><h1>'+esc(p.name)+'</h1><p class="sub">Tecnologia, stile e prestazioni in un solo dispositivo.</p><div class="price-row"><div class="price">'+money(priceFor(p))+'</div><div class="price-note">PREZZO<br>SMARTPHONE</div></div></div><div class="device-orbit"><div class="art">'+phoneVisual()+'</div></div><div class="neon-tag">SCELTO PER TE ✦</div></header><div class="content">'+highlightHtml+'<section class="tech"><div class="tech-head"><h2>Le sue carte vincenti</h2><small>DATI TECNICI SELEZIONATI</small></div><div class="specs">'+(specHtml||'<div class="spec"><strong>Dettagli tecnici non disponibili</strong></div>')+'</div></section><section class="offer"><div class="offer-kicker">✦ LA TUA OFFERTA</div><div class="plan">'+esc(o.plan)+'</div>'+rows+'</section></div><div class="foot">Proposta informativa basata sui dati del listino caricato. Prezzi, disponibilità e condizioni sono da verificare al momento della sottoscrizione.</div><div class="page-mark">DEVICE PROPOSER · SMARTPHONE</div></main></div><div class="toolbar"><button class="primary" onclick="window.print()">Stampa / Salva in PDF</button><button onclick="window.close()">Chiudi anteprima</button></div></body></html>';
  w.document.write(html);w.document.close();
 }
-function phoneVisual(){return '<svg viewBox="0 0 120 190" role="img" aria-label="Illustrazione stilizzata di smartphone" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="3" width="84" height="184" rx="18" fill="#172033"/><rect x="23" y="9" width="74" height="172" rx="14" fill="#dce7fb"/><rect x="27" y="14" width="66" height="162" rx="10" fill="#edf3ff"/><path d="M27 112 Q60 70 93 103 V166 Q93 176 83 176 H37 Q27 176 27 166Z" fill="#2457d6"/><circle cx="60" cy="31" r="3" fill="#172033"/><rect x="47" y="20" width="26" height="3" rx="2" fill="#172033"/><circle cx="60" cy="163" r="5" fill="#dce7fb"/><path d="M36 75 Q60 48 84 75" fill="none" stroke="#78a0f4" stroke-width="5" stroke-linecap="round"/><circle cx="60" cy="91" r="12" fill="#fff" opacity=".8"/></svg>'}
+function phoneVisual(){return '<svg viewBox="0 0 120 190" role="img" aria-label="Illustrazione stilizzata di smartphone" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="3" width="84" height="184" rx="18" fill="#111111" stroke="#ff9a22" stroke-width="1.5"/><rect x="23" y="9" width="74" height="172" rx="14" fill="#28221b"/><rect x="27" y="14" width="66" height="162" rx="10" fill="#17130f"/><path d="M27 112 Q60 70 93 103 V166 Q93 176 83 176 H37 Q27 176 27 166Z" fill="#e84b24"/><circle cx="60" cy="31" r="3" fill="#f6c84a"/><rect x="47" y="20" width="26" height="3" rx="2" fill="#f6c84a"/><circle cx="60" cy="163" r="5" fill="#ffbd36"/><path d="M36 75 Q60 48 84 75" fill="none" stroke="#ffb52e" stroke-width="5" stroke-linecap="round"/><circle cx="60" cy="91" r="12" fill="#fff" opacity=".82"/></svg>'}
 function getDeviceSpecs(p){
  const modelId=p?.modelId||(p?.name?modelDocumentId(p.name):'');
  const m=p?.modelSpecs||window.currentModelSpecs?.[modelId]||{};
