@@ -48,7 +48,7 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 <div class="field"><label>Modello</label><select id="editDevice" onchange="loadEditor()"></select></div>
 <h3>Varianti</h3><div class="tablewrap"><table><thead><tr><th>Variante</th><th>RAM</th><th>Memoria</th></tr></thead><tbody id="variantRows"></tbody></table></div>
 <h3 style="margin-top:18px">Specifiche condivise</h3><div class="grid">
-<div class="field"><label>Tecnologia display</label><input id="fDisplayTech" placeholder="AMOLED, OLED, LCD"></div>
+<div class="field"><label>RAM comune (GB)</label><input id="fSharedRam" placeholder="Es. 8"></div><div class="field"><label>Tecnologia display</label><input id="fDisplayTech" placeholder="AMOLED, OLED, LCD"></div>
 <div class="field"><label>Dimensione display</label><input id="fDisplaySize" placeholder="6,7 pollici"></div>
 <div class="field"><label>Risoluzione</label><input id="fResolution" placeholder="2340 × 1080 pixel"></div>
 <div class="field"><label>Frequenza aggiornamento</label><input id="fRefresh" placeholder="120 Hz"></div>
@@ -706,7 +706,7 @@ function modelVariants(){
  return catalog.filter(x=>technicalModelKey(x.name)===key);
 }
 const sharedEditorFields={
- displayTech:'fDisplayTech',displaySize:'fDisplaySize',resolution:'fResolution',
+ ram:'fSharedRam',displayTech:'fDisplayTech',displaySize:'fDisplaySize',resolution:'fResolution',
  refreshRate:'fRefresh',cpu:'fCpu',battery:'fBattery',charging:'fCharging',
  cameraMain:'fCameraMain',cameraUltra:'fCameraUltra',cameraTele:'fCameraTele',
  cameraMacro:'fCameraMacro',cameraDepth:'fCameraDepth',cameraFront:'fCameraFront',
@@ -733,6 +733,7 @@ function variantSpecsFromName(v){
   const bare=[...name.matchAll(/\b(64|128|256|512|1024|2048)\b(?=\s|$)/g)];
   if(bare.length)storage=bare[bare.length-1][1]+' GB';
  }
+ if(!ram){const modelId=v.modelId||modelDocumentId(v.name);const sharedRam=v.modelSpecs?.ram||window.currentModelSpecs?.[modelId]?.ram;if(sharedRam)ram=String(sharedRam);}
  if(ram&&!/\bGB\b/i.test(ram))ram+=' GB';
  if(storage&&!/\bGB\b|\bTB\b/i.test(storage))storage+=' GB';
  return {ram:ram||'—',storage:storage||'—'};
