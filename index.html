@@ -548,6 +548,7 @@ async function startClientMode(){
  document.querySelector('#clientView .hero').classList.add('hidden');
  document.querySelector('#clientView > .panel:not(#clientShopPanel)').classList.add('hidden');
  const api=window.firebaseApi;
+ try{
  const snap=await api.getDocs(api.collection(api.db,'shops'));
  const shops=new Map();
  snap.docs.forEach(d=>{const x=d.data();if(x.active!==false)shops.set(d.id,x.name||d.id)});
