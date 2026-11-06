@@ -464,7 +464,7 @@ function getDeviceSpecs(p){
  const variantRam=variant.ram&&variant.ram!=='—'?variant.ram:'';
  const variantStorage=variant.storage&&variant.storage!=='—'?variant.storage:'';
  return [
-  ['RAM',p?.ram||variantRam],['Memoria interna',p?.storage||variantStorage],
+  ['RAM',(p?.ram&&!/^(?:—|–|-|n\/a|na)$/i.test(String(p.ram).trim()))?p.ram:variantRam],['Memoria interna',(p?.storage&&!/^(?:—|–|-|n\/a|na)$/i.test(String(p.storage).trim()))?p.storage:variantStorage],
   ['Tecnologia display',m.displayTech||p?.display],
   ['Dimensione display',m.displaySize],['Risoluzione',m.resolution],
   ['Frequenza aggiornamento',m.refreshRate],
@@ -714,7 +714,7 @@ const sharedEditorFields={
 };
 function variantSpecsFromName(v){
  const name=String(v.name||'');
- let ram=(v.ram!==undefined&&v.ram!==null&&String(v.ram).trim())?String(v.ram):'';
+ let ram=(v.ram!==undefined&&v.ram!==null&&!/^(?:—|–|-|n\/a|na)$/i.test(String(v.ram).trim()))?String(v.ram).trim():'';
  let storage=(v.storage!==undefined&&v.storage!==null&&String(v.storage).trim())?String(v.storage):'';
  const combo=name.match(/\b(\d{1,2})\s*\+\s*(\d{2,4})\s*GB\b/i);
  if(combo){
