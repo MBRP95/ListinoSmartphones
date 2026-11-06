@@ -360,6 +360,18 @@ body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreen
  #clientView .spec-item strong{font-size:14px!important;line-height:1.45!important}
 }
 
+
+/* Client privacy and consistent offer palette */
+#clientView .stock,#clientView .availability,#clientView .device-stock{display:none!important}
+#clientView .offer-kicker{color:#ffd27a!important;background:rgba(255,151,35,.12)!important;border-color:#9a622d!important}
+#clientView .offer-choice{color:#f7eee2!important}
+#clientView .offer-choice b,#clientView .offer-choice strong{color:#fff1d6!important}
+#clientView .offer-choice small{color:#d9b98b!important}
+#clientView .offer-summary{color:#f4dfc1!important;background:#17110c!important;border-color:#80542d!important}
+#clientView .offer-summary *{color:inherit!important}
+#clientFullscreenBtn{display:block!important;position:fixed!important;z-index:10020!important;right:14px!important;top:14px!important;width:42px!important;height:42px!important;padding:0!important;border-radius:50%!important;background:#17130fee!important;color:#ffd27a!important;border:1px solid #a66b2c!important;font-size:21px!important;line-height:1!important;opacity:.9!important}
+#clientView #selectedDevicePanel{display:block}
+
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head><body>
@@ -386,6 +398,7 @@ body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreen
 <div class="home-footnote"><span>DEVICE PROPOSER</span><span>SMARTPHONE SALES ASSISTANT</span></div>
 </section>
 <section id="clientView" class="hidden">
+<button id="clientFullscreenBtn" type="button" onclick="toggleClientFullscreen()" aria-label="Attiva schermo intero" title="Schermo intero">⛶</button>
 <div id="clientShopPanel" class="panel hidden" style="max-width:560px"><h2>Seleziona il negozio</h2><p class="hint">Scegli il punto vendita per visualizzare soltanto gli smartphone disponibili nelle sue giacenze.</p><div class="field"><label for="clientShopSelect">Negozio</label><select id="clientShopSelect"></select></div><div class="actions"><button class="primary" onclick="confirmClientShop()">Continua</button></div></div>
 <div id="clientStartPanel" class="panel hidden"><div class="eyebrow">Come preferisci procedere?</div><h1>Ti guidiamo nella scelta?</h1><p class="hint">Puoi rispondere a poche domande oppure scegliere direttamente il modello che hai già in mente.</p><div class="actions"><button class="primary" onclick="beginGuidedChoice()">Sì, guidami nella scelta</button><button class="secondary" onclick="beginDirectChoice()">No, so già cosa cerco</button></div></div>
 <div id="clientDirectPanel" class="panel hidden"><div class="eyebrow">Catalogo disponibile</div><h2>Scegli uno smartphone</h2><input id="clientDeviceSearch" placeholder="Cerca marca o modello" oninput="renderClientDeviceList()"><div id="clientDeviceList" class="cards" style="margin-top:14px"></div></div>
@@ -583,7 +596,7 @@ async function startClientMode(){
 function confirmClientShop(){const id=document.getElementById('clientShopSelect').value;if(!id){alert('Seleziona un negozio.');return}currentShopId=id;document.getElementById('clientShopPanel').classList.add('hidden');document.getElementById('clientStartPanel').classList.remove('hidden')}
 function beginGuidedChoice(){document.getElementById('clientStartPanel').classList.add('hidden');document.getElementById('clientDirectPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.remove('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel):not(#clientStartPanel):not(#clientDirectPanel)').classList.remove('hidden');startClientWizard()}
 function beginDirectChoice(){document.getElementById('clientStartPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.add('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel):not(#clientStartPanel):not(#clientDirectPanel)').classList.add('hidden');document.getElementById('clientDirectPanel').classList.remove('hidden');document.getElementById('clientDeviceSearch').value='';renderClientDeviceList()}
-function renderClientDeviceList(){const q=norm(document.getElementById('clientDeviceSearch').value);const rows=currentAvailable().filter(({p})=>!q||norm(p.name).includes(q));document.getElementById('clientDeviceList').innerHTML=rows.length?rows.map(({s,p})=>{const i=catalog.indexOf(p);return '<button class="device product-card" onclick="selectDevice('+i+',\''+esc(s.sku)+'\')"><div class="devicehead"><h3>'+esc(p.name)+'</h3><span class="stock">'+available(s)+' disponibili</span></div><div class="price">'+money(priceFor(p))+'</div><div class="card-cta">Scegli questo modello →</div></button>'}).join(''):'<div class="notice">Nessun dispositivo trovato.</div>'}
+function renderClientDeviceList(){const q=norm(document.getElementById('clientDeviceSearch').value);const rows=currentAvailable().filter(({p})=>!q||norm(p.name).includes(q));document.getElementById('clientDeviceList').innerHTML=rows.length?rows.map(({s,p})=>{const i=catalog.indexOf(p);return '<button class="device product-card" onclick="selectDevice('+i+',\''+esc(s.sku)+'\')"><div class="devicehead"><h3>'+esc(p.name)+'</h3></div><div class="price">'+money(priceFor(p))+'</div><div class="card-cta">Scegli questo modello →</div></button>'}).join(''):'<div class="notice">Nessun dispositivo trovato.</div>'}
 function startClientWizard(){
  step=0;answers={};
  document.getElementById('clientDirectPanel').classList.add('hidden');
@@ -874,11 +887,13 @@ function selectDevice(index,sku){
  const p=catalog[index];if(!p)return;
  const offers=p.offers||[],visibleOffers=[];
  offers.forEach((o,i)=>{const priceKey=JSON.stringify([o.method||'',o.installments??null,o.amounts||[]]);if(!visibleOffers.some(x=>x.priceKey===priceKey))visibleOffers.push({o,i,priceKey})});
+ const directMode=document.getElementById('clientDirectPanel')&&!document.getElementById('clientDirectPanel').classList.contains('hidden');
+ if(directMode){document.getElementById('clientDirectPanel').classList.add('hidden');document.getElementById('results').classList.remove('hidden');}
  const panel=document.getElementById('selectedDevicePanel');panel.classList.remove('hidden');
  const stockItem=stock.find(s=>String(s.sku)===String(sku)),specs=getDeviceSpecs(p);
  document.getElementById('selectedDeviceContent').innerHTML=`
  <div class="selected-product">
-  <div class="selected-info"><div class="eyebrow">Smartphone selezionato</div><h2>${esc(p.name)}</h2><p class="hint">SKU ${esc(sku)} · ${stockItem?available(stockItem):'—'} disponibili</p><div class="price">${money(priceFor(p))}</div><span class="muted">Prezzo di listino</span></div>
+  <div class="selected-info"><div class="eyebrow">Smartphone selezionato</div><h2>${esc(p.name)}</h2><p class="hint">${esc(p.band||'Smartphone')}</p><div class="price">${money(priceFor(p))}</div><span class="muted">Prezzo di listino</span></div>
  </div>
  <h3 class="section-title">Caratteristiche tecniche</h3>
  <div class="spec-grid">${specs.length?specs.map(x=>`<div class="spec-item"><span>${esc(x[0])}</span><strong>${esc(x[1])}</strong></div>`).join(''):'<span class="muted">Scheda tecnica non ancora disponibile.</span>'}</div>
