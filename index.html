@@ -708,17 +708,26 @@ async function callUserAdminApi(path,payload={}){
  return data;
 }
 async function loadIndividualSellers(){
- const msg=document.getElementById('individualUsersMsg'),box=document.getElementById('individualUsersList');
+ const msg=document.getElementById('individualUsersMsg'),box=document.getElementById('individualUsersList'),sel=document.getElementById('newSellerShop');
+ msg.textContent='Caricamento account e negozi…';
+ const errors=[];
  try{
-  msg.textContent='Caricamento account…';
-  const [users,shopsSnap]=await Promise.all([callUserAdminApi('/users/list'),window.firebaseApi.getDocs(window.firebaseApi.collection(window.firebaseApi.db,'shops'))]);
+  const shopsSnap=await window.firebaseApi.getDocs(window.firebaseApi.collection(window.firebaseApi.db,'shops'));
   const shops=shopsSnap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false);
-  const sel=document.getElementById('newSellerShop');
   sel.innerHTML='<option value="">Seleziona negozio…</option>'+shops.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name||x.id)+'</option>').join('');
+ }catch(e){
+  sel.innerHTML='<option value="">Errore caricamento negozi</option>';
+  errors.push('Negozi (Firestore): '+(e.code||e.message||e));
+ }
+ try{
+  const users=await callUserAdminApi('/users/list');
   const rows=(users.users||[]).map(u=>'<tr><td>'+esc(u.username||'')+'</td><td>'+esc(u.role==='admin'?'Amministratore':'Dipendente')+'</td><td>'+esc(u.displayName||'')+'</td><td>'+esc(u.shopName||u.shopId||'—')+'</td><td>'+(u.active?'Attivo':'Disattivato')+'</td><td><button class="secondary" onclick="resetIndividualSellerPassword(\''+esc(u.uid)+'\',\''+esc(u.username)+'\')">Reimposta password</button> <button class="danger" onclick="deleteIndividualUser(\''+esc(u.uid)+'\',\''+esc(u.username)+'\')">Elimina definitivamente</button></td></tr>').join('');
   box.innerHTML='<table><thead><tr><th>Username</th><th>Ruolo</th><th>Nome</th><th>Negozio</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>'+rows+'</tbody></table>';
-  msg.textContent='Account caricati: '+(users.users||[]).length;
- }catch(e){msg.textContent='Errore: '+e.message}
+ }catch(e){
+  box.innerHTML='<div class="notice">Impossibile caricare gli account: '+esc(e.code||e.message||String(e))+'</div>';
+  errors.push('Account (backend): '+(e.code||e.message||e));
+ }
+ msg.textContent=errors.length?'Problemi di caricamento — '+errors.join(' | '):'Account caricati correttamente.';
 }
 function updateNewAccountRole(){
  const isAdmin=document.getElementById('newSellerRole').value==='admin';
@@ -806,7 +815,6 @@ async function verifySellerPassword(){
    setupEditor();
    document.getElementById('adminView').classList.remove('hidden');
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.remove('hidden'));
-   loadIndividualSellers();
   }else if(profile.role==='seller'){
    document.getElementById('sellerShopView').classList.add('hidden');
    document.getElementById('storeView').classList.remove('hidden');
