@@ -17,6 +17,7 @@ footer{max-width:1180px;margin:20px auto 45px;padding:0 18px;color:var(--muted);
 @media(max-width:650px){header{align-items:flex-start;flex-direction:column}nav{width:100%}nav button{flex:1}.panel{padding:16px}.toolbar{display:block}.toolbar .field{margin-bottom:10px}}
 
 .seller-offer-groups{display:grid;gap:12px;margin-top:12px}.seller-offer-group{padding:14px;border:1px solid var(--line);border-radius:13px;background:#fbfcff;display:grid;gap:10px}.seller-offer-group>strong{font-size:14px}.seller-monthly{font-size:20px;font-weight:900;color:#1f46b3}.seller-offer-options{display:grid;gap:8px}.seller-offer-option{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px;border:1px solid #e4eaf3;border-radius:10px;background:#fff;font-size:13px}.seller-offer-option button{white-space:nowrap}@media(max-width:600px){.seller-offer-option{align-items:flex-start;flex-direction:column}.seller-offer-option button{width:100%}}
+.offer-step{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:14px 0}.promo-choice{min-height:145px;text-align:left;padding:18px;display:flex;flex-direction:column;align-items:flex-start;gap:10px}.promo-choice .promo-device-price{font-size:19px;color:#ffd27a}.promo-choice small{color:#d3b995}.promo-rate-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:12px 0}.promo-rate-head h3{margin:4px 0}.offer-rate-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}.offer-rate-options .offer-choice{min-height:125px;text-align:left;padding:15px;display:flex;flex-direction:column;gap:8px}.offer-rate-options .offer-choice strong{font-size:14px;line-height:1.45}.offer-rate-options .offer-choice.selected{border-color:#ffae22;box-shadow:0 0 0 2px #ffae2240}.seller-offer-option small{display:block;margin-top:6px;color:var(--muted,#9aa6b8);line-height:1.5}#proposalOverlay{isolation:isolate;contain:layout style}
 /* Visual refresh: Device Proposer */
 :root{--ink:#17243b;--muted:#66758d;--line:#e3e9f2;--bg:#f3f6fb;--blue:#2859d8;--green:#087b57;--amber:#8a5b08;--navy:#101b32;--surface:#fff;--shadow:0 12px 34px #14213b0b}
 body{background:radial-gradient(ellipse at 50% -18%,#e6edff 0,transparent 48%),var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Arial}
@@ -391,10 +392,9 @@ body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreen
  <div class="home-copy"><div class="eyebrow">SMARTPHONE · CONSULENZA · GESTIONE</div><h1>La scelta giusta,<br>parte da qui.</h1><p class="sub">Uno spazio unico per guidare il cliente verso il dispositivo più adatto e gestire catalogo, prezzi e disponibilità del punto vendita.</p><span class="home-status"><i></i> Piattaforma operativa</span></div>
  <div class="home-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-phone"><span></span><b></b><i></i></div><div class="art-chip">DEVICE<br>PROPOSER</div></div>
 </div>
-<div class="home-section-head"><div><div class="eyebrow">SCEGLI IL TUO PERCORSO</div><h2>Come vuoi iniziare?</h2></div><span class="home-caption">ACCESSO RAPIDO</span></div>
-<div class="home-choices">
-<button class="choice home-choice client-choice" onclick="enterClient()"><span class="choice-icon">01</span><span class="choice-content"><b>Modalità Cliente</b><small>Una consulenza guidata, semplice e intuitiva, per individuare lo smartphone più adatto alle esigenze del cliente.</small><strong>Avvia la consulenza <em>↗</em></strong></span></button>
-<button class="choice home-choice staff-choice" onclick="requestSellerAccess()"><span class="choice-icon">02</span><span class="choice-content"><b>Area riservata</b><small>Accedi agli strumenti di lavoro: catalogo, listino, magazzino e gestione amministrativa.</small><strong>Accedi al gestionale <em>↗</em></strong></span></button>
+<div class="home-section-head"><div><div class="eyebrow">ACCESSO ALLA PIATTAFORMA</div><h2>Entra in Device Proposer</h2></div><span class="home-caption">ACCESSO UNICO</span></div>
+<div class="home-choices" style="grid-template-columns:minmax(0,520px)">
+<button class="choice home-choice staff-choice" onclick="requestUnifiedAccess()"><span class="choice-icon">↗</span><span class="choice-content"><b>Accedi</b><small>Inserisci le tue credenziali. Device Proposer riconoscerà automaticamente il tuo profilo e aprirà la modalità corretta.</small><strong>Accedi alla piattaforma <em>↗</em></strong></span></button>
 </div>
 <div class="home-footnote"><span>DEVICE PROPOSER</span><span>SMARTPHONE SALES ASSISTANT</span></div>
 </section>
@@ -512,24 +512,21 @@ function matchScore(a,b){
 function autoMatch(s){let ranked=catalog.map((p,i)=>({i,score:matchScore(s.description,p.name)})).sort((a,b)=>b.score-a.score);return ranked[0]?.score>=.48?ranked[0].i:-1}
 function autoMatchAll(){stock.forEach(s=>{if(mapped(s)<0){const i=autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}}});renderAll();alert('Abbinamento automatico completato. Verifica manualmente ogni SKU: non è una conferma di corrispondenza.')}
 async function goHome(){if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}currentUserProfile=null;['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';}
-function enterClient(){
- requestedAccessRole='client';
- clientLoginVerified=false;
+function requestUnifiedAccess(){
+ requestedAccessRole='auto';clientLoginVerified=false;
  document.getElementById('homeView').classList.add('hidden');
- document.getElementById('clientView').classList.add('hidden');
- document.getElementById('sellerShopView').classList.add('hidden');
- document.getElementById('storeView').classList.add('hidden');
- document.getElementById('adminView').classList.add('hidden');
+ ['clientView','sellerShopView','storeView','adminView'].forEach(id=>document.getElementById(id).classList.add('hidden'));
  document.getElementById('sellerAuthView').classList.remove('hidden');
  document.getElementById('homeBtn').style.display='none';
- document.querySelector('#sellerAuthView .eyebrow').textContent='Accesso cliente';
+ document.querySelector('#sellerAuthView .eyebrow').textContent='Accesso piattaforma';
  document.querySelector('#sellerAuthView h1').textContent='Benvenuto.';
- document.querySelector('#sellerAuthView .sub').textContent='Inserisci le credenziali cliente per avviare la consulenza.';
+ document.querySelector('#sellerAuthView .sub').textContent='Inserisci username e password: ti porteremo automaticamente nella tua area.';
  document.getElementById('sellerPassword').value='';
  document.getElementById('sellerUsername').value='';
- document.getElementById('sellerAuthMsg').textContent='Accesso riservato alla modalità Cliente.';
+ document.getElementById('sellerAuthMsg').textContent='';
  document.getElementById('sellerUsername').focus();
 }
+function enterClient(){requestUnifiedAccess()}
 async function startSellerMode(){
  const sel=document.getElementById('sellerShopSelect'),msg=document.getElementById('sellerShopMsg');
  sel.innerHTML='<option value="">Caricamento negozi...</option>';msg.textContent='';
@@ -819,8 +816,7 @@ async function verifySellerPassword(){
   const profile=profileSnap.data();
   if(profile.active!==true)throw new Error('Account disattivato. Contatta l’amministratore.');
   if(!['admin','seller','client'].includes(profile.role))throw new Error('Ruolo utente non valido.');
-  if(requestedAccessRole==='client'&&profile.role!=='client')throw new Error('Queste credenziali non sono abilitate alla modalità Cliente.');
-  if(requestedAccessRole==='staff'&&profile.role==='client')throw new Error('Usa le credenziali dipendenti per accedere all’area negozio.');
+  requestedAccessRole=profile.role==='client'?'client':'staff';
   currentUserProfile={...profile,uid:credential.user.uid};
   selectedShopFilter=profile.role==='seller'?'':'';
   if(profile.role==='admin') await loadAuthenticatedData({loadStock:true});
@@ -841,7 +837,6 @@ async function verifySellerPassword(){
    selectedShopFilter=profile.shopId;currentShopId=profile.shopId;
    renderAll();
   }else{
-   if(requestedAccessRole!=='client')throw new Error('Accesso cliente non autorizzato.');
    clientLoginVerified=true;
    await startClientMode();
   }
@@ -928,15 +923,66 @@ function selectDevice(index,sku){
  </div>
  <h3 class="section-title">Caratteristiche tecniche</h3>
  <div class="spec-grid">${specs.length?specs.map(x=>`<div class="spec-item"><span>${esc(x[0])}</span><strong>${esc(x[1])}</strong></div>`).join(''):'<span class="muted">Scheda tecnica non ancora disponibile.</span>'}</div>
- <h3 class="section-title">Scegli l'offerta da proporre</h3>
- <div class="cards offer-grid" id="offerChoices">${visibleOffers.map(({o,i})=>`<button class="device choice offer-choice ${i===0?'selected':''}" onclick="selectOffer(${i})"><span class="offer-kicker">${esc(o.method==='one shot'?'PAGAMENTO UNICO':o.method==='finanziato'?'FINANZIAMENTO':'RATEALE')}</span><b>${esc(o.plan)}</b><small>${o.installments?o.installments+' rate':'Condizioni da listino'}</small><strong>${o.method==='one shot'?money(o.amounts?.[0]):(o.amounts||[]).map(v=>money(v)).join(' · ')}</strong></button>`).join('')}</div>
- <div id="offerSummary" class="notice offer-summary"></div>
- <div class="actions"><button class="secondary" onclick="document.getElementById('selectedDevicePanel').classList.add('hidden')">Chiudi</button><button class="primary" onclick="generateProposalPdf()">Genera proposta PDF</button></div>
- <p class="hint">Il PDF si apre nella finestra di stampa: scegli “Salva come PDF”.</p>`;
- if(!offers.length)document.getElementById('offerSummary').textContent='Non sono presenti offerte per questo dispositivo.';else selectOffer(0);
+ <h3 class="section-title">1. Scegli la promozione SIM</h3>
+ <div id="offerChoices" class="offer-step"></div>
+ <div id="offerSummary" class="notice offer-summary hidden"></div>
+ <div class="actions"><button class="secondary" onclick="document.getElementById('selectedDevicePanel').classList.add('hidden')">Chiudi</button><button id="clientGeneratePdf" class="primary hidden" onclick="generateProposalPdf()">Genera proposta PDF</button></div>
+ <p class="hint">Dopo aver scelto la promozione, potrai selezionare la durata del finanziamento.</p>`;
+ if(!offers.length)document.getElementById('offerChoices').innerHTML='<div class="notice">Non sono presenti offerte per questo dispositivo.</div>';
+ else renderPromoSelection('offerChoices',index,'client');
  panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
-function selectOffer(index){const p=catalog[selectedDeviceIndex];if(!p||!p.offers?.[index])return;selectedOfferIndex=index;document.querySelectorAll('#offerChoices button').forEach((b,i)=>b.classList.toggle('selected',i===index));const o=p.offers[index],a=o.amounts||[];let detail='';if(o.method==='one shot')detail='Pagamento in un’unica soluzione: '+money(a[0]);else detail='Importi da listino: '+a.map(money).join(' · ')+(o.installments?' · '+o.installments+' rate':'');document.getElementById('offerSummary').textContent=o.plan+' — '+(o.method==='one shot'?'Pagamento unico':o.method==='finanziato'?'Finanziamento':'Rateale')+' — '+detail}
+function getOfferPromoGroups(deviceIndex){
+ const groups=new Map();
+ (catalog[deviceIndex]?.offers||[]).forEach((offer,index)=>{
+  const plan=String(offer.plan||'Promozione').trim();
+  if(!groups.has(plan))groups.set(plan,{plan,items:[]});
+  groups.get(plan).items.push({offer,index});
+ });
+ return [...groups.values()];
+}
+function renderPromoSelection(containerId,deviceIndex,mode){
+ const host=document.getElementById(containerId),groups=getOfferPromoGroups(deviceIndex);
+ if(!host)return;
+ host.innerHTML=groups.map((g,i)=>{
+  const ref=g.items.find(x=>x.offer.method==='finanziato')||g.items[0];
+  const amount=ref.offer.amounts?.[0];
+  return '<button type="button" class="device choice promo-choice" data-promo-index="'+i+'"><span class="offer-kicker">PROMO SIM</span><b>'+esc(g.plan)+'</b><strong class="promo-device-price">Dispositivo: '+(amount!=null?money(amount):money(priceFor(catalog[deviceIndex])))+'</strong><small>'+g.items.length+' opzioni disponibili</small></button>';
+ }).join('');
+ host.querySelectorAll('[data-promo-index]').forEach(btn=>btn.addEventListener('click',()=>showPromoRates(deviceIndex,Number(btn.dataset.promoIndex),mode)));
+}
+function showPromoRates(deviceIndex,groupIndex,mode){
+ const p=catalog[deviceIndex],group=getOfferPromoGroups(deviceIndex)[groupIndex];
+ const host=document.getElementById(mode==='client'?'offerChoices':'sellerOfferGroups');
+ if(!p||!group||!host)return;
+ const title='<div class="promo-rate-head"><button type="button" class="secondary" id="changePromo">← Cambia promozione</button><div><span class="offer-kicker">PROMO SIM SELEZIONATA</span><h3>'+esc(group.plan)+'</h3></div></div>';
+ const options=group.items.map(({offer,index})=>{
+  const a=offer.amounts||[],devicePrice=a[0]!=null?money(a[0]):money(priceFor(p));
+  const detail=offer.method==='finanziato'
+   ? (offer.installments||'—')+' rate · '+(a[1]!=null?money(a[1])+'/mese':'rata non indicata')+' · dispositivo '+devicePrice
+   : offer.method==='one shot'?'Pagamento unico · dispositivo '+devicePrice:'Rateale · '+a.map(money).join(' · ');
+  if(mode==='seller')return '<div class="seller-offer-option"><span><b>'+(offer.method==='finanziato'?'Finanziamento':offer.method==='one shot'?'Pagamento unico':'Rateale')+'</b><small>'+esc(detail)+'</small></span><button class="primary" onclick="sellerGenerateOffer('+deviceIndex+','+index+')">Genera PDF</button></div>';
+  return '<button type="button" class="device choice offer-choice" data-offer-index="'+index+'"><span class="offer-kicker">'+(offer.method==='finanziato'?'FINANZIAMENTO':offer.method==='one shot'?'PAGAMENTO UNICO':'RATEALE')+'</span><b>'+(offer.installments?offer.installments+' rate':'Pagamento unico')+'</b><strong>'+esc(detail)+'</strong></button>';
+ }).join('');
+ host.innerHTML=title+'<h4 class="section-title">2. Scegli la modalità e la durata</h4><div class="offer-rate-options">'+options+'</div>';
+ host.querySelector('#changePromo')?.addEventListener('click',()=>renderPromoSelection(mode==='client'?'offerChoices':'sellerOfferGroups',deviceIndex,mode));
+ if(mode==='client'){
+  const summary=document.getElementById('offerSummary'),pdf=document.getElementById('clientGeneratePdf');
+  summary.classList.remove('hidden');pdf.classList.add('hidden');
+  host.querySelectorAll('[data-offer-index]').forEach(btn=>btn.addEventListener('click',()=>{
+   const idx=Number(btn.dataset.offerIndex);selectOffer(idx);
+   host.querySelectorAll('[data-offer-index]').forEach(x=>x.classList.toggle('selected',x===btn));
+   pdf.classList.remove('hidden');
+  }));
+ }
+}
+function selectOffer(index){
+ const p=catalog[selectedDeviceIndex],o=p?.offers?.[index];if(!o)return;
+ selectedOfferIndex=index;
+ const a=o.amounts||[];
+ const detail=o.method==='one shot'?'Pagamento unico: '+money(a[0]):o.method==='finanziato'?(o.installments||'—')+' rate da '+(a[1]!=null?money(a[1]):'—')+' · dispositivo '+(a[0]!=null?money(a[0]):money(priceFor(p))):a.map(money).join(' · ');
+ const summary=document.getElementById('offerSummary');if(summary)summary.textContent=o.plan+' — '+detail;
+}
 function generateProposalPdf(){
  const p=catalog[selectedDeviceIndex],o=p?.offers?.[selectedOfferIndex];
  if(!p||!o){alert('Seleziona prima uno smartphone e una delle sue offerte.');return}
@@ -956,9 +1002,14 @@ function generateProposalPdf(){
  const highlightHtml=highlights.length?'<section class="highlights"><div class="section-title"><span>01</span><h2>Quello che cercavi</h2></div><div class="highlight-grid">'+highlights.map(x=>'<div class="highlight"><b>✦</b><span>'+esc(x)+'</span></div>').join('')+'</div></section>':'';
  const existing=document.getElementById('proposalOverlay');if(existing)existing.remove();
  const overlay=document.createElement('div');overlay.id='proposalOverlay';
- overlay.style.cssText='position:fixed;inset:0;z-index:10050;background:#050505;display:flex;flex-direction:column;';
- const frame=document.createElement('iframe');frame.title='Anteprima proposta smartphone';frame.style.cssText='width:100%;height:100%;border:0;background:#050505;';frame.setAttribute('sandbox','allow-scripts allow-modals allow-same-origin');
- overlay.appendChild(frame);const fullscreenHost=document.fullscreenElement;if(fullscreenHost){fullscreenHost.appendChild(overlay)}else{document.body.appendChild(overlay)}
+ const fullscreenHost=document.fullscreenElement;
+ const kioskHost=document.body.classList.contains('client-kiosk')?document.getElementById('clientView'):null;
+ const overlayHost=fullscreenHost||kioskHost||document.body;
+ overlay.style.cssText='position:absolute;inset:0;width:100%;height:100%;min-height:100dvh;z-index:2147483647;background:#050505;display:flex;flex-direction:column;overflow:auto;';
+ const frame=document.createElement('iframe');frame.title='Anteprima proposta smartphone';frame.style.cssText='flex:1 1 auto;width:100%;height:100%;min-height:100%;border:0;background:#050505;';
+ frame.setAttribute('sandbox','allow-scripts allow-modals allow-same-origin');
+ overlay.appendChild(frame);overlayHost.appendChild(overlay);
+ if(overlayHost===document.body)overlay.style.position='fixed';
  const previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
  const w=frame.contentWindow;
  const css=`*{box-sizing:border-box}html,body{margin:0;padding:0;background:#000000;color:#f5f8ff;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}.sheet{width:210mm;height:297mm;margin:16px auto;background:#050505;position:relative;overflow:hidden;box-shadow:0 18px 55px #0008}.hero{height:91mm;padding:10mm 14mm 0;position:relative;overflow:hidden;background:radial-gradient(ellipse at 76% 55%,#261006 0%,#100b08 34%,#050505 78%)}.tunnel{position:absolute;inset:0;overflow:hidden;opacity:.95}.tunnel:before,.tunnel:after{content:"";position:absolute;left:50%;top:49%;width:145mm;height:92mm;transform:translate(-50%,-50%) perspective(240px) rotateY(-10deg);border:1.4px solid #ffd52a;box-shadow:0 0 5px #ffd52a,0 0 16px #ff8a00, inset 0 0 12px #ffb000;clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}.tunnel:after{width:110mm;height:70mm;border-color:#ff3b22;box-shadow:0 0 5px #ff39d0,0 0 16px #ff5a1f,inset 0 0 12px #ff5a1f;transform:translate(-50%,-50%) perspective(240px) rotateY(10deg)}.tunnel-lines{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 17mm,#ff8a0012 17.2mm 17.5mm,transparent 17.7mm 34mm);mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent)}.top-shade{position:absolute;inset:0;background:linear-gradient(90deg,#000000ee 0%,#000000aa 48%,#00000055 100%),linear-gradient(0deg,#050505 0%,transparent 38%)}.brandline{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:3}.brand{font-size:10px;letter-spacing:2.5px;font-weight:900;color:#fff;text-shadow:0 0 10px #ffd52a}.date{font-size:8px;color:#f1c27a}.hero-copy{position:relative;z-index:3;margin-top:9mm;max-width:98mm}.eyebrow{display:inline-block;padding:2.2mm 4mm;border:1px solid #ffb52e;border-radius:20px;color:#ffd85a;background:#102b4d99;font-size:8px;letter-spacing:1.4px;font-weight:900;text-transform:uppercase;box-shadow:0 0 13px #ff8a0055}.hero h1{font-size:23px;line-height:1.08;letter-spacing:-.5px;margin:6mm 0 3mm;color:#fff;text-shadow:0 0 18px #318cff88}.sub{font-size:10px;color:#f5d7b0;margin:0}.price-row{display:flex;align-items:baseline;gap:4mm;margin-top:8mm}.price{font-size:30px;font-weight:900;letter-spacing:-1px;color:#fff;text-shadow:0 0 14px #ff8a0099}.price-note{font-size:8px;color:#ffc04d;letter-spacing:1px}.device-orbit{position:absolute;z-index:3;right:15mm;top:26mm;width:43mm;height:54mm;border:1px solid #ffcc3388;border-radius:12mm;display:grid;place-items:center;transform:rotate(7deg);background:linear-gradient(145deg,#17100b,#050505);box-shadow:0 0 8px #ffb000,0 0 28px #ff6a0088,inset 0 0 22px #ffcf2222}.device-orbit:before{content:"";position:absolute;inset:-5mm;border:1px solid #ff4b22aa;border-radius:15mm;transform:rotate(-12deg);box-shadow:0 0 14px #ff6a00aa}.art{position:relative;z-index:2;width:33mm;height:51mm;display:grid;place-items:center}.art svg{width:31mm;height:49mm;filter:drop-shadow(0 0 7px #ffd52a)}.neon-tag{position:absolute;z-index:4;right:13mm;bottom:11mm;color:#ffbd3b;font-size:7px;font-weight:900;letter-spacing:1.6px;text-shadow:0 0 8px #ff4b22}.content{padding:6mm 14mm 13mm;position:relative;background:linear-gradient(180deg,#050505,#090909)}.section-title{display:flex;align-items:center;gap:3mm;margin-bottom:3mm}.section-title>span{font-size:8px;font-weight:900;color:#081324;background:#ffd52a;border-radius:2mm;padding:1.8mm 2.5mm;box-shadow:0 0 12px #ff8a0066}.section-title h2{font-size:14px;margin:0;color:#f4f8ff;letter-spacing:-.2px}.highlight-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm}.highlight{display:flex;align-items:center;gap:2.5mm;padding:2.8mm 3mm;border:1px solid #bd4a22;border-radius:2mm;background:linear-gradient(100deg,#111111,#18110c);box-shadow:inset 0 0 12px #ff8a0010;min-height:11mm}.highlight:nth-child(even){border-color:#b85a25;background:linear-gradient(100deg,#17100d,#101010)}.highlight b{font-size:11px;color:#ffd52a;text-shadow:0 0 8px #ff8a00;flex:none}.highlight:nth-child(even) b{color:#ff4b22;text-shadow:0 0 8px #ff4b22}.highlight span{font-size:8.5px;font-weight:700;color:#e0eaff;line-height:1.2}.tech{margin-top:5mm}.tech-head{display:flex;align-items:end;justify-content:space-between;margin-bottom:3mm}.tech-head h2{font-size:14px;margin:0;color:#f4f8ff}.tech-head small{font-size:7px;color:#ffb52e;letter-spacing:1.2px;font-weight:800}.specs{display:grid;grid-template-columns:1fr 1fr;gap:2.2mm}.spec{padding:2.6mm 3mm;min-height:12mm;border:1px solid #39302a;border-radius:2mm;background:linear-gradient(110deg,#151515,#0c0c0c);position:relative;overflow:hidden}.spec:before{content:"";position:absolute;left:0;top:0;bottom:0;width:1mm;background:#ffd52a;box-shadow:0 0 8px #ff8a00}.spec:nth-child(4n+2):before{background:#ff4b22;box-shadow:0 0 8px #ff4b22}.spec:nth-child(4n+3):before{background:#ff7a00;box-shadow:0 0 8px #ff7a00}.spec:nth-child(4n):before{background:#ffb52e;box-shadow:0 0 8px #ffb52e}.spec span{display:block;color:#d9b98b;font-size:7px;margin-bottom:1.2mm}.spec strong{font-size:9px;line-height:1.2;color:#f0f6ff}.offer{margin-top:4mm;padding:3mm 4mm;border:1px solid #ffd52a;border-radius:3mm;background:linear-gradient(110deg,#17100b,#090909 70%,#1b0d08);position:relative;box-shadow:0 0 12px #ff8a0044,inset 0 0 18px #ffb00012;overflow:hidden}.offer:after{content:"";position:absolute;width:45mm;height:45mm;border:1px solid #ff4b2299;border-radius:50%;right:-17mm;top:-24mm;box-shadow:0 0 12px #ff6a0088,0 0 0 8mm #ff9a0011}.offer-kicker{font-size:7px;letter-spacing:1.7px;color:#ffd52a;font-weight:900}.plan{font-size:16px;font-weight:900;margin:1.5mm 0 2.5mm;position:relative;z-index:1;color:#fff}.offer-row{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #ffffff20;padding:1.8mm 0;position:relative;z-index:1}.offer-row span{font-size:7.5px;color:#9fb9dd}.offer-row strong{font-size:8.5px;text-align:right;color:#fff}.foot{position:absolute;left:14mm;right:14mm;bottom:6mm;padding-top:2mm;border-top:1px solid #273956;color:#7186a7;font-size:6.5px;line-height:1.35}.page-mark{position:absolute;right:14mm;bottom:2.5mm;font-size:6px;color:#5d7397;letter-spacing:1.4px;font-weight:900}.toolbar{width:210mm;margin:12px auto;display:flex;justify-content:center;gap:10px}.toolbar button{border:1px solid #ffb52e;background:#102447;color:#eafaff;padding:11px 18px;border-radius:30px;font-weight:800;font-size:14px;box-shadow:0 0 12px #ff8a0033}.toolbar button.primary{background:linear-gradient(90deg,#ff8a00,#d83222);border:0}.toolbar button:active{transform:scale(.98)}@page{size:A4 portrait;margin:0}@media screen and (max-width:760px){body{padding:0 0 20px}.preview-stage{margin:12px auto;position:relative}.sheet{width:210mm;height:297mm;margin:0;transform-origin:top left}.toolbar{width:100%;margin:12px auto;flex-wrap:wrap}.toolbar button{font-size:12px;padding:10px 14px}}@media print{html,body{width:210mm;height:297mm;background:#050505}.toolbar{display:none!important}.sheet{width:210mm;height:297mm;margin:0;box-shadow:none;break-after:avoid-page;page-break-after:avoid}.hero,.content,.offer,.highlight,.spec{break-inside:avoid}}`;
@@ -1049,28 +1100,7 @@ function renderCatalog(){
   return `<tr><td>${esc(p.name)}</td><td>${esc(p.band||'—')}</td><td>${money(p.vendorPrice)}</td><td>${(p.offers||[]).length}</td><td>${availability}</td><td><button class="rowbtn" onclick="showDetail(${i})">Dettaglio</button></td></tr>`;
  }).join(''):'<tr><td colspan="6" class="muted">Nessuno smartphone disponibile con i filtri selezionati.</td></tr>';
 }
-function sellerOfferGroupsHtml(deviceIndex){
- const offers=catalog[deviceIndex]?.offers||[];
- if(!offers.length)return '<div class="notice">Nessuna offerta configurata.</div>';
- const groups=new Map();
- offers.forEach((o,i)=>{
-  const financed=o.method==='finanziato';
-  const monthly=financed?(o.amounts||[])[1]:null;
-  const key=financed?JSON.stringify([o.plan,monthly]):JSON.stringify(['single',i]);
-  if(!groups.has(key))groups.set(key,{plan:o.plan,financed,monthly,items:[]});
-  groups.get(key).items.push({offer:o,index:i});
- });
- return [...groups.values()].map(g=>{
-  const heading=g.financed?'<strong>'+esc(g.plan)+'</strong><span class="seller-monthly">'+money(g.monthly)+' / mese</span>':'<strong>'+esc(g.plan)+'</strong>';
-  const options=g.items.map(({offer,index})=>{
-   const details=offer.method==='finanziato'
-    ? (offer.installments||'—')+' rate · '+(offer.amounts||[]).map(money).join(' · ')
-    : (offer.method==='one shot'?'Pagamento unico':'Rateale')+' · '+(offer.amounts||[]).map(money).join(' · ');
-   return '<div class="seller-offer-option"><span>'+esc(details)+'</span><button class="primary" onclick="sellerGenerateOffer('+deviceIndex+','+index+')">Genera PDF</button></div>';
-  }).join('');
-  return '<section class="seller-offer-group">'+heading+'<div class="seller-offer-options">'+options+'</div></section>';
- }).join('');
-}
+function sellerOfferGroupsHtml(deviceIndex){return '<div id="sellerOfferGroups" class="offer-step"></div>';}
 function sellerGenerateOffer(deviceIndex,offerIndex){
  const p=catalog[deviceIndex],offer=p?.offers?.[offerIndex];
  if(!p||!offer)return;
@@ -1086,6 +1116,7 @@ function showDetail(index){
  const specs=getDeviceSpecs(p);
  document.getElementById('detailBox').innerHTML=`<h3>${esc(p.name)}</h3><div class="chips"><span class="chip">Fascia ${esc(p.band||'—')}</span><span class="chip">Prezzo vendor ${money(p.vendorPrice)}</span><span class="chip">${stores.reduce((a,s)=>a+s.qty,0)} pezzi totali</span></div><h3 style="margin-top:18px">Caratteristiche tecniche</h3><div class="chips">${specs.length?specs.map(x=>`<span class="chip">${esc(x[0])}: ${esc(x[1])}</span>`).join(''):'<span class="muted">Scheda tecnica non ancora disponibile.</span>'}</div><h3>Disponibilità nei negozi</h3><div class="tablewrap"><table><thead><tr><th>Negozio</th><th>Quantità vendibile</th></tr></thead><tbody>${availability}</tbody></table></div><h3 style="margin-top:18px">Offerte e condizioni</h3><div id="sellerOfferGroups" class="seller-offer-groups">${sellerOfferGroupsHtml(index)}</div>`;
  document.getElementById('detailPanel').classList.remove('hidden');
+ renderPromoSelection('sellerOfferGroups',index,'seller');
  document.getElementById('detailPanel').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function sellerPrepareProposal(index){const p=catalog[index];if(!p)return;selectedDeviceIndex=index;selectedOfferIndex=0;const skuItem=stock.find(x=>mapped(x)===index);selectedDeviceSku=skuItem?.sku||'CATALOGO';const offers=p.offers||[];if(!offers.length){alert('Questo modello non ha promozioni configurate.');return}const choices=offers.map((o,i)=>'<button class="device choice offer-choice '+(i===0?'selected':'')+'" onclick="sellerChooseOffer('+i+')"><b>'+esc(o.plan)+'</b><small>'+esc(o.method||'')+'</small><strong>'+(o.amounts||[]).map(money).join(' · ')+'</strong></button>').join('');document.getElementById('detailBox').insertAdjacentHTML('beforeend','<h3 style="margin-top:18px">Scegli la promozione</h3><div class="cards offer-grid" id="sellerOfferChoices">'+choices+'</div><div class="actions"><button class="primary" onclick="generateProposalPdf()">Genera PDF</button></div>')}
