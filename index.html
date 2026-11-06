@@ -572,7 +572,7 @@ async function startClientMode(){
  sel.innerHTML='<option value="">Caricamento negozi...</option>';
  panel.classList.remove('hidden');
  document.querySelector('#clientView .hero').classList.add('hidden');
- document.querySelector('#clientView > .panel:not(#clientShopPanel)').classList.add('hidden');
+ document.querySelectorAll('#clientView > .panel:not(#clientShopPanel)').forEach(el=>el.classList.add('hidden'));
  const api=window.firebaseApi;
  const snap=await api.getDocs(api.collection(api.db,'shops'));
  const shops=new Map();
