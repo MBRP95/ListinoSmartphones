@@ -461,6 +461,7 @@ const questions=[
 let answers={},step=0,activeQuestions=questions;
 let currentUserProfile=null;
 let requestedAccessRole='staff';
+let clientLoginVerified=false;
 let currentShopId=new URLSearchParams(location.search).get('shop')||'';
 let selectedShopFilter='';
 let activeStockVersion='';
@@ -485,6 +486,7 @@ function autoMatchAll(){stock.forEach(s=>{if(mapped(s)<0){const i=autoMatch(s);i
 async function goHome(){if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}currentUserProfile=null;['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';}
 function enterClient(){
  requestedAccessRole='client';
+ clientLoginVerified=false;
  document.getElementById('homeView').classList.add('hidden');
  document.getElementById('clientView').classList.add('hidden');
  document.getElementById('sellerShopView').classList.add('hidden');
@@ -541,6 +543,11 @@ document.addEventListener('fullscreenchange',()=>{
  btn.textContent=active?'×':'⛶';btn.setAttribute('aria-label',active?'Esci dallo schermo intero':'Attiva schermo intero');btn.title=active?'Esci':'Schermo intero';
 });
 async function startClientMode(){
+ if(!clientLoginVerified||currentUserProfile?.role!=='client'||!window.firebaseApi?.auth?.currentUser){
+  enterClient();
+  return;
+ }
+ clientLoginVerified=false;
  document.getElementById('sellerAuthView').classList.add('hidden');
  document.getElementById('clientView').classList.remove('hidden');
  document.getElementById('storeView').classList.add('hidden');
@@ -574,6 +581,7 @@ function startClientWizard(){
 }
 function requestSellerAccess(){
  requestedAccessRole='staff';
+ clientLoginVerified=false;
  document.querySelector('#sellerAuthView .eyebrow').textContent='Accesso riservato';
  document.querySelector('#sellerAuthView h1').textContent='Area riservata';
  document.querySelector('#sellerAuthView .sub').textContent='Inserisci le credenziali previste per la modalità scelta.';
@@ -776,9 +784,12 @@ async function verifySellerPassword(){
    selectedShopFilter=profile.shopId;currentShopId=profile.shopId;
    renderAll();
   }else{
+   if(requestedAccessRole!=='client')throw new Error('Accesso cliente non autorizzato.');
+   clientLoginVerified=true;
    await startClientMode();
   }
  }catch(e){
+  clientLoginVerified=false;
   msg.textContent=e.code==='auth/invalid-credential'?'Username o password non corretti.':e.message;
   currentUserProfile=null;
   try{if(window.firebaseApi)await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(_){}
