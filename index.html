@@ -1591,11 +1591,14 @@ function renderOfferEditor(){
  if(!p){host.innerHTML='<div class="notice">Nessuna variante disponibile.</div>';return}
  const offers=p.offers||[];
  if(!offers.length){host.innerHTML='<div class="notice">Questa variante non ha offerte configurate.</div>';return}
- host.innerHTML=offers.map((o,i)=>{
-  const a=Array.isArray(o.amounts)?o.amounts:[];
-  const financed=offerMethod(o)==='finanziato';
-  const total=a[0]??priceFor(p),monthly=financed?offerMonthlyPayment(o,p):null,count=offerInstallmentCount(o);
-  return '<div class="offer-value-row" style="border:1px solid #62472b;border-radius:12px;padding:14px;margin:10px 0;background:#171411"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px"><strong>'+esc(o.plan||'Promozione')+'</strong><span class="chip">'+(financed?'Finanziamento':offerMethod(o)==='one shot'?'Pagamento unico':'Rateale')+(count?' · '+count+' rate':'')+'</span></div><div class="grid"><div class="field"><label>Totale dispositivo (€)</label><input type="number" min="0" step="0.01" data-offer-index="'+i+'" data-amount-index="0" value="'+esc(total)+'"></div>'+(financed?'<div class="field"><label>Rata mensile (calcolata)</label><div class="input-like" style="padding:12px;border:1px solid #62472b;border-radius:9px;color:#fff1d6;background:#100e0c">'+(monthly!==null?money(monthly):'Numero rate non valido')+'</div><small class="muted">Totale dispositivo ÷ numero rate</small></div>':'')+'</div></div>';
+ host.innerHTML=getOfferPromoGroups(index).map((g,gi)=>{
+  const first=g.items[0]?.offer,advance=first?offerAdvance(first,p):priceFor(p);
+  const options=g.items.map(({offer, index:oi})=>{
+   const financed=offerMethod(offer)==='finanziato',count=offerInstallmentCount(offer),monthly=offerMonthlyPayment(offer,p);
+   const total=offerDeviceTotal(offer,p);
+   return '<div style="border-top:1px solid #493b2c;padding:12px 0"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><strong>'+(financed?'Finanziamento':offerMethod(offer)==='one shot'?'Pagamento unico':'Rateale')+'</strong><span class="chip">'+(count?count+' rate':'Importo unico')+'</span></div>'+(financed?'<div class="grid"><div class="field"><label>Rata mensile (€)</label><input type="number" min="0" step="0.01" data-offer-monthly-index="'+oi+'" value="'+(monthly!==null?esc(monthly):'')+'"></div><div class="field"><label>Costo complessivo</label><div class="input-like" style="padding:12px;border:1px solid #62472b;border-radius:9px;color:#fff1d6;background:#100e0c">'+(Number.isFinite(total)?money(total):'Da configurare')+'</div><small class="muted">Anticipo + rata × '+(count||'numero')+' rate</small></div></div>':'<small class="muted">Importo complessivo: '+money(offerDeviceTotal(offer,p))+'</small>')+'</div>';
+  }).join('');
+  return '<section class="offer-value-row" style="border:1px solid #62472b;border-radius:12px;padding:14px;margin:10px 0;background:#171411"><div style="margin-bottom:10px"><strong>'+esc(g.plan)+'</strong></div><div class="field"><label>Anticipo / importo iniziale della promo (€)</label><input type="number" min="0" step="0.01" data-promo-advance-index="'+gi+'" value="'+esc(advance)+'"></div><small class="muted">Questo importo viene condiviso da tutte le durate della stessa promo SIM.</small>'+options+'</section>';
  }).join('');
  const msg=document.getElementById('offerValuesMsg');if(msg)msg.textContent='';
 }
@@ -1606,21 +1609,23 @@ async function saveOfferValues(){
  if(!p||!host)return;
  const nextOffers=(p.offers||[]).map(o=>({...o,amounts:Array.isArray(o.amounts)?[...o.amounts]:[]}));
  try{
-  host.querySelectorAll('input[data-offer-index]').forEach(input=>{
-   const offerIndex=Number(input.dataset.offerIndex),amountIndex=Number(input.dataset.amountIndex),value=String(input.value).trim();
+  host.querySelectorAll('input[data-promo-advance-index]').forEach(input=>{
+   const group=getOfferPromoGroups(index)[Number(input.dataset.promoAdvanceIndex)],value=String(input.value).trim();
+   if(value==='')throw new Error('Inserisci l’anticipo o l’importo iniziale per ogni promo.');
+   const parsed=Number(value);
+   if(!Number.isFinite(parsed)||parsed<0)throw new Error('Inserisci importi validi e non negativi.');
+   group?.items.forEach(({index:offerIndex})=>{nextOffers[offerIndex].amounts[0]=parsed});
+  });
+  host.querySelectorAll('input[data-offer-monthly-index]').forEach(input=>{
+   const offerIndex=Number(input.dataset.offerMonthlyIndex),value=String(input.value).trim();
    if(!nextOffers[offerIndex])return;
-   if(value==='')nextOffers[offerIndex].amounts[amountIndex]=null;
-   else{
-    const parsed=Number(value);
-    if(!Number.isFinite(parsed)||parsed<0)throw new Error('Inserisci importi validi e non negativi.');
-    nextOffers[offerIndex].amounts[amountIndex]=parsed;
-   }
+   if(value==='')throw new Error('Inserisci la rata mensile per ogni finanziamento.');
+   const parsed=Number(value);
+   if(!Number.isFinite(parsed)||parsed<0)throw new Error('Inserisci rate valide e non negative.');
+   nextOffers[offerIndex].amounts[1]=parsed;
   });
   nextOffers.forEach(o=>{
-   if(offerMethod(o)==='finanziato'){
-    const count=offerInstallmentCount(o),total=offerDeviceTotal(o,p);
-    if(count>0&&Number.isFinite(total))o.amounts[1]=Number((total/count).toFixed(2));
-   }
+   if(offerMethod(o)==='finanziato'&&offerInstallmentCount(o)<=0)throw new Error('Durata non valida per una delle opzioni di finanziamento.');
   });
  }catch(e){msg.textContent=e.message;return}
  btn.disabled=true;msg.textContent='Salvataggio su Firebase in corso…';
@@ -1630,7 +1635,7 @@ async function saveOfferValues(){
   Object.assign(p,updated);
   await window.firebaseApi.setDoc(window.firebaseApi.doc(window.firebaseApi.db,'settings','catalog'),{updatedAt:window.firebaseApi.serverTimestamp(),deviceCount:catalog.length,updatedBy:window.firebaseApi.auth.currentUser?.uid||''},{merge:true});
   catalogUpdatedAt=new Date();renderDataFreshness();renderOfferEditor();renderCatalog();
-  msg.textContent='Prezzi e rate salvati. Le nuove proposte useranno questi importi.';
+  msg.textContent='Anticipi e rate salvati. Il costo complessivo viene calcolato come anticipo + rate.';
  }catch(e){msg.textContent='Salvataggio non riuscito: '+e.message}
  finally{btn.disabled=false}
 }
