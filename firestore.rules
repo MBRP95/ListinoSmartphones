@@ -50,11 +50,21 @@ function sellerOwnsShop(shopId) {
       allow write: if isAdmin();
     }
 
+    function clientCanReadDevice(deviceId) {
+      return isClient() &&
+        clientShopId() != null &&
+        exists(/databases/$(database)/documents/shopCatalog/$(clientShopId())) &&
+        deviceId in get(/databases/$(database)/documents/shopCatalog/$(clientShopId())).data.enabledDeviceIds;
+    }
+
     match /devices/{deviceId} {
-      allow read: if canReadCatalog();
+      allow get: if isAdmin() || isSeller() || clientCanReadDevice(deviceId);
+      allow list: if isAdmin() || isSeller();
       allow write: if isAdmin();
     }
 
+    // Le schede tecniche non contengono quantità di magazzino né offerte commerciali.
+    // Il catalogo delle varianti resta comunque filtrato da clientCanReadDevice.
     match /deviceModels/{modelId} {
       allow read: if canReadCatalog();
       allow write: if isAdmin();
@@ -74,7 +84,8 @@ function sellerOwnsShop(shopId) {
     }
 
     match /settings/{settingId} {
-      allow read: if isAdmin();
+      allow get: if isAdmin() || (settingId == 'catalog' && canReadCatalog());
+      allow list: if isAdmin();
       allow write: if isAdmin();
     }
 
