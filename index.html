@@ -563,8 +563,8 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signInWithCustomToken, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyA-FeADcnW89AOSuAZ-i3xnF7reReOcg2o",
   authDomain: "deviceproposer.firebaseapp.com",
@@ -577,7 +577,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-window.firebaseApi = { auth, db, signInWithEmailAndPassword, signInWithCustomToken, signOut, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc };
+window.firebaseApi = { auth, db, signInWithEmailAndPassword, signInWithCustomToken, signOut, updatePassword, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc, updateDoc };
 window.firebaseReady = true;
 window.dispatchEvent(new Event("firebase-ready"));
 </script>
@@ -1109,10 +1109,11 @@ async function verifySellerPassword(){
   const email=username.includes('@')?username:username+'@deviceproposer.invalid';
   const {auth,signInWithEmailAndPassword}=window.firebaseApi;
   const credential=await signInWithEmailAndPassword(auth,email,pw);
-  phase='lettura profilo tramite backend sicuro';
-  const profileResult=await callUserAdminApi('/users/me',{});
-  if(!profileResult.profile)throw new Error('Profilo utente non configurato in Firestore.');
-  const profile={...profileResult.profile,uid:profileResult.uid};
+  phase='lettura profilo Firestore';
+  const api=window.firebaseApi;
+  const profileSnap=await api.getDoc(api.doc(api.db,'users',credential.user.uid));
+  if(!profileSnap.exists())throw new Error('Profilo utente non configurato in Firestore.');
+  const profile={...profileSnap.data(),uid:credential.user.uid};
   if(profile.active!==true)throw new Error('Account disattivato. Contatta l’amministratore.');
   if(!['admin','seller'].includes(profile.role)) {
    throw new Error(profile.role==='client'
@@ -1125,7 +1126,8 @@ async function verifySellerPassword(){
    if(nextPassword.length<8)throw new Error('La nuova password deve contenere almeno 8 caratteri. Accedi nuovamente per riprovare.');
    const confirmation=prompt('Conferma la nuova password.');
    if(confirmation===null||confirmation!==nextPassword)throw new Error('Le password non coincidono. Accedi nuovamente per riprovare.');
-   await callUserAdminApi('/password/change',{newPassword:nextPassword});
+   await api.updatePassword(credential.user,nextPassword);
+   await api.updateDoc(api.doc(api.db,'users',credential.user.uid),{mustChangePassword:false,updatedAt:api.serverTimestamp()});
    profile.mustChangePassword=false;
   }
   requestedAccessRole='staff';
