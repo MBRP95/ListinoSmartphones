@@ -477,6 +477,13 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 #shopSyncPreview .tablewrap select{background:#171411!important;color:#fff!important;border:1px solid #79512b!important;color-scheme:dark}
 #shopSyncPreview .tablewrap select option{background:#171411!important;color:#f7f3ed!important}
 #shopSyncPreview .tablewrap .rowbtn{background:#292018!important;color:#ffe1a3!important;border:1px solid #79512b!important}
+
+/* Seller catalog: keep hover/focus rows readable in the dark interface. */
+#storeView .tablewrap tbody tr:hover,
+#storeView .tablewrap tbody tr:focus-within{background:#211b16!important}
+#storeView .tablewrap tbody tr:hover td,
+#storeView .tablewrap tbody tr:focus-within td{background:transparent!important;color:#f4eee5!important}
+#storeView .tablewrap tbody tr:hover button{color:#ffe0a3!important}
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
