@@ -692,7 +692,7 @@ async function confirmClientShop(){
  if(!id){alert('Seleziona un negozio.');return}
  currentShopId=id;
  try{
-  await loadShopCatalog(id);stock=[];mappings={};
+  await loadClientCatalogForShop(id);stock=[];mappings={};
   document.getElementById('clientShopPanel').classList.add('hidden');
   document.getElementById('clientStartPanel').classList.remove('hidden');
  }catch(e){alert('Errore caricamento catalogo: '+e.message)}
@@ -915,7 +915,8 @@ async function verifySellerPassword(){
   currentUserProfile={...profile,uid:credential.user.uid};
   selectedShopFilter=profile.role==='seller'?'':'';
   if(profile.role==='admin') await loadAuthenticatedData({loadStock:true});
-  else { await loadCatalogFromFirestore(); stock=[]; mappings={}; }
+  else if(profile.role==='seller') { await loadCatalogFromFirestore(); stock=[]; mappings={}; }
+  else { catalog=[]; window.currentModelSpecs={}; stock=[]; mappings={}; enabledDeviceIds=[]; shopCatalogLoaded=false; }
   document.getElementById('sellerAuthView').classList.add('hidden');
   document.getElementById('sellerPassword').value='';
   document.getElementById('sellerUsername').value='';
@@ -1442,6 +1443,23 @@ async function loadShopCatalog(shopId){
  const snap=await api.getDoc(api.doc(api.db,'shopCatalog',shopId));
  enabledDeviceIds=snap.exists()&&Array.isArray(snap.data().enabledDeviceIds)?snap.data().enabledDeviceIds.map(String):[];
  shopCatalogLoaded=true;return enabledDeviceIds;
+}
+
+async function loadClientCatalogForShop(shopId){
+ const api=window.firebaseApi;
+ if(currentUserProfile?.role!=='client')throw new Error('Caricamento riservato alla sessione Cliente.');
+ if(!shopId)throw new Error('Negozio non specificato.');
+ await loadShopCatalog(shopId);
+ const ids=[...new Set(enabledDeviceIds)];
+ const docs=await Promise.all(ids.map(id=>api.getDoc(api.doc(api.db,'devices',id))));
+ catalog=docs.filter(d=>d.exists()).map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+ const modelIds=[...new Set(catalog.map(p=>p.modelId||modelDocumentId(p.name)).filter(Boolean))];
+ const modelDocs=await Promise.all(modelIds.map(id=>api.getDoc(api.doc(api.db,'deviceModels',id))));
+ window.currentModelSpecs={};
+ modelDocs.forEach(d=>{if(d.exists())window.currentModelSpecs[d.id]=d.data();});
+ catalog.forEach(p=>{const id=p.modelId||modelDocumentId(p.name);if(window.currentModelSpecs[id])p.modelSpecs=window.currentModelSpecs[id];});
+ if(!catalog.length)throw new Error('Nessun prodotto è attualmente abilitato per questo negozio.');
+ return catalog;
 }
 function productsForShop(){
  if(!shopCatalogLoaded)return [];
