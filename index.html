@@ -2171,9 +2171,15 @@ async function saveShopPin(){
  const shopId=shopQrTargetId(),pin=document.getElementById('shopPinValue').value.trim(),msg=document.getElementById('shopPinMsg');
  if(!shopId){msg.textContent='Seleziona prima un negozio specifico nel filtro catalogo.';return}
  if(!/^[0-9]{6}$/.test(pin)){msg.textContent='Il PIN deve contenere esattamente 6 cifre.';return}
- const api=window.firebaseApi,user=api?.auth?.currentUser;
- if(!user||currentUserProfile?.role!=='admin'){msg.textContent='Devi accedere con un account amministratore.';return}
+ const api=window.firebaseApi;
+ if(String(currentUserProfile?.role||'').trim().toLowerCase()!=='admin'){
+  msg.textContent='Profilo non amministratore: ruolo corrente '+(currentUserProfile?.role||'non disponibile')+'. Esci e rientra con Modena01.';
+  return;
+ }
  try{
+  if(api?.auth?.authStateReady)await api.auth.authStateReady();
+  const user=api?.auth?.currentUser;
+  if(!user)throw new Error('Sessione Firebase assente o scaduta. Esci e accedi nuovamente con Modena01.');
   msg.textContent='Salvataggio PIN…';
   const ref=api.doc(api.db,'shopAccess',shopId);
   const previous=await api.getDoc(ref);
@@ -2190,9 +2196,15 @@ async function disableShopPin(){
  const shopId=shopQrTargetId(),msg=document.getElementById('shopPinMsg');
  if(!shopId){msg.textContent='Seleziona prima un negozio specifico.';return}
  if(!confirm('Disabilitare l’accesso cliente e revocare tutte le sessioni del negozio '+shopId+'?'))return;
- const api=window.firebaseApi,user=api?.auth?.currentUser;
- if(!user||currentUserProfile?.role!=='admin'){msg.textContent='Devi accedere con un account amministratore.';return}
+ const api=window.firebaseApi;
+ if(String(currentUserProfile?.role||'').trim().toLowerCase()!=='admin'){
+  msg.textContent='Profilo non amministratore: ruolo corrente '+(currentUserProfile?.role||'non disponibile')+'. Esci e rientra con Modena01.';
+  return;
+ }
  try{
+  if(api?.auth?.authStateReady)await api.auth.authStateReady();
+  const user=api?.auth?.currentUser;
+  if(!user)throw new Error('Sessione Firebase assente o scaduta. Esci e accedi nuovamente con Modena01.');
   msg.textContent='Disattivazione…';
   const ref=api.doc(api.db,'shopAccess',shopId),snap=await api.getDoc(ref);
   const previous=snap.exists()?snap.data():{};
