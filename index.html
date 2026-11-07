@@ -492,7 +492,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <div class="field admin-only" style="margin-top:15px"><label>Carica catalogo JSON aggiornato</label><input type="file" id="catalogJson" accept=".json,application/json" onchange="importCatalogJson()"></div>
 <div class="field admin-only"><label>Carica magazzino JSON aggiornato</label><input type="file" id="stockJson" accept=".json,application/json" onchange="importStockJson()"></div>
 <div id="exportMsg" class="muted"></div></div>
-<div class="panel"><h2>Catalogo e promozioni disponibili</h2><p class="hint">La ricerca considera tutti i negozi. Per ogni variante puoi vedere dove è disponibile e in quale quantità. Il negozio scelto all'accesso resta evidenziato.</p><div class="toolbar catalog-filters"><div class="field"><label>Visualizza disponibilità</label><select id="shopFilter" onchange="changeShopFilter()"><option value="__all__">Tutti i negozi</option></select></div><div class="field"><label>Cerca modello / marca</label><input id="catalogSearch" placeholder="Es. iPhone 17, Galaxy S26..." oninput="renderCatalog()"></div><div class="field"><label>Marca</label><select id="brandFilter" onchange="renderCatalog()"><option value="">Tutte</option></select></div></div>
+<div class="panel"><h2>Catalogo e promozioni disponibili</h2><p class="hint">La ricerca considera tutti i negozi. Per ogni variante puoi vedere dove è disponibile e in quale quantità. Il negozio scelto all'accesso resta evidenziato.</p><div class="toolbar catalog-filters"><div class="field"><label>Visualizza disponibilità</label><select id="shopFilter" onchange="changeShopFilter()"><option value="__all__">Tutti i negozi</option></select></div><div class="field"><label>Cerca modello / marca</label><input id="catalogSearch" placeholder="Es. iPhone 17, Galaxy S26..." oninput="renderCatalog()"></div><div class="field"><label>Marca</label><select id="brandFilter" onchange="renderCatalog()"><option value="">Tutte</option></select></div><div class="field"><label>Stato catalogo</label><select id="catalogStatusFilter" onchange="renderCatalog()"><option value="all">Tutti</option><option value="enabled">Attivi</option><option value="disabled">Disattivati</option></select></div></div>
 <div class="tablewrap"><table><thead><tr><th>Modello / variante</th><th>Fascia</th><th>Prezzo vendor</th><th>Offerte</th><th>Disponibilità per negozio</th><th></th></tr></thead><tbody id="catalogRows"></tbody></table></div></div>
 <div id="detailPanel" class="panel hidden"><div class="toolbar" style="justify-content:space-between;align-items:center"><h2>Dettaglio variante e condizioni</h2><button class="secondary" onclick="closeDetail()">Chiudi</button></div><div id="detailBox"></div></div>
 </section>
@@ -1263,14 +1263,15 @@ function storeAvailabilityFor(index){
 }
 function renderCatalog(){
  const searchInput=document.getElementById('catalogSearch'),brandInput=document.getElementById('brandFilter');
- const q=norm(searchInput?.value||''),b=norm(brandInput?.value||'');
+ const q=norm(searchInput?.value||''),b=norm(brandInput?.value||''),status=document.getElementById('catalogStatusFilter')?.value||'all';
  const role=currentUserProfile?.role,isClient=role==='client';
  const source=isClient?productsForShop():catalog.map((p,i)=>({p,i}));
  const canStock=role==='admin'||(role==='seller'&&currentUserProfile?.canViewStock===true);
  const rows=source.filter(({p})=>{
   const searchable=norm([p.name,p.brand,p.model,p.sku].filter(Boolean).join(' '));
   const brand=norm(brandOf(p.name)||p.brand||'');
-  return (!q||searchable.includes(q))&&(!b||brand===b);
+  const active=enabledDeviceIds.includes(catalogDocId(p));
+  return (!q||searchable.includes(q))&&(!b||brand===b)&&(role!=='seller'||status==='all'||(status==='enabled'&&active)||(status==='disabled'&&!active));
  });
  const target=document.getElementById('catalogRows');if(!target)return;
  target.innerHTML=rows.length?rows.map(({p,i})=>{
@@ -1445,7 +1446,7 @@ function productsForShop(){
 async function setShopDeviceEnabled(index,enabled){
  if(!['admin','seller'].includes(currentUserProfile?.role))throw new Error('Operazione non autorizzata.');
  const shopId=currentUserProfile.role==='seller'?currentUserProfile.shopId:String(selectedShopFilter||currentShopId||'').trim();
- if(!shopId)throw new Error('Negozio non selezionato.');
+ if(!shopId||shopId==='__all__')throw new Error('Seleziona un singolo negozio prima di modificare il catalogo.');
  const p=catalog[index];if(!p)throw new Error('Dispositivo non valido.');
  const api=window.firebaseApi,ref=api.doc(api.db,'shopCatalog',shopId),next=new Set(enabledDeviceIds);
  if(enabled)next.add(catalogDocId(p));else next.delete(catalogDocId(p));
