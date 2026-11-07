@@ -1,0 +1,31 @@
+name: Firestore security tests
+
+on:
+  push:
+    branches:
+      - feat/shop-catalog-stock-permissions
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  firestore-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Setup Java for Firestore Emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install dependencies
+        run: npm install
+      - name: Run Firestore rules tests
+        run: npm run test:rules
