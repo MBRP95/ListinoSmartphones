@@ -348,7 +348,16 @@ body.client-kiosk{overflow:hidden}
 body.client-kiosk #clientView{position:fixed;inset:0;z-index:9998;display:block!important;overflow-y:auto;width:100%;height:100dvh;background:#050505;padding:18px 14px 28px}
 body.client-kiosk #clientFullscreenBtn{top:auto;right:7px;bottom:7px;width:25px;height:25px;font-size:13px;opacity:.22;background:#111;border-color:#776047}
 body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreenBtn:hover{opacity:.9}
-@media print{#clientFullscreenBtn{display:none!important}}
+@media print{
+ body *{visibility:hidden!important}
+ #shopQrPrintCard,#shopQrPrintCard *{visibility:visible!important}
+ #shopQrPrintCard{position:fixed!important;inset:12mm auto auto 50%!important;transform:translateX(-50%)!important;width:180mm!important;max-width:180mm!important;margin:0!important;padding:12mm!important;background:#fff!important;color:#111!important;text-align:center!important;border:0!important;box-shadow:none!important}
+ #shopQrPrintCard h2,#shopQrPrintCard p{color:#111!important}
+ #shopQrPrintCard #shopQrCanvas{display:inline-block!important;margin:8mm auto!important;border:1px solid #ddd!important}
+ #shopQrPrintCard #shopQrUrl{font-size:9pt!important}
+ #clientFullscreenBtn{display:none!important}
+ @page{size:A4;margin:10mm}
+}
 
 /* CONTRAST FIX — technical specs and unmet requirements */
 #clientView .spec-item{background:#f7f9fc!important;border:1px solid #dce3ed!important}
@@ -597,7 +606,23 @@ function matchScore(a,b){
 }
 function autoMatch(s){let ranked=catalog.map((p,i)=>({i,score:matchScore(s.description,p.name)})).sort((a,b)=>b.score-a.score);return ranked[0]?.score>=.48?ranked[0].i:-1}
 function autoMatchAll(){stock.forEach(s=>{if(mapped(s)<0){const i=autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}}});renderAll();alert('Abbinamento automatico completato. Verifica manualmente ogni SKU: non è una conferma di corrispondenza.')}
-async function goHome(){if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}currentUserProfile=null;selectedDeviceIndex=-1;selectedDeviceSku='';selectedOfferIndex=0;['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';}
+function clearClientSessionState(){
+ if(clientExpiryTimer){clearTimeout(clientExpiryTimer);clientExpiryTimer=null;}
+ currentUserProfile=null;requestedAccessRole='';clientLoginVerified=false;
+ currentShopId='';catalog=[];enabledDeviceIds=[];shopCatalogLoaded=false;stock=[];mappings={};
+ selectedDeviceIndex=-1;selectedDeviceSku='';selectedOfferIndex=0;window.currentModelSpecs={};
+ ['clientStartPanel','clientDirectPanel','clientShopPanel','selectedDevicePanel','results'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden')});
+ const input=document.getElementById('clientPinInput');if(input)input.value='';
+ const pinMsg=document.getElementById('clientPinMsg');if(pinMsg)pinMsg.textContent='';
+}
+async function goHome(){
+ if(clientExpiryTimer){clearTimeout(clientExpiryTimer);clientExpiryTimer=null;}
+ if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}
+ clearClientSessionState();
+ ['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+ document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';
+ document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';
+}
 function goBack(){
  const overlay=document.getElementById('proposalOverlay');
  if(overlay&&typeof overlay.closeProposal==='function'){overlay.closeProposal();return;}
@@ -703,13 +728,13 @@ function qrShopFromUrl(){const id=new URLSearchParams(location.search).get('shop
 async function verifyClientPin(){
  const shopId=qrShopFromUrl(),pin=document.getElementById('clientPinInput').value.trim(),msg=document.getElementById('clientPinMsg'),btn=document.getElementById('clientPinButton');
  if(!shopId){msg.textContent='QR code non valido.';return}
- if(!/^\d{6}$/.test(pin)){msg.textContent='Inserisci un PIN di 6 cifre.';return}
+ if(!/^\\d{6}$/.test(pin)){msg.textContent='Inserisci un PIN di 6 cifre.';return}
  btn.disabled=true;msg.textContent='Verifica del PIN…';
+ const api=window.firebaseApi;
  try{
   const response=await fetch(CLIENT_WORKER_URL+'/client/access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({shopId,pin})});
   const data=await response.json().catch(()=>({}));
   if(!response.ok||!data.success)throw new Error(data.error||'Accesso non riuscito.');
-  const api=window.firebaseApi;
   await api.signOut(api.auth).catch(()=>{});
   await api.signInWithCustomToken(api.auth,data.customToken);
   requestedAccessRole='client';
@@ -722,20 +747,31 @@ async function verifyClientPin(){
   document.getElementById('clientPinMsg').textContent='';
   document.getElementById('homeBtn').style.display='inline-block';
   if(clientExpiryTimer)clearTimeout(clientExpiryTimer);
+  const expiresAt=Date.parse(data.expiresAt);
+  if(!Number.isFinite(expiresAt)||expiresAt<=Date.now())throw new Error('La sessione ricevuta non è valida o è già scaduta.');
   clientExpiryTimer=setTimeout(async()=>{
    try{await api.signOut(api.auth)}catch(e){}
-   currentUserProfile=null;catalog=[];enabledDeviceIds=[];shopCatalogLoaded=false;stock=[];mappings={};
+   clearClientSessionState();
    document.getElementById('clientView').classList.add('hidden');
    document.getElementById('homeView').classList.remove('hidden');
+   document.getElementById('homeBtn').style.display='none';
    alert('Sessione scaduta. Scansiona nuovamente il QR code.');
-  },Math.max(0,Date.parse(data.expiresAt)-Date.now()));
- }catch(e){msg.textContent=e.message||'Accesso non riuscito.';try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(ignore){}}
- finally{btn.disabled=false}
+  },expiresAt-Date.now());
+ }catch(e){
+  clearClientSessionState();
+  try{await api.signOut(api.auth)}catch(ignore){}
+  document.getElementById('clientPinPanel').classList.remove('hidden');
+  document.getElementById('clientStartPanel').classList.add('hidden');
+  document.getElementById('homeBtn').style.display='none';
+  msg.textContent=e.message||'Accesso non riuscito.';
+ }finally{btn.disabled=false}
 }
 async function startQrClientEntry(){
  const shopId=qrShopFromUrl();if(!shopId)return false;
+ if(clientExpiryTimer){clearTimeout(clientExpiryTimer);clientExpiryTimer=null;}
  try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}
- currentShopId=shopId;currentUserProfile=null;catalog=[];stock=[];mappings={};
+ clearClientSessionState();
+ currentShopId=shopId;
  document.getElementById('homeView').classList.add('hidden');
  document.getElementById('sellerAuthView').classList.add('hidden');
  document.getElementById('storeView').classList.add('hidden');
