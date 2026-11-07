@@ -996,13 +996,16 @@ async function verifySellerPassword(){
   if(!profileSnap.exists())throw new Error('Profilo utente non configurato in Firestore.');
   const profile=profileSnap.data();
   if(profile.active!==true)throw new Error('Account disattivato. Contatta l’amministratore.');
-  if(!['admin','seller','client'].includes(profile.role))throw new Error('Ruolo utente non valido.');
-  requestedAccessRole=profile.role==='client'?'client':'staff';
+  if(!['admin','seller'].includes(profile.role)) {
+   throw new Error(profile.role==='client'
+    ? 'Gli account cliente condivisi non sono più supportati. Scansiona il QR code del negozio e inserisci il PIN.'
+    : 'Ruolo utente non valido.');
+  }
+  requestedAccessRole='staff';
   currentUserProfile={...profile,uid:credential.user.uid};
-  selectedShopFilter=profile.role==='seller'?'':'';
+  selectedShopFilter='';
   if(profile.role==='admin') await loadAuthenticatedData({loadStock:true});
-  else if(profile.role==='seller') { await loadCatalogFromFirestore(); stock=[]; mappings={}; }
-  else { catalog=[]; window.currentModelSpecs={}; stock=[]; mappings={}; enabledDeviceIds=[]; shopCatalogLoaded=false; }
+  else { await loadCatalogFromFirestore(); stock=[]; mappings={}; }
   document.getElementById('sellerAuthView').classList.add('hidden');
   document.getElementById('sellerPassword').value='';
   document.getElementById('sellerUsername').value='';
@@ -1019,9 +1022,6 @@ async function verifySellerPassword(){
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
    selectedShopFilter=profile.shopId||'';currentShopId=profile.shopId||'';
    await startSellerMode();
-  }else{
-   clientLoginVerified=true;
-   await startClientMode();
   }
  }catch(e){
   clientLoginVerified=false;
