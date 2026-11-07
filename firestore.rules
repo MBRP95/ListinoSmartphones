@@ -47,9 +47,20 @@ function sellerOwnsShop(shopId) {
     }
 
     match /users/{userId} {
-      allow get: if activeUser() && (request.auth.uid == userId || isAdmin());
+      // Ogni utente autenticato può leggere esclusivamente il proprio profilo.
+      // L'applicazione controlla active e role dopo la lettura.
+      allow get: if signedIn() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
-      allow create, update, delete: if false;
+      // Il dipendente può soltanto completare il cambio password obbligatorio.
+      // Ruolo, negozio, stato e ogni altro campo restano non modificabili dal client.
+      allow update: if signedIn() &&
+        request.auth.uid == userId &&
+        resource.data.role == 'seller' &&
+        resource.data.active == true &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['mustChangePassword', 'updatedAt']) &&
+        request.resource.data.mustChangePassword == false;
+      allow create, delete: if false;
     }
 
     match /shops/{shopId} {
