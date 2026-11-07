@@ -493,6 +493,25 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <div class="field admin-only" style="margin-top:15px"><label>Carica catalogo JSON aggiornato</label><input type="file" id="catalogJson" accept=".json,application/json" onchange="importCatalogJson()"></div>
 <div class="field admin-only"><label>Carica magazzino JSON aggiornato</label><input type="file" id="stockJson" accept=".json,application/json" onchange="importStockJson()"></div>
 <div id="exportMsg" class="muted"></div></div>
+<div class="panel" id="shopQrPanel">
+<div class="eyebrow">Accesso cliente</div><h2>QR code e PIN del negozio</h2>
+<p class="hint">Il QR identifica il negozio; il PIN va comunicato separatamente al cliente. Cambiare PIN revoca tutte le sessioni cliente già attive.</p>
+<div class="grid">
+ <div class="field"><label for="shopPinValue">Nuovo PIN (6 cifre)</label><input id="shopPinValue" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="Imposta o ruota il PIN"></div>
+ <div class="field"><label>Negozio selezionato</label><div id="shopQrTarget" class="stat"><b>—</b><span>Seleziona un negozio</span></div></div>
+</div>
+<div class="actions" style="justify-content:flex-start;flex-wrap:wrap">
+ <button class="primary" onclick="saveShopPin()">Imposta / cambia PIN</button>
+ <button class="secondary" onclick="disableShopPin()">Disabilita accesso PIN</button>
+ <button class="secondary" onclick="renderShopQr()">Mostra QR code</button>
+</div>
+<div id="shopPinMsg" class="muted" role="status" style="margin-top:10px"></div>
+<div id="shopQrResult" class="hidden" style="margin-top:18px;text-align:center">
+ <div id="shopQrCanvas" style="display:inline-block;padding:14px;background:white;border:1px solid #e4eaf2;border-radius:14px"></div>
+ <p class="muted" id="shopQrUrl" style="overflow-wrap:anywhere"></p>
+ <p class="hint">Non stampare o esporre il PIN insieme al QR code.</p>
+</div>
+</div>
 <div class="panel"><h2>Catalogo e promozioni disponibili</h2><p class="hint">La ricerca considera tutti i negozi. Per ogni variante puoi vedere dove è disponibile e in quale quantità. Il negozio scelto all'accesso resta evidenziato.</p><div class="toolbar catalog-filters"><div class="field"><label>Visualizza disponibilità</label><select id="shopFilter" onchange="changeShopFilter()"><option value="__all__">Tutti i negozi</option></select></div><div class="field"><label>Cerca modello / marca</label><input id="catalogSearch" placeholder="Es. iPhone 17, Galaxy S26..." oninput="renderCatalog()"></div><div class="field"><label>Marca</label><select id="brandFilter" onchange="renderCatalog()"><option value="">Tutte</option></select></div><div class="field"><label>Stato catalogo</label><select id="catalogStatusFilter" onchange="renderCatalog()"><option value="all">Tutti</option><option value="enabled">Attivi</option><option value="disabled">Disattivati</option></select></div></div>
 <div class="tablewrap"><table><thead><tr><th>Modello / variante</th><th>Fascia</th><th>Prezzo vendor</th><th>Offerte</th><th>Disponibilità per negozio</th><th></th></tr></thead><tbody id="catalogRows"></tbody></table></div></div>
 <div id="detailPanel" class="panel hidden"><div class="toolbar" style="justify-content:space-between;align-items:center"><h2>Dettaglio variante e condizioni</h2><button class="secondary" onclick="closeDetail()">Chiudi</button></div><div id="detailBox"></div></div>
@@ -500,6 +519,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 </main>
 
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -1282,6 +1302,7 @@ function scopedStock(){
  return stock.filter(s=>(!shopId||s.shopId===shopId||(!s.shopId&&String(s.shop||'').startsWith(shopId)))&&String(s.warehouse||'').toLowerCase()==='vendibile'&&available(s)>0);
 }
 async function changeShopFilter(){
+ refreshShopQrTarget();
  const sel=document.getElementById('shopFilter');
  selectedShopFilter=String(sel?.value||'__all__').trim();
  if(currentUserProfile?.role==='admin'&&selectedShopFilter!=='__all__'){
@@ -1893,4 +1914,46 @@ async function init(){
 }
 
 init();
+
+function shopQrTargetId(){
+ if(currentUserProfile?.role==='seller')return String(currentUserProfile.shopId||'');
+ if(currentUserProfile?.role==='admin'){
+  const id=String(document.getElementById('shopFilter')?.value||'');
+  return id&&id!=='__all__'?id:'';
+ }
+ return '';
+}
+function refreshShopQrTarget(){
+ const id=shopQrTargetId(),el=document.getElementById('shopQrTarget');
+ if(el)el.innerHTML=id?'<b>'+esc(id)+'</b><span>Negozio destinatario</span>':'<b>Non selezionato</b><span>Seleziona un negozio specifico nel filtro catalogo</span>';
+}
+async function saveShopPin(){
+ const shopId=shopQrTargetId(),pin=document.getElementById('shopPinValue').value.trim(),msg=document.getElementById('shopPinMsg');
+ if(!shopId){msg.textContent='Seleziona prima un negozio specifico nel filtro catalogo.';return}
+ if(!/^[0-9]{6}$/.test(pin)){msg.textContent='Il PIN deve contenere esattamente 6 cifre.';return}
+ try{
+  msg.textContent='Salvataggio PIN…';
+  await callUserAdminApi('/shop/pin/set',{shopId,pin});
+  document.getElementById('shopPinValue').value='';
+  msg.textContent='PIN impostato. Le sessioni precedenti sono state revocate.';
+  renderShopQr();
+ }catch(e){msg.textContent='Operazione non riuscita: '+e.message}
+}
+async function disableShopPin(){
+ const shopId=shopQrTargetId(),msg=document.getElementById('shopPinMsg');
+ if(!shopId){msg.textContent='Seleziona prima un negozio specifico.';return}
+ if(!confirm('Disabilitare l’accesso cliente e revocare tutte le sessioni del negozio '+shopId+'?'))return;
+ try{msg.textContent='Disattivazione…';await callUserAdminApi('/shop/pin/disable',{shopId});msg.textContent='Accesso PIN disabilitato. Tutte le sessioni precedenti sono state revocate.';document.getElementById('shopQrResult').classList.add('hidden')}
+ catch(e){msg.textContent='Operazione non riuscita: '+e.message}
+}
+function renderShopQr(){
+ const shopId=shopQrTargetId(),msg=document.getElementById('shopPinMsg');
+ if(!shopId){msg.textContent='Seleziona prima un negozio specifico.';return}
+ if(typeof QRCode==='undefined'){msg.textContent='Libreria QR non caricata. Ricarica la pagina.';return}
+ const url=location.origin+location.pathname+'?shop='+encodeURIComponent(shopId);
+ const host=document.getElementById('shopQrCanvas');host.innerHTML='';
+ new QRCode(host,{text:url,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
+ document.getElementById('shopQrUrl').textContent=url;
+ document.getElementById('shopQrResult').classList.remove('hidden');
+}
 </script></body></html>
