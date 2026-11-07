@@ -587,8 +587,9 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 </div>
 </div>
 <details class="panel seller-only manual-shop-device-details" id="manualShopDevicePanel"><summary><span><b>Aggiungi dispositivo al negozio</b><small>Apri per cercare e abilitare un dispositivo già presente nel catalogo generale.</small></span><span class="details-chevron">＋</span></summary><div class="manual-shop-device-body"><p class="hint">Questa operazione abilita il dispositivo per il tuo punto vendita. Non modifica il catalogo globale né richiede l'Excel.</p><div class="field"><label for="manualShopDeviceSearch">Cerca dispositivo</label><input id="manualShopDeviceSearch" placeholder="Es. iPhone 17, Galaxy A56..." oninput="renderManualShopDevicePicker()"></div><div id="manualShopDeviceList" class="grid" style="margin-top:12px"></div><div id="manualShopDeviceMsg" class="muted" role="status"></div></div></details>
-<div class="panel"><h2>Catalogo e promozioni disponibili</h2><p class="hint">La ricerca considera tutti i negozi. Per ogni variante puoi vedere dove è disponibile e in quale quantità. Il negozio scelto all'accesso resta evidenziato.</p><div class="toolbar catalog-filters"><div class="field"><label>Visualizza disponibilità</label><select id="shopFilter" onchange="changeShopFilter()"><option value="__all__">Tutti i negozi</option></select></div><div class="field"><label>Cerca modello / marca</label><input id="catalogSearch" placeholder="Es. iPhone 17, Galaxy S26..." oninput="renderCatalog()"></div><div class="field"><label>Marca</label><select id="brandFilter" onchange="renderCatalog()"><option value="">Tutte</option></select></div><div class="field"><label>Stato catalogo</label><select id="catalogStatusFilter" onchange="renderCatalog()"><option value="all">Tutti</option><option value="enabled">Attivi</option><option value="disabled">Disattivati</option></select></div></div>
-<div class="tablewrap"><table><thead><tr><th>Modello / variante</th><th>Fascia</th><th>Prezzo vendor</th><th>Offerte</th><th>Disponibilità per negozio</th><th></th></tr></thead><tbody id="catalogRows"></tbody></table></div></div>
+<div class="panel"><h2>Catalogo e promozioni disponibili</h2><p class="hint">La ricerca considera tutti i negozi. Per ogni variante puoi vedere dove è disponibile e in quale quantità. Il negozio scelto all'accesso resta evidenziato.</p><div class="toolbar catalog-filters"><div class="field"><label>Cerca modello / marca</label><input id="catalogSearch" placeholder="Es. iPhone 17, Galaxy S26..." oninput="renderCatalog()"></div><div class="field"><label>Marca</label><select id="brandFilter" onchange="renderCatalog()"><option value="">Tutte</option></select></div><div class="field"><label>Stato catalogo</label><select id="catalogStatusFilter" onchange="renderCatalog()"><option value="all">Tutti</option><option value="enabled">Attivi</option><option value="disabled">Disattivati</option></select></div></div>
+<div class="tablewrap"><table><thead><tr><th>Modello / variante</th><th>Fascia</th><th>Prezzo vendor</th><th>Offerte</th><th>Stato nel tuo negozio</th><th></th></tr></thead><tbody id="catalogRows"></tbody></table></div></div>
+<div class="panel" id="otherStoresSearchPanel"><h2>Cerca in altri store</h2><p class="hint">Cerca un modello per sapere in quali altri negozi è abilitato. Non vengono mostrati cataloghi completi né quantità di magazzino.</p><div class="toolbar"><div class="field" style="flex:1"><label for="otherStoresQuery">Modello o marca</label><input id="otherStoresQuery" placeholder="Es. OPPO Reno 15, iPhone 17..." oninput="clearOtherStoreResults()"></div><button class="primary" onclick="searchOtherStores()">Cerca</button></div><div id="otherStoresResults" class="muted" role="status" style="margin-top:12px"></div></div>
 <div id="detailPanel" class="panel hidden"><div class="toolbar" style="justify-content:space-between;align-items:center"><h2>Dettaglio variante e condizioni</h2><button class="secondary" onclick="closeDetail()">Chiudi</button></div><div id="detailBox"></div></div>
 </section>
 </main>
@@ -639,7 +640,6 @@ let clientLoginVerified=false;
 let currentShopId=new URLSearchParams(location.search).get('shop')||'';
 let selectedShopFilter='';
 let shopDirectory=[];
-let shopCatalogByShop={};
 let activeStockVersion='';
 let catalogUpdatedAt=null;
 let stockUpdatedAt=null;
@@ -824,8 +824,6 @@ async function startSellerMode(){
   phase='lettura shopCatalog/'+shopId+' (controllo associazione account/negozio)';
   await loadShopCatalog(shopId);
   phase='lettura negozi e disponibilità cataloghi';
-  await loadShopDirectory();
-  await loadSellerShopCatalogs();
   stock=[];mappings={};stockUpdatedAt=null;
   phase='apertura interfaccia negozio';
   document.getElementById('sellerShopView').classList.add('hidden');
@@ -1571,20 +1569,8 @@ async function loadShopDirectory(){
  const snap=await api.getDocs(api.collection(api.db,'shops'));
  shopDirectory=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'it'));
 }
-async function loadSellerShopCatalogs(){
- const api=window.firebaseApi;
- const snap=await api.getDocs(api.collection(api.db,'shopCatalog'));
- shopCatalogByShop={};
- snap.docs.forEach(d=>{const data=d.data()||{};shopCatalogByShop[d.id]=new Set(Array.isArray(data.enabledDeviceIds)?data.enabledDeviceIds.map(String):[]);});
-}
-function setupShopFilter(){
- const sel=document.getElementById('shopFilter');if(!sel)return;
- const shops=new Map(shopDirectory.map(x=>[String(x.id),String(x.name||x.id)]));
- const preferred=String(selectedShopFilter||currentUserProfile?.shopId||currentShopId||'').trim();
- sel.innerHTML='<option value="__all__">Tutti i negozi</option>'+[...shops].map(([id,name])=>'<option value="'+esc(id)+'">'+esc(name)+' ('+esc(id)+')</option>').join('');
- sel.value=preferred&&shops.has(preferred)?preferred:'__all__';
- selectedShopFilter=sel.value;
-}
+
+function setupShopFilter(){}
 function renderStock(){const rows=stock;const count=document.getElementById('stockCount');if(count)count.textContent=rows.length;const pieces=document.getElementById('pieceCount');if(pieces)pieces.textContent=rows.reduce((a,s)=>a+available(s),0);let matched=rows.filter(s=>mapped(s)>=0).length;const matchedEl=document.getElementById('matchedCount');if(matchedEl)matchedEl.textContent=matched+'/'+rows.length;const body=document.getElementById('stockRows');if(!body)return;body.innerHTML=rows.map(s=>{let i=mapped(s);return `<tr><td>${esc(s.sku)}</td><td>${esc(s.description)}</td><td>${s.stock}</td><td>${s.reserved}</td><td class="status ${available(s)>0?'ok':'bad'}">${available(s)}</td><td><select onchange="mappings['${esc(s.sku)}']=Number(this.value);renderStock();renderCatalog()"><option value="-1">— Non associato —</option>${catalog.map((p,j)=>`<option value="${j}" ${i===j?'selected':''}>${esc(p.name)}</option>`).join('')}</select></td><td class="status ${i>=0?'ok':'bad'}">${i>=0?'Associato':'Da associare'}</td></tr>`}).join('')}
 function storeAvailabilityFor(index){
  const totals=new Map();
@@ -1597,6 +1583,39 @@ function storeAvailabilityFor(index){
  });
  return [...totals.values()].sort((a,b)=>a.name.localeCompare(b.name,'it'));
 }
+
+function clearOtherStoreResults(){
+ const host=document.getElementById('otherStoresResults');if(host)host.textContent='Premi Cerca per verificare gli altri negozi.';
+}
+async function searchOtherStores(){
+ const host=document.getElementById('otherStoresResults');
+ const input=document.getElementById('otherStoresQuery');
+ if(!host||!input)return;
+ if(currentUserProfile?.role!=='seller'){host.textContent='Funzione riservata allo Shop Assistant.';return;}
+ const term=norm(input.value);
+ if(term.length<2){host.textContent='Inserisci almeno 2 caratteri.';return;}
+ const matches=catalog.map((p,i)=>({p,i})).filter(x=>norm([x.p.name,x.p.brand,x.p.model].filter(Boolean).join(' ')).includes(term));
+ if(!matches.length){host.textContent='Nessun modello corrispondente nel catalogo globale.';return;}
+ host.textContent='Ricerca in corso…';
+ try{
+  const api=window.firebaseApi;
+  const shopId=String(currentUserProfile.shopId||'');
+  const otherShops=new Map();
+  const shopSnap=await api.getDocs(api.collection(api.db,'shops'));
+  shopSnap.docs.forEach(d=>{const x=d.data()||{};if(d.id!==shopId&&x.active!==false)otherShops.set(d.id,String(x.name||d.id));});
+  const results=[];
+  for(const item of matches){
+   const deviceId=catalogDocId(item.p);
+   if(!deviceId)continue;
+   const q=api.query(api.collection(api.db,'shopCatalog'),api.where('enabledDeviceIds','array-contains',deviceId));
+   const snap=await api.getDocs(q);
+   const names=snap.docs.filter(d=>d.id!==shopId&&otherShops.has(d.id)).map(d=>otherShops.get(d.id)).sort((a,b)=>a.localeCompare(b,'it'));
+   if(names.length)results.push({name:item.p.name,names});
+  }
+  host.innerHTML=results.length?results.map(x=>'<div class="panel" style="margin:8px 0;padding:12px"><strong>'+esc(x.name)+'</strong><div style="margin-top:6px">'+x.names.map(esc).join(' · ')+'</div></div>').join(''):'Nessun altro negozio ha abilitato i modelli trovati.';
+ }catch(e){host.textContent='Ricerca non riuscita: '+e.message;}
+}
+
 function renderManualShopDevicePicker(){
  const host=document.getElementById('manualShopDeviceList');if(!host||currentUserProfile?.role!=='seller')return;
  const q=norm(document.getElementById('manualShopDeviceSearch')?.value||'');
@@ -1625,16 +1644,13 @@ function renderCatalog(){
   const searchable=norm([p.name,p.brand,p.model,p.sku].filter(Boolean).join(' '));
   const brand=brandOf(p.name,p.brand);
   const active=enabledDeviceIds.includes(catalogDocId(p));
-  const selectedStore=String(document.getElementById('shopFilter')?.value||'__all__');
-  const activeInSelected=selectedStore==='__all__'||!!shopCatalogByShop[selectedStore]?.has(catalogDocId(p));
-  return (!q||searchable.includes(q))&&(!b||brand===b)&&(role!=='seller'||status==='all'||(status==='enabled'&&active)||(status==='disabled'&&!active))&&(role!=='seller'||activeInSelected);
+  return (!q||searchable.includes(q))&&(!b||brand===b)&&(role!=='seller'||status==='all'||(status==='enabled'&&active)||(status==='disabled'&&!active));
  });
  const target=document.getElementById('catalogRows');if(!target)return;
  target.innerHTML=rows.length?rows.map(({p,i})=>{
   const enabled=role==='client'||enabledDeviceIds.includes(catalogDocId(p));
   const stores=canStock?storeAvailabilityFor(i):[];
-  const activeShops=role==='seller'?shopDirectory.filter(st=>shopCatalogByShop[st.id]?.has(catalogDocId(p))):[];
-  const availability=canStock?stores.map(st=>esc(st.name)+': '+st.qty).join(' · '):role==='seller'?(activeShops.length?activeShops.map(st=>esc(st.name||st.id)).join(' · '):'Non attivo in altri negozi'):(role==='client'?(enabled?'Attivo nel catalogo':'Non attivo'):'—');
+  const availability=canStock?stores.map(st=>esc(st.name)+': '+st.qty).join(' · '):role==='seller'?(enabled?'Attivo nel tuo negozio':'Non attivo nel tuo negozio'):(role==='client'?(enabled?'Attivo nel catalogo':'Non attivo'):'—');
   const toggle=role==='admin'||role==='seller'?'<button class="rowbtn" onclick="setShopDeviceEnabled('+i+','+(!enabled)+').catch(e=>alert(e.message))">'+(enabled?'Disattiva':'Attiva')+'</button>':'';
   return `<tr><td>${esc(p.name)}</td><td>${esc(p.band||'—')}</td><td>${money(p.vendorPrice)}</td><td>${(p.offers||[]).length}</td><td>${availability}</td><td><button class="rowbtn" onclick="showDetail(${i})">Dettaglio</button> ${toggle}</td></tr>`;
  }).join(''):'<tr><td colspan="6" class="muted">Nessuno smartphone trovato con i filtri correnti.</td></tr>';
