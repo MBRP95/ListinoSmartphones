@@ -1327,7 +1327,8 @@ async function importGlobalStock(){
   for(const r of raw){
    const sku=String(get(r,'Codice Prodotto')).trim(),description=String(get(r,'Descrizione')).trim(),shop=String(get(r,'Negozio')).trim();
    if(!sku||!description||!shop)continue;
-   if(!/iphone|galaxy|samsung|honor|motorola|oppo|realme|xiaomi|redmi|pixel|oneplus/i.test(description)||/buds|auricolari|caricabatter|vetro|cover|custodia|screen protector|screenglass|skinny|t-shirt/i.test(description))continue;
+   // Il file fornito contiene già l'elenco degli articoli da valutare:
+   // non filtrare per marca, perché molte descrizioni sono abbreviate dal gestionale.
    const shopId=(shop.match(/^[A-Z]{2}\d{3}/i)||[])[0]?.toUpperCase()||'';
    if(!shopId)throw new Error('Codice negozio non riconosciuto nella riga: '+shop);
    shops.set(shopId,shop.replace(/^([A-Z]{2}\d{3})\s*[-–:]?\s*/i,'').trim()||shop);
