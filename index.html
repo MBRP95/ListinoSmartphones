@@ -723,6 +723,7 @@ async function logoutStaff(){
  document.getElementById('homeView')?.classList.remove('hidden');
  
  document.getElementById('logoutBtn').style.display='none';
+  document.getElementById('homeAccessBtn').style.display='inline-block';
  document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';
 }
 async function restoreStaffSession(){
@@ -756,6 +757,7 @@ async function restoreStaffSession(){
  document.getElementById('sellerAuthView').classList.add('hidden');
  
  document.getElementById('logoutBtn').style.display='inline-block';
+  document.getElementById('homeAccessBtn').style.display='none';
  return true;
 }
 async function goHome(){
@@ -764,6 +766,7 @@ async function goHome(){
  clearClientSessionState();
  ['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));
  document.getElementById('homeView').classList.remove('hidden');document.getElementById('logoutBtn').style.display='none';
+  document.getElementById('homeAccessBtn').style.display='inline-block';
  document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';
 }
 function goBack(){
@@ -800,6 +803,7 @@ function requestUnifiedAccess(){
  document.getElementById('sellerAuthView').classList.remove('hidden');
  
  document.getElementById('logoutBtn').style.display='none';
+  document.getElementById('homeAccessBtn').style.display='inline-block';
  document.querySelector('#sellerAuthView .eyebrow').textContent='Accesso piattaforma';
  document.querySelector('#sellerAuthView h1').textContent='Benvenuto.';
  document.querySelector('#sellerAuthView .sub').textContent='Inserisci username e password: ti porteremo automaticamente nella tua area.';
@@ -1240,6 +1244,7 @@ async function verifySellerPassword(){
   document.getElementById('sellerUsername').value='';
   
   document.getElementById('logoutBtn').style.display='inline-block';
+  document.getElementById('homeAccessBtn').style.display='none';
   if(profile.role==='admin'){
    await loadShopDirectory();
    setupEditor();
