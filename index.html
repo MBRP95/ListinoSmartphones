@@ -1548,6 +1548,7 @@ function suggestImportedCatalogMatch(description){
   const item=importedTextParts(p.name);
   if(!item.tokens.length)return;
   if(query.storage&&item.storage!==query.storage)return;
+  if(!query.storage&&item.storage)return;
   if(query.color&&item.color!==query.color)return;
   const full=item.tokens.join(' '),wanted=query.tokens.join(' ');
   const reduced=item.tokens.filter(t=>!optionalVariantWords.has(t)).join(' ');
