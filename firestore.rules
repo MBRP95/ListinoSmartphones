@@ -20,10 +20,29 @@ service cloud.firestore {
     function isSeller() {
       return activeUser() && userData().role == 'seller';
     }
-    function isClient() {
-      return activeUser() && userData().role == 'client';
+function sellerOwnsShop(shopId) {
+      return isSeller() && userData().shopId == shopId;
     }
-    function canReadAppData() {
+    function clientShopId() {
+      return signedIn() && request.auth.token.role == 'client'
+        ? request.auth.token.shopId
+        : null;
+    }
+    function isClient() {
+      return signedIn() &&
+        request.auth.token.role == 'client' &&
+        request.auth.token.sid != null &&
+        clientShopId() != null &&
+        exists(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)) &&
+        exists(/databases/$(database)/documents/shopAccess/$(clientShopId())) &&
+        get(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)).data.active == true &&
+        get(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)).data.shopId == clientShopId() &&
+        request.time < get(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)).data.expiresAt &&
+        get(/databases/$(database)/documents/shopAccess/$(clientShopId())).data.active == true &&
+        get(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)).data.sessionVersion ==
+          get(/databases/$(database)/documents/shopAccess/$(clientShopId())).data.sessionVersion;
+    }
+    function canReadCatalog() {
       return isAdmin() || isSeller() || isClient();
     }
 
@@ -34,27 +53,54 @@ service cloud.firestore {
     }
 
     match /shops/{shopId} {
-      allow read: if canReadAppData();
+      // Il cliente QR può leggere soltanto il negozio associato al proprio token.
+      allow get: if isAdmin() || isSeller() ||
+        (isClient() && clientShopId() == shopId);
+      allow list: if isAdmin() || isSeller();
       allow write: if isAdmin();
     }
+
+    function clientCanReadDevice(deviceId) {
+      return isClient() &&
+        clientShopId() != null &&
+        exists(/databases/$(database)/documents/shopCatalog/$(clientShopId())) &&
+        deviceId in get(/databases/$(database)/documents/shopCatalog/$(clientShopId())).data.enabledDeviceIds;
+    }
+
     match /devices/{deviceId} {
-      allow read: if canReadAppData();
+      allow get: if isAdmin() || isSeller() || clientCanReadDevice(deviceId);
+      allow list: if isAdmin() || isSeller();
       allow write: if isAdmin();
     }
+
+    // Le schede tecniche non contengono quantità di magazzino né offerte commerciali.
+    // Il catalogo delle varianti resta comunque filtrato da clientCanReadDevice.
     match /deviceModels/{modelId} {
-      allow read: if canReadAppData();
+      allow read: if canReadCatalog();
       allow write: if isAdmin();
     }
+
+    match /shopCatalog/{shopId} {
+      allow get, list: if isAdmin() ||
+        sellerOwnsShop(shopId) ||
+        (isClient() && clientShopId() == shopId);
+      allow create, update: if isAdmin() || sellerOwnsShop(shopId);
+      allow delete: if isAdmin();
+    }
+
     match /stock/{stockId} {
-      allow read: if canReadAppData();
+      allow read: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
+
     match /settings/{settingId} {
-      allow read: if canReadAppData();
+      allow get: if isAdmin() || (settingId == 'catalog' && canReadCatalog());
+      allow list: if isAdmin();
       allow write: if isAdmin();
     }
+
     match /stockVersions/{versionId}/items/{stockId} {
-      allow read: if canReadAppData();
+      allow read: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 

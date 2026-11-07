@@ -348,7 +348,16 @@ body.client-kiosk{overflow:hidden}
 body.client-kiosk #clientView{position:fixed;inset:0;z-index:9998;display:block!important;overflow-y:auto;width:100%;height:100dvh;background:#050505;padding:18px 14px 28px}
 body.client-kiosk #clientFullscreenBtn{top:auto;right:7px;bottom:7px;width:25px;height:25px;font-size:13px;opacity:.22;background:#111;border-color:#776047}
 body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreenBtn:hover{opacity:.9}
-@media print{#clientFullscreenBtn{display:none!important}}
+@media print{
+ body *{visibility:hidden!important}
+ #shopQrPrintCard,#shopQrPrintCard *{visibility:visible!important}
+ #shopQrPrintCard{position:fixed!important;inset:12mm auto auto 50%!important;transform:translateX(-50%)!important;width:180mm!important;max-width:180mm!important;margin:0!important;padding:12mm!important;background:#fff!important;color:#111!important;text-align:center!important;border:0!important;box-shadow:none!important}
+ #shopQrPrintCard h2,#shopQrPrintCard p{color:#111!important}
+ #shopQrPrintCard #shopQrCanvas{display:inline-block!important;margin:8mm auto!important;border:1px solid #ddd!important}
+ #shopQrPrintCard #shopQrUrl{font-size:9pt!important}
+ #clientFullscreenBtn{display:none!important}
+ @page{size:A4;margin:10mm}
+}
 
 /* CONTRAST FIX — technical specs and unmet requirements */
 #clientView .spec-item{background:#f7f9fc!important;border:1px solid #dce3ed!important}
@@ -419,8 +428,9 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 #clientView .client-answer.selected .answer-radio:after{background:#ffbd4a!important}
 #clientView .answer-arrow{color:#c6b49b!important}
 #clientView .client-answer.selected .answer-arrow{color:#ffbd4a!important}
+
 </style>
-<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head><body>
 <header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav><button id="homeBtn" onclick="goBack()" style="display:none">Indietro</button></nav></header>
 <main>
@@ -444,6 +454,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <div class="home-footnote"><span>DEVICE PROPOSER</span><span>SMARTPHONE SALES ASSISTANT</span></div>
 </section>
 <section id="clientView" class="hidden">
+<div id="clientPinPanel" class="panel hidden" style="max-width:520px"><div class="eyebrow">Accesso cliente</div><h1>Benvenuto.</h1><p class="hint">Inserisci il PIN comunicato dal personale del negozio.</p><div class="field"><label for="clientPinInput">PIN a 6 cifre</label><input id="clientPinInput" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••"></div><div id="clientPinMsg" class="muted"></div><div class="actions"><button class="primary" id="clientPinButton" onclick="verifyClientPin()">Accedi al catalogo</button></div></div>
 <button id="clientFullscreenBtn" type="button" onclick="toggleClientFullscreen()" aria-label="Attiva schermo intero" title="Schermo intero">⛶</button>
 <div id="clientShopPanel" class="panel hidden" style="max-width:560px"><h2>Seleziona il negozio</h2><p class="hint">Scegli il punto vendita per visualizzare soltanto gli smartphone disponibili nelle sue giacenze.</p><div class="field"><label for="clientShopSelect">Negozio</label><select id="clientShopSelect"></select></div><div class="actions"><button class="primary" onclick="confirmClientShop()">Continua</button></div></div>
 <div id="clientStartPanel" class="panel hidden"><div class="eyebrow">Come preferisci procedere?</div><h1>Ti guidiamo nella scelta?</h1><p class="hint">Puoi rispondere a poche domande oppure scegliere direttamente il modello che hai già in mente.</p><div class="actions"><button class="primary" onclick="beginGuidedChoice()">Sì, guidami nella scelta</button><button class="secondary" onclick="beginDirectChoice()">No, so già cosa cerco</button></div></div>
@@ -456,7 +467,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <div class="hero"><div class="eyebrow">Accesso dipendenti</div><h1>Seleziona il negozio</h1><p class="sub">Scegli il punto vendita su cui lavorare. Potrai cambiare negozio anche dal gestionale.</p></div>
 <div class="panel" style="max-width:560px"><div class="field"><label for="sellerShopSelect">Negozio</label><select id="sellerShopSelect"></select></div><div id="sellerShopMsg" class="muted"></div><div class="actions"><button class="secondary" onclick="goHome()">Esci</button><button class="primary" onclick="confirmSellerShop()">Entra nel gestionale</button></div></div>
 </section>
-<section id="adminView" class="hidden"><div class="hero"><div class="eyebrow">Area amministratore</div><h1>Gestisci catalogo e magazzino.</h1><p class="sub">Catalogo e giacenze vengono salvati direttamente su Firebase.</p></div><div class="actions" style="justify-content:flex-start;margin:0 0 16px"><button class="primary" id="adminCatalogTab" onclick="switchAdminTab('catalog')">Catalogo e magazzino</button><button class="secondary" id="adminUsersTab" onclick="switchAdminTab('users')">Gestione utenze</button></div><div id="adminUsersSection" class="hidden"><div class="panel" id="individualUsersPanel"><h2>Account individuali dipendenti</h2><p class="hint">Crea un accesso personale e assegnalo a un negozio. Username non modificabile dopo la creazione.</p><div class="grid"><div class="field"><label for="newSellerRole">Tipo account</label><select id="newSellerRole" onchange="updateNewAccountRole()"><option value="seller">Dipendente</option><option value="admin">Amministratore</option></select></div><div class="field"><label for="newSellerUsername">Username</label><input id="newSellerUsername" autocomplete="off" placeholder="es. Modena01" maxlength="40"></div><div class="field"><label for="newSellerDisplayName">Nome visualizzato</label><input id="newSellerDisplayName" placeholder="Nome Cognome"></div><div class="field" id="newSellerShopField"><label for="newSellerShop">Negozio assegnato</label><select id="newSellerShop"><option value="">Caricamento negozi…</option></select></div><div class="field"><label for="newSellerPassword">Password iniziale</label><input id="newSellerPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128"></div></div><div class="actions"><button class="primary" id="createSellerBtn" onclick="createIndividualSeller()">Crea account dipendente</button><button class="secondary" onclick="loadIndividualSellers()">Aggiorna elenco</button></div><div id="individualUsersMsg" class="muted" role="status" style="margin-top:10px"></div><div id="individualUsersList" class="tablewrap" style="margin-top:14px"></div></div><div class="panel"><h2>Gestione password</h2><p class="hint">Reimposta la password degli account condivisi. Le password non vengono mostrate né salvate nell'app.</p><div class="grid"><div class="field"><label for="passwordTarget">Account</label><select id="passwordTarget"><option value="client">Cliente</option><option value="seller">Dipendenti</option><option value="admin">Amministratore</option></select></div><div class="field"><label for="newSharedPassword">Nuova password</label><input id="newSharedPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Almeno 8 caratteri"></div><div class="field"><label for="confirmSharedPassword">Conferma nuova password</label><input id="confirmSharedPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Ripeti la password"></div></div><div class="actions"><button class="primary" id="saveSharedPasswordBtn" onclick="resetSharedPassword()">Reimposta password</button></div><div id="sharedPasswordMsg" class="muted" role="status" style="margin-top:10px"></div></div></div><div id="adminCatalogSection"><div class="panel"><h2>Importazione magazzino globale</h2><p class="hint">Carica l’esportazione completa Excel di tutti i negozi. Le nuove giacenze saranno pubblicate solo dopo il caricamento completo.</p><div class="toolbar"><div class="field"><label>Excel magazzino completo (.xlsx)</label><input id="globalStockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importGlobalStock()">Controlla e pubblica magazzino</button></div><div id="globalStockMsg" class="muted" style="margin-top:10px"></div></div><div class="panel"><h2>Aggiorna listino da PDF</h2><p class="hint">Carica il nuovo PDF retail. Il catalogo non cambia finché non controlli l'anteprima e confermi.</p><div class="toolbar"><div class="field"><label>Nuovo listino retail (.pdf)</label><input id="retailPdf" type="file" accept="application/pdf,.pdf"></div><button class="primary" onclick="previewRetailPdf()">Analizza PDF</button></div><div id="pdfMsg" class="muted" style="margin-top:9px"></div><div id="pdfPreview" class="hidden" style="margin-top:14px"><div class="stats"><div class="stat"><b id="pdfCount">0</b><span>varianti lette</span></div><div class="stat"><b id="pdfNew">0</b><span>nuove varianti</span></div><div class="stat"><b id="pdfChanged">0</b><span>prezzi modificati</span></div><div class="stat"><b id="pdfWarnings">0</b><span>anomalie</span></div></div><div class="notice">Schede tecniche e abbinamenti SKU sono mantenuti quando la variante è riconosciuta. Il magazzino non viene modificato.</div><div class="tablewrap"><table><thead><tr><th>Variante</th><th>Prezzo attuale</th><th>Nuovo prezzo</th><th>Esito</th></tr></thead><tbody id="pdfRows"></tbody></table></div><div class="actions"><button class="secondary" onclick="cancelPdfImport()">Annulla</button><button class="primary" onclick="confirmPdfImport()">Conferma aggiornamento</button></div></div></div><div class="panel" id="deviceManagementPanel"><h2>Gestione dispositivo</h2><p class="hint">Cerca e seleziona una variante: qui puoi gestire insieme scheda tecnica e promozioni.</p><div class="grid"><div class="field"><label for="adminDeviceSearch">Cerca dispositivo</label><input id="adminDeviceSearch" type="search" placeholder="Scrivi marca, modello, RAM, memoria..." oninput="filterAdminDevices()"></div><div class="field"><label for="adminDeviceSelect">Dispositivo selezionato</label><select id="adminDeviceSelect" onchange="selectAdminDevice()"></select></div></div><div class="field" style="display:none"><label>Modello</label><select id="editDevice" onchange="loadEditor()"></select></div><p class="hint">Le caratteristiche comuni vengono salvate una volta per modello. RAM e memoria restano proprietà della singola variante.</p>
+<section id="adminView" class="hidden"><div class="hero"><div class="eyebrow">Area amministratore</div><h1>Gestisci catalogo e magazzino.</h1><p class="sub">Catalogo e giacenze vengono salvati direttamente su Firebase.</p></div><div class="actions" style="justify-content:flex-start;margin:0 0 16px"><button class="primary" id="adminCatalogTab" onclick="switchAdminTab('catalog')">Catalogo e magazzino</button><button class="secondary" id="adminUsersTab" onclick="switchAdminTab('users')">Gestione utenze</button></div><div id="adminUsersSection" class="hidden"><div class="panel" id="individualUsersPanel"><h2>Account individuali dipendenti</h2><p class="hint">Crea un accesso personale e assegnalo a un negozio. Username non modificabile dopo la creazione.</p><div class="grid"><div class="field"><label for="newSellerRole">Tipo account</label><select id="newSellerRole" onchange="updateNewAccountRole()"><option value="seller">Dipendente</option><option value="admin">Amministratore</option></select></div><div class="field"><label for="newSellerUsername">Username</label><input id="newSellerUsername" autocomplete="off" placeholder="es. Modena01" maxlength="40"></div><div class="field"><label for="newSellerDisplayName">Nome visualizzato</label><input id="newSellerDisplayName" placeholder="Nome Cognome"></div><div class="field" id="newSellerShopField"><label for="newSellerShop">Negozio assegnato</label><select id="newSellerShop"><option value="">Caricamento negozi…</option></select></div><div class="field"><label for="newSellerPassword">Password iniziale</label><input id="newSellerPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128"></div></div><div class="actions"><button class="primary" id="createSellerBtn" onclick="createIndividualSeller()">Crea account dipendente</button><button class="secondary" onclick="loadIndividualSellers()">Aggiorna elenco</button></div><div id="individualUsersMsg" class="muted" role="status" style="margin-top:10px"></div><div id="individualUsersList" class="tablewrap" style="margin-top:14px"></div></div><div class="panel"><h2>Gestione password</h2><p class="hint">Reimposta la password degli account condivisi. Le password non vengono mostrate né salvate nell'app.</p><div class="grid"><div class="field"><label for="passwordTarget">Account</label><select id="passwordTarget"><option value="client">Cliente</option><option value="seller">Dipendenti</option><option value="admin">Amministratore</option></select></div><div class="field"><label for="newSharedPassword">Nuova password</label><input id="newSharedPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Almeno 8 caratteri"></div><div class="field"><label for="confirmSharedPassword">Conferma nuova password</label><input id="confirmSharedPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Ripeti la password"></div></div><div class="actions"><button class="primary" id="saveSharedPasswordBtn" onclick="resetSharedPassword()">Reimposta password</button></div><div id="sharedPasswordMsg" class="muted" role="status" style="margin-top:10px"></div></div></div><div id="adminCatalogSection"><div class="panel"><h2>Abilitazione e disabilitazione dispositivi per negozio</h2><p class="hint">Carica l’esportazione Excel del gestionale. Il sistema usa Codice Prodotto, Descrizione e Negozio per determinare quali dispositivi rendere visibili in ciascun punto vendita. Le quantità di magazzino non vengono importate. I negozi rilevati saranno selezionati automaticamente; puoi scegliere su quali applicare la sincronizzazione.</p><div class="toolbar"><div class="field"><label>File Excel (.xlsx / .xls)</label><input id="globalStockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importGlobalStock()">Analizza Excel</button></div><div id="globalStockMsg" class="muted" style="margin-top:10px"></div><div id="shopSyncPreview" class="hidden" style="margin-top:16px"></div></div><div class="panel" id="deviceManagementPanel"><h2>Gestione dispositivo</h2><p class="hint">Cerca e seleziona una variante: qui puoi gestire insieme scheda tecnica e promozioni.</p><div class="grid"><div class="field"><label for="adminDeviceSearch">Cerca dispositivo</label><input id="adminDeviceSearch" type="search" placeholder="Scrivi marca, modello, RAM, memoria..." oninput="filterAdminDevices()"></div><div class="field"><label for="adminDeviceSelect">Dispositivo selezionato</label><select id="adminDeviceSelect" onchange="selectAdminDevice()"></select></div></div><div class="field" style="display:none"><label>Modello</label><select id="editDevice" onchange="loadEditor()"></select></div><p class="hint">Le caratteristiche comuni vengono salvate una volta per modello. RAM e memoria restano proprietà della singola variante.</p>
 <div class="field"><label>Modello</label><select id="editDevice" onchange="loadEditor()"></select></div>
 <h3>Varianti</h3><div class="tablewrap"><table><thead><tr><th>Variante</th><th>RAM</th><th>Memoria</th></tr></thead><tbody id="variantRows"></tbody></table></div>
 <h3 style="margin-top:18px">Specifiche condivise</h3><div class="grid">
@@ -482,26 +493,49 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <div class="panel" id="offerValuesEditor"><h2>Modifica prezzi e rate delle offerte</h2><p class="hint">Seleziona una variante e correggi manualmente il totale del dispositivo e, per i finanziamenti, la rata mensile. Le modifiche vengono salvate direttamente su Firebase e restano associate alla singola variante.</p><div class="field" style="display:none"><label for="offerEditDevice">Variante smartphone</label><select id="offerEditDevice" onchange="renderOfferEditor()"></select></div><div id="offerEditRows" style="margin-top:14px"></div><div class="actions"><button class="primary" id="saveOfferValuesBtn" onclick="saveOfferValues()">Salva prezzi e rate su Firebase</button></div><div id="offerValuesMsg" class="muted" role="status" style="margin-top:8px"></div>
 </div><div class="notice">Questa password protegge soltanto l'interfaccia: in un sito statico è leggibile nel codice pubblico. Anche il token è esposto al browser durante l'operazione.</div></section>
 <section id="storeView" class="hidden">
-<div class="hero"><div class="eyebrow">Area negozio</div><h1>Catalogo, listino e magazzino.</h1><p class="sub">Il catalogo retail si aggiorna caricando il PDF. Importa il file Excel aggiornato per riallineare disponibilità e quantità del negozio.</p></div>
+<div class="hero"><div class="eyebrow">Area negozio</div><h1>Catalogo, listino e magazzino.</h1><p class="sub">Il catalogo e le offerte sono gestiti dall’amministratore. Le abilitazioni dei dispositivi per negozio si aggiornano caricando il file Excel commerciale.</p></div>
 
-<div class="panel admin-only"><h2>Aggiorna magazzino</h2><p class="hint">Carica l'Excel esportato dal gestionale. Vengono considerate soltanto le righe che sembrano smartphone; accessori e altri articoli sono esclusi. Le righe importate sostituiscono la fotografia iniziale.</p><div class="toolbar"><div class="field"><label>File Excel magazzino (.xlsx)</label><input id="stockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importStock()">Importa magazzino</button></div><div id="importMsg" class="muted" style="margin-top:9px"></div>
-<div class="notice">Disponibilità calcolata come <b>Giacenza − Quantità Impegnata</b>. Quantità futura e in arrivo non vengono considerate vendibili. È una scelta prudenziale: non promette al cliente merce non ancora fisicamente disponibile.</div></div>
-<div class="panel admin-only"><div class="toolbar"><div class="field"><h2>Associa SKU al listino</h2><p class="hint">Il collegamento automatico è solo un suggerimento. Controlla le varianti non abbinate o dubbie: capacità e colore devono corrispondere.</p></div><button class="secondary" onclick="autoMatchAll()">Prova abbinamento automatico</button></div>
+<div class="panel admin-only"><h2>Disponibilità e associazioni</h2><p class="hint">L’abilitazione dei dispositivi per ciascun negozio si gestisce dalla sezione amministratore “Abilitazione dispositivi per negozio”, caricando il file Excel commerciale. Questo pannello mostra le associazioni SKU già presenti.</p></div><div class="panel admin-only"><div class="toolbar"><div class="field"><h2>Associa SKU al listino</h2><p class="hint">Il collegamento automatico è solo un suggerimento. Controlla le varianti non abbinate o dubbie: capacità e colore devono corrispondere.</p></div><button class="secondary" onclick="autoMatchAll()">Prova abbinamento automatico</button></div>
 <div class="tablewrap"><table><thead><tr><th>SKU</th><th>Descrizione magazzino</th><th>Giacenza</th><th>Impegnata</th><th>Disponibili</th><th>Variante listino associata</th><th>Esito</th></tr></thead><tbody id="stockRows"></tbody></table></div></div>
 
 <div class="field admin-only" style="margin-top:15px"><label>Carica catalogo JSON aggiornato</label><input type="file" id="catalogJson" accept=".json,application/json" onchange="importCatalogJson()"></div>
-<div class="field admin-only"><label>Carica magazzino JSON aggiornato</label><input type="file" id="stockJson" accept=".json,application/json" onchange="importStockJson()"></div>
+
 <div id="exportMsg" class="muted"></div></div>
-<div class="panel"><h2>Catalogo e promozioni disponibili</h2><p class="hint">La ricerca considera tutti i negozi. Per ogni variante puoi vedere dove è disponibile e in quale quantità. Il negozio scelto all'accesso resta evidenziato.</p><div class="toolbar catalog-filters"><div class="field"><label>Visualizza disponibilità</label><select id="shopFilter" onchange="changeShopFilter()"><option value="__all__">Tutti i negozi</option></select></div><div class="field"><label>Cerca modello / marca</label><input id="catalogSearch" placeholder="Es. iPhone 17, Galaxy S26..." oninput="renderCatalog()"></div><div class="field"><label>Marca</label><select id="brandFilter" onchange="renderCatalog()"><option value="">Tutte</option></select></div></div>
+<div class="panel" id="shopQrPanel">
+<div class="eyebrow">Accesso cliente</div><h2>QR code e PIN del negozio</h2>
+<p class="hint">Il QR identifica il negozio; il PIN va comunicato separatamente al cliente. Cambiare PIN revoca tutte le sessioni cliente già attive.</p>
+<div class="grid">
+ <div class="field"><label for="shopPinValue">Nuovo PIN (6 cifre)</label><input id="shopPinValue" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="Imposta o ruota il PIN"></div>
+ <div class="field"><label>Negozio selezionato</label><div id="shopQrTarget" class="stat"><b>—</b><span>Seleziona un negozio</span></div></div>
+</div>
+<div class="actions" style="justify-content:flex-start;flex-wrap:wrap">
+ <button class="primary" onclick="saveShopPin()">Imposta / cambia PIN</button>
+ <button class="secondary" onclick="disableShopPin()">Disabilita accesso PIN</button>
+ <button class="secondary" onclick="renderShopQr()">Mostra QR code</button>
+ <button class="secondary" onclick="printShopQr()">Stampa QR</button>
+</div>
+<div id="shopPinMsg" class="muted" role="status" style="margin-top:10px"></div>
+<div id="shopQrResult" class="hidden" style="margin-top:18px;text-align:center">
+ <div id="shopQrPrintCard">
+  <h2 id="shopQrPrintTitle">Catalogo smartphone</h2>
+  <p>Scansiona il QR code e chiedi il PIN al personale del negozio.</p>
+ <div id="shopQrCanvas" style="display:inline-block;padding:14px;background:white;border:1px solid #e4eaf2;border-radius:14px"></div>
+ <p class="muted" id="shopQrUrl" style="overflow-wrap:anywhere"></p>
+ <p class="hint">Non stampare o esporre il PIN insieme al QR code.</p>
+ </div>
+</div>
+</div>
+<div class="panel"><h2>Catalogo e promozioni disponibili</h2><p class="hint">La ricerca considera tutti i negozi. Per ogni variante puoi vedere dove è disponibile e in quale quantità. Il negozio scelto all'accesso resta evidenziato.</p><div class="toolbar catalog-filters"><div class="field"><label>Visualizza disponibilità</label><select id="shopFilter" onchange="changeShopFilter()"><option value="__all__">Tutti i negozi</option></select></div><div class="field"><label>Cerca modello / marca</label><input id="catalogSearch" placeholder="Es. iPhone 17, Galaxy S26..." oninput="renderCatalog()"></div><div class="field"><label>Marca</label><select id="brandFilter" onchange="renderCatalog()"><option value="">Tutte</option></select></div><div class="field"><label>Stato catalogo</label><select id="catalogStatusFilter" onchange="renderCatalog()"><option value="all">Tutti</option><option value="enabled">Attivi</option><option value="disabled">Disattivati</option></select></div></div>
 <div class="tablewrap"><table><thead><tr><th>Modello / variante</th><th>Fascia</th><th>Prezzo vendor</th><th>Offerte</th><th>Disponibilità per negozio</th><th></th></tr></thead><tbody id="catalogRows"></tbody></table></div></div>
 <div id="detailPanel" class="panel hidden"><div class="toolbar" style="justify-content:space-between;align-items:center"><h2>Dettaglio variante e condizioni</h2><button class="secondary" onclick="closeDetail()">Chiudi</button></div><div id="detailBox"></div></div>
 </section>
 </main>
 
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyA-FeADcnW89AOSuAZ-i3xnF7reReOcg2o",
@@ -515,7 +549,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-window.firebaseApi = { auth, db, signInWithEmailAndPassword, signOut, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc };
+window.firebaseApi = { auth, db, signInWithEmailAndPassword, signInWithCustomToken, signOut, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc };
 window.firebaseReady = true;
 window.dispatchEvent(new Event("firebase-ready"));
 </script>
@@ -523,6 +557,8 @@ window.dispatchEvent(new Event("firebase-ready"));
 let catalog=[];
 let stock=[];
 let mappings={};
+let enabledDeviceIds=[];
+let shopCatalogLoaded=false;
 const questions=[
  {key:'budget',name:'Budget',title:'Quanto vuoi investire nel tuo prossimo smartphone?',desc:'Consideriamo il prezzo di listino dei dispositivi disponibili.',icon:'€',opts:[['200','Fino a 200 €','Essenziale e conveniente'],['350','Fino a 350 €','Un buon equilibrio'],['500','Fino a 500 €','Più prestazioni e qualità'],['800','Fino a 800 €','Fascia alta'],['over800','Oltre 800 €','Il meglio senza compromessi'],['any','Valuto tutte le fasce','Prima vediamo cosa offre il negozio']]},
  {key:'use',name:'Utilizzo',title:'Come utilizzi più spesso il telefono?',desc:'Ci aiuta a dare il giusto peso a prestazioni, schermo e autonomia.',icon:'✦',opts:[['everyday','Un po’ di tutto','Chat, social, navigazione e app'],['photos','Foto e video','Scatto spesso e voglio bei ricordi'],['work','Lavoro e produttività','Email, documenti e tante app'],['gaming','Giochi e intrattenimento','Fluidità e schermo di qualità'],['simple','Uso semplice','Chiamate, messaggi e poche app'],['any','Un utilizzo equilibrato','Non ho esigenze particolari']]},
@@ -538,6 +574,7 @@ let requestedAccessRole='staff';
 let clientLoginVerified=false;
 let currentShopId=new URLSearchParams(location.search).get('shop')||'';
 let selectedShopFilter='';
+let shopDirectory=[];
 let activeStockVersion='';
 let catalogUpdatedAt=null;
 let stockUpdatedAt=null;
@@ -561,7 +598,23 @@ function matchScore(a,b){
 }
 function autoMatch(s){let ranked=catalog.map((p,i)=>({i,score:matchScore(s.description,p.name)})).sort((a,b)=>b.score-a.score);return ranked[0]?.score>=.48?ranked[0].i:-1}
 function autoMatchAll(){stock.forEach(s=>{if(mapped(s)<0){const i=autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}}});renderAll();alert('Abbinamento automatico completato. Verifica manualmente ogni SKU: non è una conferma di corrispondenza.')}
-async function goHome(){if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}currentUserProfile=null;selectedDeviceIndex=-1;selectedDeviceSku='';selectedOfferIndex=0;['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';}
+function clearClientSessionState(){
+ if(clientExpiryTimer){clearTimeout(clientExpiryTimer);clientExpiryTimer=null;}
+ currentUserProfile=null;requestedAccessRole='';clientLoginVerified=false;
+ currentShopId='';catalog=[];enabledDeviceIds=[];shopCatalogLoaded=false;stock=[];mappings={};
+ selectedDeviceIndex=-1;selectedDeviceSku='';selectedOfferIndex=0;window.currentModelSpecs={};
+ ['clientStartPanel','clientDirectPanel','clientShopPanel','selectedDevicePanel','results'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden')});
+ const input=document.getElementById('clientPinInput');if(input)input.value='';
+ const pinMsg=document.getElementById('clientPinMsg');if(pinMsg)pinMsg.textContent='';
+}
+async function goHome(){
+ if(clientExpiryTimer){clearTimeout(clientExpiryTimer);clientExpiryTimer=null;}
+ if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}
+ clearClientSessionState();
+ ['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+ document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';
+ document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';
+}
 function goBack(){
  const overlay=document.getElementById('proposalOverlay');
  if(overlay&&typeof overlay.closeProposal==='function'){overlay.closeProposal();return;}
@@ -612,19 +665,14 @@ async function startSellerMode(){
   const shopId=String(currentUserProfile?.shopId||'').trim();
   if(!shopId)throw new Error('Questo account Seller non è associato a un negozio. Assegna il negozio dal profilo Admin.');
   currentShopId=shopId;selectedShopFilter=shopId;
-  msg.textContent='Caricamento disponibilità di '+shopId+'…';
-  const loaded=await loadStockFromFirestore();
-  if(!loaded)throw new Error('Magazzino non pubblicato su Firebase.');
-  applyStockMappings();
+  msg.textContent='Caricamento catalogo commerciale di '+shopId+'…';
+  await loadShopCatalog(shopId);
+  stock=[];mappings={};stockUpdatedAt=null;
   document.getElementById('sellerShopView').classList.add('hidden');
   document.getElementById('storeView').classList.remove('hidden');
   document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
   renderDataFreshness();renderAll();
- }catch(e){
-  msg.textContent='Impossibile aprire il negozio associato: '+e.message;
-  console.error('startSellerMode:',e);
-  throw e;
- }
+ }catch(e){msg.textContent='Impossibile aprire il negozio associato: '+e.message;console.error('startSellerMode:',e);throw e;}
 }
 async function confirmSellerShop(){
  const id=document.getElementById('sellerShopSelect').value;
@@ -665,6 +713,69 @@ document.addEventListener('fullscreenchange',()=>{
  const active=!!document.fullscreenElement;
  btn.textContent=active?'×':'⛶';btn.setAttribute('aria-label',active?'Esci dallo schermo intero':'Attiva schermo intero');btn.title=active?'Esci':'Schermo intero';
 });
+
+const CLIENT_WORKER_URL='https://device-proposer-admin.mariab-ragucci.workers.dev';
+let clientExpiryTimer=null;
+function qrShopFromUrl(){const id=new URLSearchParams(location.search).get('shop')||'';return /^[A-Z0-9_-]{2,32}$/.test(id)?id:''}
+async function verifyClientPin(){
+ const shopId=qrShopFromUrl(),pin=document.getElementById('clientPinInput').value.trim(),msg=document.getElementById('clientPinMsg'),btn=document.getElementById('clientPinButton');
+ if(!shopId){msg.textContent='QR code non valido.';return}
+ if(!/^\d{6}$/.test(pin)){msg.textContent='Inserisci un PIN di 6 cifre.';return}
+ btn.disabled=true;msg.textContent='Verifica del PIN…';
+ const api=window.firebaseApi;
+ try{
+  const response=await fetch(CLIENT_WORKER_URL+'/client/access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({shopId,pin})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.success)throw new Error(data.error||'Accesso non riuscito.');
+  await api.signOut(api.auth).catch(()=>{});
+  await api.signInWithCustomToken(api.auth,data.customToken);
+  requestedAccessRole='client';
+  currentUserProfile={role:'client',shopId:data.shopId,shopName:data.shopName,active:true};
+  currentShopId=data.shopId;
+  await loadClientCatalogForShop(data.shopId);
+  stock=[];mappings={};
+  document.getElementById('clientPinPanel').classList.add('hidden');
+  document.getElementById('clientStartPanel').classList.remove('hidden');
+  document.getElementById('clientPinMsg').textContent='';
+  document.getElementById('homeBtn').style.display='inline-block';
+  if(clientExpiryTimer)clearTimeout(clientExpiryTimer);
+  const expiresAt=Date.parse(data.expiresAt);
+  if(!Number.isFinite(expiresAt)||expiresAt<=Date.now())throw new Error('La sessione ricevuta non è valida o è già scaduta.');
+  clientExpiryTimer=setTimeout(async()=>{
+   try{await api.signOut(api.auth)}catch(e){}
+   clearClientSessionState();
+   document.getElementById('clientView').classList.add('hidden');
+   document.getElementById('homeView').classList.remove('hidden');
+   document.getElementById('homeBtn').style.display='none';
+   alert('Sessione scaduta. Scansiona nuovamente il QR code.');
+  },expiresAt-Date.now());
+ }catch(e){
+  clearClientSessionState();
+  try{await api.signOut(api.auth)}catch(ignore){}
+  document.getElementById('clientPinPanel').classList.remove('hidden');
+  document.getElementById('clientStartPanel').classList.add('hidden');
+  document.getElementById('homeBtn').style.display='none';
+  msg.textContent=e.message||'Accesso non riuscito.';
+ }finally{btn.disabled=false}
+}
+async function startQrClientEntry(){
+ const shopId=qrShopFromUrl();if(!shopId)return false;
+ if(clientExpiryTimer){clearTimeout(clientExpiryTimer);clientExpiryTimer=null;}
+ try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}
+ clearClientSessionState();
+ currentShopId=shopId;
+ document.getElementById('homeView').classList.add('hidden');
+ document.getElementById('sellerAuthView').classList.add('hidden');
+ document.getElementById('storeView').classList.add('hidden');
+ document.getElementById('clientView').classList.remove('hidden');
+ document.getElementById('clientPinPanel').classList.remove('hidden');
+ document.getElementById('clientShopPanel').classList.add('hidden');
+ document.getElementById('clientStartPanel').classList.add('hidden');
+ document.querySelector('#clientView .hero').classList.add('hidden');
+ document.getElementById('homeBtn').style.display='none';
+ document.getElementById('clientPinInput').focus();
+ return true;
+}
 async function startClientMode(){
  if(!clientLoginVerified||currentUserProfile?.role!=='client'||!window.firebaseApi?.auth?.currentUser){
   enterClient();
@@ -694,19 +805,22 @@ async function confirmClientShop(){
  if(!id){alert('Seleziona un negozio.');return}
  currentShopId=id;
  try{
-  await loadStockFromFirestore(id);
-  applyStockMappings();
+  await loadClientCatalogForShop(id);stock=[];mappings={};
   document.getElementById('clientShopPanel').classList.add('hidden');
   document.getElementById('clientStartPanel').classList.remove('hidden');
- }catch(e){alert('Errore caricamento disponibilità: '+e.message)}
+ }catch(e){alert('Errore caricamento catalogo: '+e.message)}
 }
 function beginGuidedChoice(){document.getElementById('clientStartPanel').classList.add('hidden');document.getElementById('clientDirectPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.remove('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel):not(#clientStartPanel):not(#clientDirectPanel)').classList.remove('hidden');startClientWizard()}
 function beginDirectChoice(){document.getElementById('clientStartPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.add('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel):not(#clientStartPanel):not(#clientDirectPanel)').classList.add('hidden');document.getElementById('clientDirectPanel').classList.remove('hidden');document.getElementById('clientDeviceSearch').value='';renderClientDeviceList()}
-function renderClientDeviceList(){const q=norm(document.getElementById('clientDeviceSearch').value);const rows=currentAvailable().filter(({p})=>!q||norm(p.name).includes(q));document.getElementById('clientDeviceList').innerHTML=rows.length?rows.map(({s,p})=>{const i=catalog.indexOf(p);return '<button class="device product-card" onclick="selectDevice('+i+',\''+esc(s.sku)+'\')"><div class="devicehead"><h3>'+esc(p.name)+'</h3></div><div class="price">'+money(priceFor(p))+'</div><div class="card-cta">Scegli questo modello →</div></button>'}).join(''):'<div class="notice">Nessun dispositivo trovato.</div>'}
+function renderClientDeviceList(){
+ const q=norm(document.getElementById('clientDeviceSearch').value);
+ const rows=productsForShop().filter(({p})=>!q||norm(p.name).includes(q));
+ document.getElementById('clientDeviceList').innerHTML=rows.length?rows.map(({p,i})=>'<button class="device product-card" onclick="selectDevice('+i+',\'CATALOGO\')"><div class="devicehead"><h3>'+esc(p.name)+'</h3></div><div class="price">'+money(priceFor(p))+'</div><div class="card-cta">Scegli questo modello →</div></button>').join(''):'<div class="notice">Nessun dispositivo trovato.</div>';
+}
 function startClientWizard(){
  step=0;answers={};
  document.getElementById('clientDirectPanel').classList.add('hidden');
- const availableDevices=currentAvailable().map(x=>x.p);
+ const availableDevices=productsForShop().map(x=>x.p);
  const has=(keys)=>availableDevices.some(p=>{const t=deviceFeatureText(p);return keys.some(k=>t.includes(k));});
  activeQuestions=questions.filter(q=>{
   if(q.key==='camera')return has(['fotocamera','teleobiettivo','ultra-grandangolare','video']);
@@ -909,10 +1023,14 @@ async function verifySellerPassword(){
   if(!profileSnap.exists())throw new Error('Profilo utente non configurato in Firestore.');
   const profile=profileSnap.data();
   if(profile.active!==true)throw new Error('Account disattivato. Contatta l’amministratore.');
-  if(!['admin','seller','client'].includes(profile.role))throw new Error('Ruolo utente non valido.');
-  requestedAccessRole=profile.role==='client'?'client':'staff';
+  if(!['admin','seller'].includes(profile.role)) {
+   throw new Error(profile.role==='client'
+    ? 'Gli account cliente condivisi non sono più supportati. Scansiona il QR code del negozio e inserisci il PIN.'
+    : 'Ruolo utente non valido.');
+  }
+  requestedAccessRole='staff';
   currentUserProfile={...profile,uid:credential.user.uid};
-  selectedShopFilter=profile.role==='seller'?'':'';
+  selectedShopFilter='';
   if(profile.role==='admin') await loadAuthenticatedData({loadStock:true});
   else { await loadCatalogFromFirestore(); stock=[]; mappings={}; }
   document.getElementById('sellerAuthView').classList.add('hidden');
@@ -920,6 +1038,7 @@ async function verifySellerPassword(){
   document.getElementById('sellerUsername').value='';
   document.getElementById('homeBtn').style.display='inline-block';
   if(profile.role==='admin'){
+   await loadShopDirectory();
    setupEditor();
    document.getElementById('adminView').classList.remove('hidden');
    renderDataFreshness();
@@ -930,9 +1049,6 @@ async function verifySellerPassword(){
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
    selectedShopFilter=profile.shopId||'';currentShopId=profile.shopId||'';
    await startSellerMode();
-  }else{
-   clientLoginVerified=true;
-   await startClientMode();
   }
  }catch(e){
   clientLoginVerified=false;
@@ -1226,17 +1342,25 @@ function scopedStock(){
  const shopId=currentUserProfile?.role==='seller'?(selectedShopFilter||currentUserProfile.shopId):currentShopId;
  return stock.filter(s=>(!shopId||s.shopId===shopId||(!s.shopId&&String(s.shop||'').startsWith(shopId)))&&String(s.warehouse||'').toLowerCase()==='vendibile'&&available(s)>0);
 }
-function changeShopFilter(){
+async function changeShopFilter(){
+ refreshShopQrTarget();
  const sel=document.getElementById('shopFilter');
  selectedShopFilter=String(sel?.value||'__all__').trim();
+ if(currentUserProfile?.role==='admin'&&selectedShopFilter!=='__all__'){
+  try{await loadShopCatalog(selectedShopFilter);}catch(e){alert('Impossibile caricare il catalogo del negozio: '+e.message);return;}
+ }else if(currentUserProfile?.role==='admin'){enabledDeviceIds=[];shopCatalogLoaded=false;}
  renderCatalog();
+}
+async function loadShopDirectory(){
+ const api=window.firebaseApi;
+ const snap=await api.getDocs(api.collection(api.db,'shops'));
+ shopDirectory=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'it'));
 }
 function setupShopFilter(){
  const sel=document.getElementById('shopFilter');if(!sel)return;
- const shops=new Map();
- stock.forEach(item=>{const id=String(item.shopId||'').trim();if(id)shops.set(id,String(item.shop||id))});
+ const shops=new Map(shopDirectory.map(x=>[String(x.id),String(x.name||x.id)]));
  const preferred=String(selectedShopFilter||currentUserProfile?.shopId||currentShopId||'').trim();
- sel.innerHTML='<option value="__all__">Tutti i negozi</option>'+[...shops].sort((a,b)=>a[1].localeCompare(b[1],'it')).map(([id,name])=>'<option value="'+esc(id)+'">'+esc(name)+' ('+esc(id)+')</option>').join('');
+ sel.innerHTML='<option value="__all__">Tutti i negozi</option>'+[...shops].map(([id,name])=>'<option value="'+esc(id)+'">'+esc(name)+' ('+esc(id)+')</option>').join('');
  sel.value=preferred&&shops.has(preferred)?preferred:'__all__';
  selectedShopFilter=sel.value;
 }
@@ -1254,22 +1378,24 @@ function storeAvailabilityFor(index){
 }
 function renderCatalog(){
  const searchInput=document.getElementById('catalogSearch'),brandInput=document.getElementById('brandFilter');
- const q=norm(searchInput?.value||''),b=norm(brandInput?.value||'');
- const selected=String(selectedShopFilter||'__all__').trim().toUpperCase();
- const rows=catalog.map((p,i)=>({p,i,stores:storeAvailabilityFor(i)})).map(item=>({
-  ...item,
-  visibleStores:selected==='__ALL__'?item.stores:item.stores.filter(st=>String(st.id||'').trim().toUpperCase()===selected)
- })).filter(({p,visibleStores})=>{
+ const q=norm(searchInput?.value||''),b=norm(brandInput?.value||''),status=document.getElementById('catalogStatusFilter')?.value||'all';
+ const role=currentUserProfile?.role,isClient=role==='client';
+ const source=isClient?productsForShop():catalog.map((p,i)=>({p,i}));
+ const canStock=role==='admin';
+ const rows=source.filter(({p})=>{
   const searchable=norm([p.name,p.brand,p.model,p.sku].filter(Boolean).join(' '));
   const brand=norm(brandOf(p.name)||p.brand||'');
-  return visibleStores.length>0&&(!q||searchable.includes(q))&&(!b||brand===b);
+  const active=enabledDeviceIds.includes(catalogDocId(p));
+  return (!q||searchable.includes(q))&&(!b||brand===b)&&(role!=='seller'||status==='all'||(status==='enabled'&&active)||(status==='disabled'&&!active));
  });
- const target=document.getElementById('catalogRows');
- if(!target)return;
- target.innerHTML=rows.length?rows.map(({p,i,visibleStores})=>{
-  const availability=visibleStores.map(st=>(String(st.id||'').trim().toUpperCase()===selected?'★ ':'')+esc(st.name)+': '+st.qty).join(' · ');
-  return `<tr><td>${esc(p.name)}</td><td>${esc(p.band||'—')}</td><td>${money(p.vendorPrice)}</td><td>${(p.offers||[]).length}</td><td>${availability}</td><td><button class="rowbtn" onclick="showDetail(${i})">Dettaglio</button></td></tr>`;
- }).join(''):'<tr><td colspan="6" class="muted">Nessuno smartphone disponibile per il negozio selezionato con i filtri correnti.</td></tr>';
+ const target=document.getElementById('catalogRows');if(!target)return;
+ target.innerHTML=rows.length?rows.map(({p,i})=>{
+  const enabled=role==='client'||enabledDeviceIds.includes(catalogDocId(p));
+  const stores=canStock?storeAvailabilityFor(i):[];
+  const availability=canStock?stores.map(st=>esc(st.name)+': '+st.qty).join(' · '):((role==='seller'||role==='client')?(enabled?'Attivo nel catalogo':'Non attivo'):'—');
+  const toggle=role==='admin'||role==='seller'?'<button class="rowbtn" onclick="setShopDeviceEnabled('+i+','+(!enabled)+').catch(e=>alert(e.message))">'+(enabled?'Disattiva':'Attiva')+'</button>':'';
+  return `<tr><td>${esc(p.name)}</td><td>${esc(p.band||'—')}</td><td>${money(p.vendorPrice)}</td><td>${(p.offers||[]).length}</td><td>${availability}</td><td><button class="rowbtn" onclick="showDetail(${i})">Dettaglio</button> ${toggle}</td></tr>`;
+ }).join(''):'<tr><td colspan="6" class="muted">Nessuno smartphone trovato con i filtri correnti.</td></tr>';
 }
 function sellerOfferGroupsHtml(deviceIndex){return '';}
 function sellerGenerateOffer(deviceIndex,offerIndex){
@@ -1282,10 +1408,12 @@ function sellerGenerateOffer(deviceIndex,offerIndex){
 }
 function showDetail(index){
  const p=catalog[index];if(!p)return;
- const stores=storeAvailabilityFor(index);
- const availability=stores.length?stores.map(s=>`<tr><td>${esc(s.name)} (${esc(s.id)})${s.id===selectedShopFilter?' · negozio selezionato':''}</td><td>${s.qty}</td></tr>`).join(''):'<tr><td colspan="2">Nessuna disponibilità vendibile</td></tr>';
+ const role=currentUserProfile?.role,canStock=role==='admin';
+ const stores=canStock?storeAvailabilityFor(index):[];
+ const availability=stores.length?stores.map(s=>`<tr><td>${esc(s.name)} (${esc(s.id)})</td><td>${s.qty}</td></tr>`).join(''):'<tr><td colspan="2">Nessun dato magazzino disponibile.</td></tr>';
  const specs=getDeviceSpecs(p);
- document.getElementById('detailBox').innerHTML=`<h3>${esc(p.name)}</h3><div class="chips"><span class="chip">Fascia ${esc(p.band||'—')}</span><span class="chip">Prezzo vendor ${money(p.vendorPrice)}</span><span class="chip">${stores.reduce((a,s)=>a+s.qty,0)} pezzi totali</span></div><h3 style="margin-top:18px">Caratteristiche tecniche</h3><div class="chips">${specs.length?specs.map(x=>`<span class="chip">${esc(x[0])}: ${esc(x[1])}</span>`).join(''):'<span class="muted">Scheda tecnica non ancora disponibile.</span>'}</div><h3>Disponibilità nei negozi</h3><div class="tablewrap"><table><thead><tr><th>Negozio</th><th>Quantità vendibile</th></tr></thead><tbody>${availability}</tbody></table></div><h3 style="margin-top:18px">Offerte e condizioni</h3><div id="sellerOfferGroups" class="seller-offer-groups">${sellerOfferGroupsHtml(index)}</div>`;
+ const stockBlock=canStock?`<h3>Disponibilità nel negozio</h3><div class="tablewrap"><table><thead><tr><th>Negozio</th><th>Quantità vendibile</th></tr></thead><tbody>${availability}</tbody></table></div>`:'';
+ document.getElementById('detailBox').innerHTML=`<h3>${esc(p.name)}</h3><div class="chips"><span class="chip">Fascia ${esc(p.band||'—')}</span><span class="chip">Prezzo vendor ${money(p.vendorPrice)}</span>${canStock?'<span class="chip">'+stores.reduce((a,s)=>a+s.qty,0)+' pezzi nel negozio</span>':''}</div><h3 style="margin-top:18px">Caratteristiche tecniche</h3><div class="chips">${specs.length?specs.map(x=>`<span class="chip">${esc(x[0])}: ${esc(x[1])}</span>`).join(''):'<span class="muted">Scheda tecnica non ancora disponibile.</span>'}</div>${stockBlock}<h3 style="margin-top:18px">Offerte e condizioni</h3><div id="sellerOfferGroups" class="seller-offer-groups">${sellerOfferGroupsHtml(index)}</div>`;
  document.getElementById('detailPanel').classList.remove('hidden');
  renderPromoSelection('sellerOfferGroups',index,'seller');
  document.getElementById('detailPanel').scrollIntoView({behavior:'smooth',block:'start'});
@@ -1293,51 +1421,110 @@ function showDetail(index){
 function sellerPrepareProposal(index){const p=catalog[index];if(!p)return;selectedDeviceIndex=index;selectedOfferIndex=0;const skuItem=stock.find(x=>mapped(x)===index);selectedDeviceSku=skuItem?.sku||'CATALOGO';const offers=p.offers||[];if(!offers.length){alert('Questo modello non ha promozioni configurate.');return}const choices=offers.map((o,i)=>'<button class="device choice offer-choice '+(i===0?'selected':'')+'" onclick="sellerChooseOffer('+i+')"><b>'+esc(o.plan)+'</b><small>'+esc(o.method||'')+'</small><strong>'+(o.amounts||[]).map(money).join(' · ')+'</strong></button>').join('');document.getElementById('detailBox').insertAdjacentHTML('beforeend','<h3 style="margin-top:18px">Scegli la promozione</h3><div class="cards offer-grid" id="sellerOfferChoices">'+choices+'</div><div class="actions"><button class="primary" onclick="generateProposalPdf()">Conferma</button></div>')}
 function sellerChooseOffer(i){const p=catalog[selectedDeviceIndex];if(!p?.offers?.[i])return;selectedOfferIndex=i;document.querySelectorAll('#sellerOfferChoices button').forEach((b,n)=>b.classList.toggle('selected',n===i))}
 function closeDetail(){document.getElementById('detailPanel').classList.add('hidden');document.getElementById('detailBox').innerHTML=''}
-function renderAll(){const count=document.getElementById('catalogCount');if(count)count.textContent=catalog.length;setupShopFilter();let brands=[...new Set(catalog.map(p=>brandOf(p.name)).filter(Boolean))].sort();let sel=document.getElementById('brandFilter');if(sel){let old=sel.value;sel.innerHTML='<option value="">Tutte</option>'+brands.map(b=>`<option value="${b}">${b[0].toUpperCase()+b.slice(1)}</option>`).join('');sel.value=old;}renderStock();renderCatalog()}
+function renderAll(){const count=document.getElementById('catalogCount');if(count)count.textContent=catalog.length;setupShopFilter();refreshShopQrTarget();let brands=[...new Set(catalog.map(p=>brandOf(p.name)).filter(Boolean))].sort();let sel=document.getElementById('brandFilter');if(sel){let old=sel.value;sel.innerHTML='<option value="">Tutte</option>'+brands.map(b=>`<option value="${b}">${b[0].toUpperCase()+b.slice(1)}</option>`).join('');sel.value=old;}renderStock();renderCatalog()}
 
+let pendingShopCatalogImport=null;
+function renderShopCatalogImportPreview(){
+ const box=document.getElementById('shopSyncPreview'),data=pendingShopCatalogImport;if(!box||!data)return;
+ const shops=[...data.shops.entries()].sort((a,b)=>a[1].localeCompare(b[1],'it'));
+ const unknown=data.rows.filter(x=>x.catalogIndex<0);
+ box.classList.remove('hidden');
+ box.innerHTML='<div class="notice"><b>'+data.rows.length+'</b> righe smartphone riconosciute · <b>'+shops.length+'</b> negozi · <b>'+unknown.length+'</b> codici non associati. Le quantità del file vengono ignorate.</div>'+
+ '<h3>Negozi su cui applicare la sincronizzazione</h3><p class="hint">Sono selezionati in automatico tutti i negozi presenti nel file. Deseleziona quelli da lasciare invariati.</p>'+
+ '<div class="grid">'+shops.map(([id,name])=>'<label class="choice" style="min-height:0"><input type="checkbox" class="shop-sync-check" value="'+esc(id)+'" checked> <b>'+esc(name)+'</b><small>'+esc(id)+' · '+data.rows.filter(x=>x.shopId===id).length+' codici nel file</small></label>').join('')+'</div>'+
+ (unknown.length?'<h3 style="margin-top:18px">Codici da associare al catalogo</h3><div class="tablewrap"><table><thead><tr><th>Codice</th><th>Descrizione Excel</th><th>Azione</th></tr></thead><tbody>'+unknown.map(x=>'<tr><td>'+esc(x.sku)+'</td><td>'+esc(x.description)+'</td><td><select onchange="assignImportedSku(\''+esc(x.sku)+'\',this.value)"><option value="">Associa a una variante esistente…</option>'+catalog.map((p,i)=>'<option value="'+i+'">'+esc(p.name)+'</option>').join('')+'</select><button class="rowbtn" onclick="createMissingImportedDevice(\''+esc(x.sku)+'\')">Crea nuova variante</button></td></tr>').join('')+'</tbody></table></div>':'<p class="ok">Tutti i codici sono associati al catalogo.</p>')+
+ '<div class="actions"><button class="secondary" onclick="cancelShopCatalogImport()">Annulla</button><button class="primary" onclick="confirmShopCatalogImport()">Conferma sincronizzazione</button></div><div id="shopSyncResult" class="muted" style="margin-top:10px"></div>';
+}
+function cancelShopCatalogImport(){pendingShopCatalogImport=null;const box=document.getElementById('shopSyncPreview');box.classList.add('hidden');box.innerHTML='';document.getElementById('globalStockMsg').textContent='Importazione annullata: nessuna modifica applicata.';}
 async function importGlobalStock(){
  const file=document.getElementById('globalStockFile').files[0],msg=document.getElementById('globalStockMsg');
  if(!file){msg.textContent='Seleziona prima il file Excel.';return}
  if(!window.XLSX){msg.textContent='Libreria Excel non caricata.';return}
  if(currentUserProfile?.role!=='admin'){msg.textContent='Operazione consentita soltanto all’amministratore.';return}
- const btn=document.querySelector('button[onclick="importGlobalStock()"]');btn.disabled=true;msg.textContent='Controllo del file in corso…';
+ const btn=document.querySelector('button[onclick="importGlobalStock()"]');btn.disabled=true;msg.textContent='Analisi del file in corso…';
  try{
-  const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
-  const ws=wb.Sheets['Magazzino']||wb.Sheets[wb.SheetNames[0]];
-  const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-  const get=(r,k)=>r[k]??r[Object.keys(r).find(x=>norm(x)===norm(k))]??'';
-  const shops=new Map();
-  const all=rows.map(r=>{
-   const shop=String(get(r,'Negozio')).trim();
+  const wb=XLSX.read(await file.arrayBuffer(),{type:'array'}),ws=wb.Sheets['Magazzino']||wb.Sheets[wb.SheetNames[0]];
+  const raw=XLSX.utils.sheet_to_json(ws,{defval:''}),get=(r,k)=>r[k]??r[Object.keys(r).find(x=>norm(x)===norm(k))]??'';
+  const shops=new Map(),rows=[],seen=new Set();
+  for(const r of raw){
+   const sku=String(get(r,'Codice Prodotto')).trim(),description=String(get(r,'Descrizione')).trim(),shop=String(get(r,'Negozio')).trim();
+   if(!sku||!description||!shop)continue;
+   // Il file fornito contiene già l'elenco degli articoli da valutare:
+   // non filtrare per marca, perché molte descrizioni sono abbreviate dal gestionale.
    const shopId=(shop.match(/^[A-Z]{2}\d{3}/i)||[])[0]?.toUpperCase()||'';
-   return {sku:String(get(r,'Codice Prodotto')).trim(),description:String(get(r,'Descrizione')).trim(),shop,shopId,warehouse:String(get(r,'Tipo Magazzino')).trim(),stock:Number(get(r,'Giacenza'))||0,future:Number(get(r,'Giacenza Futura'))||0,ordered:Number(get(r,'Quantità Ordinata'))||0,incoming:Number(get(r,'Quantità In Arrivo'))||0,reserved:Number(get(r,'Quantità Impegnata'))||0,shipped:Number(get(r,'Quantità Spedita'))||0};
-  }).filter(x=>x.sku&&x.shopId&&x.shop&&x.warehouse);
-  if(!all.length)throw new Error('Nessuna riga valida: verifica intestazioni e foglio Magazzino.');
-  all.forEach(x=>shops.set(x.shopId,x.shop));
-  const dup=new Set();for(const x of all){const k=x.shopId+'|'+x.sku+'|'+x.warehouse;if(dup.has(k))throw new Error('Riga duplicata per SKU/negozio/magazzino: '+k);dup.add(k)}
-  if(shops.size<2)throw new Error('Il file sembra incompleto: sono stati riconosciuti meno di 2 negozi.');
-  const version='v'+Date.now();
-  const db=window.firebaseApi.db,writeBatch=window.firebaseApi.writeBatch,doc=window.firebaseApi.doc;
-  // Sincronizza l'anagrafica negozi dal file completo caricato dall'admin.
-  let shopBatch=writeBatch(db),shopCount=0;
-  for(const [id,name] of shops){shopBatch.set(doc(db,'shops',id),{name,active:true},{merge:true});shopCount++;if(shopCount%450===0){await shopBatch.commit();shopBatch=writeBatch(db)}}
-  if(shopCount%450!==0)await shopBatch.commit();
-  let batch=writeBatch(db),count=0,batches=0;
-  for(const x of all){
-   const id=encodeURIComponent(x.shopId+'_'+x.sku+'_'+x.warehouse).replace(/%/g,'_');
-   batch.set(doc(db,'stockVersions',version,'items',id),x);
-   count++;
-   if(count%450===0){await batch.commit();batches++;batch=writeBatch(db)}
+   if(!shopId)throw new Error('Codice negozio non riconosciuto nella riga: '+shop);
+   shops.set(shopId,shop.replace(/^([A-Z]{2}\d{3})\s*[-–:]?\s*/i,'').trim()||shop);
+   const key=shopId+'|'+sku;if(seen.has(key))continue;seen.add(key);
+   const catalogIndex=catalog.findIndex(p=>String(p.sku||'').trim()===sku);
+   rows.push({sku,description,shop,shopId,catalogIndex});
   }
-  if(count%450!==0){await batch.commit();batches++}
-  await window.firebaseApi.setDoc(doc(db,'settings','stock'),{activeVersion:version,rowCount:all.length,shopCount:shops.size,updatedAt:window.firebaseApi.serverTimestamp(),updatedBy:currentUserProfile.uid});
-  activeStockVersion=version;
-  await loadStockFromFirestore();
-  msg.textContent='Pubblicazione completata: '+all.length+' righe, '+shops.size+' negozi, versione '+version+'.';
- }catch(e){msg.textContent='Importazione non pubblicata: '+e.message}
+  if(!rows.length||!shops.size)throw new Error('Nessuno smartphone valido trovato. Verifica le colonne Codice Prodotto, Descrizione e Negozio.');
+  pendingShopCatalogImport={rows,shops,fileName:file.name};
+  renderShopCatalogImportPreview();
+  msg.textContent='Analisi completata. Nessuna modifica è stata ancora applicata.';
+ }catch(e){pendingShopCatalogImport=null;msg.textContent='File non valido: '+e.message}
  finally{btn.disabled=false}
 }
-
+function assignImportedSku(sku,indexValue){
+ if(indexValue==='')return;
+ const index=Number(indexValue);
+ if(!Number.isInteger(index)||index<0||!catalog[index])return;
+ pendingShopCatalogImport?.rows.filter(x=>x.sku===sku).forEach(x=>x.catalogIndex=index);
+ renderShopCatalogImportPreview();
+}
+async function createMissingImportedDevice(sku){
+ const item=pendingShopCatalogImport?.rows.find(x=>x.sku===sku&&x.catalogIndex<0);if(!item)return;
+ const name=prompt('Nome completo della variante da inserire nel catalogo:',item.description);if(name===null)return;
+ if(!name.trim()){alert('Il nome del dispositivo è obbligatorio.');return}
+ const priceText=prompt('Prezzo vendor in euro (solo numero, es. 349.99):','');if(priceText===null)return;
+ const vendorPrice=Number(String(priceText).replace(',','.'));if(!Number.isFinite(vendorPrice)||vendorPrice<=0){alert('Prezzo non valido.');return}
+ const product={name:name.trim(),sku,brand:brandOf(name),band:'',vendorPrice,offers:[]};
+ try{
+  const api=window.firebaseApi,id=catalogDocId(product),ref=api.doc(api.db,'devices',id);
+  const existing=await api.getDoc(ref);if(existing.exists())throw new Error('Esiste già un dispositivo con questo identificativo. Aggiorna il catalogo e ripeti l’associazione.');
+  await api.setDoc(ref,product);
+  catalog.push(product);catalog.sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+  const index=catalog.findIndex(p=>catalogDocId(p)===id);
+  pendingShopCatalogImport.rows.filter(x=>x.sku===sku).forEach(x=>x.catalogIndex=index);
+  renderShopCatalogImportPreview();renderAll();
+ }catch(e){alert('Creazione non riuscita: '+e.message)}
+}
+async function confirmShopCatalogImport(){
+ const data=pendingShopCatalogImport,box=document.getElementById('shopSyncResult');if(!data||!box)return;
+ const selected=[...document.querySelectorAll('.shop-sync-check:checked')].map(x=>x.value);
+ if(!selected.length){box.textContent='Seleziona almeno un negozio.';return}
+ const missing=data.rows.filter(x=>selected.includes(x.shopId)&&x.catalogIndex<0);
+ if(missing.length){box.textContent='Prima associa tutti i codici non riconosciuti dei negozi selezionati. '+missing.length+' codici ancora da associare.';return}
+ if(selected.length>240){box.textContent='Troppi negozi selezionati per una singola operazione. Dividi il file in più importazioni (massimo 240 per volta).';return}
+ const api=window.firebaseApi,db=api.db;let changed=0,enabled=0,disabled=0;
+ try{
+  box.textContent='Lettura stato attuale e preparazione aggiornamenti…';
+  const updates=[];
+  for(const shopId of selected){
+   const ref=api.doc(db,'shopCatalog',shopId),snap=await api.getDoc(ref);
+   const before=new Set(snap.exists()&&Array.isArray(snap.data().enabledDeviceIds)?snap.data().enabledDeviceIds.map(String):[]);
+   const desired=new Set(data.rows.filter(x=>x.shopId===shopId&&x.catalogIndex>=0).map(x=>catalogDocId(catalog[x.catalogIndex])));
+   for(const id of desired)if(!before.has(id))enabled++;
+   for(const id of before)if(!desired.has(id))disabled++;
+   if([...before].sort().join('|')!==[...desired].sort().join('|'))changed++;
+   updates.push({ref,shopId,enabledDeviceIds:[...desired]});
+  }
+  const batch=api.writeBatch(db);
+  const names=new Map(data.shops);
+  for(const shopId of selected){
+   const shopRef=api.doc(db,'shops',shopId);
+   batch.set(shopRef,{name:names.get(shopId)||shopId,source:'excel-import',updatedAt:api.serverTimestamp()},{merge:true});
+  }
+  for(const x of updates)batch.set(x.ref,{shopId:x.shopId,enabledDeviceIds:x.enabledDeviceIds,updatedAt:api.serverTimestamp(),updatedBy:currentUserProfile.uid,source:'excel-import',sourceFile:data.fileName},{merge:true});
+  await batch.commit();
+  await loadShopDirectory();
+  setupShopFilter();
+  box.textContent='Sincronizzazione completata. Negozi aggiornati: '+selected.length+'. Dispositivi abilitati: '+enabled+'. Disabilitati: '+disabled+'. Negozi con variazioni: '+changed+'. Schede catalogo e offerte non eliminate.';
+  pendingShopCatalogImport=null;
+  if(currentUserProfile?.role==='admin'&&selectedShopFilter&&selected.includes(selectedShopFilter))await loadShopCatalog(selectedShopFilter);
+  renderCatalog();
+ }catch(e){box.textContent='Sincronizzazione non completata: '+e.message}
+}
 async function loadCatalogFromFirestore(){
  const api=window.firebaseApi;
  const [snap,metaSnap]=await Promise.all([api.getDocs(api.collection(api.db,'devices')),api.getDoc(api.doc(api.db,'settings','catalog'))]);
@@ -1355,92 +1542,55 @@ async function loadCatalogFromFirestore(){
 
 async function loadStockFromFirestore(shopId=null){
  const api=window.firebaseApi,db=api.db;
+ if(currentUserProfile?.role!=='admin')throw new Error('Accesso al magazzino riservato esclusivamente all’Admin.');
  const setting=await api.getDoc(api.doc(db,'settings','stock'));
- if(!setting.exists()||!setting.data().activeVersion){stockUpdatedAt=null;renderDataFreshness();return false;}
+ if(!setting.exists()||!setting.data().activeVersion){stock=[];stockUpdatedAt=null;renderDataFreshness();return false;}
  stockUpdatedAt=setting.data().updatedAt||null;
  activeStockVersion=setting.data().activeVersion;
  const items=api.collection(db,'stockVersions',activeStockVersion,'items');
  const stockQuery=shopId?api.query(items,api.where('shopId','==',shopId)):items;
  const snap=await api.getDocs(stockQuery);
  stock=snap.docs.map(d=>d.data());
- renderDataFreshness();
- return true;
+ renderDataFreshness();return true;
+}
+async function loadShopCatalog(shopId){
+ const api=window.firebaseApi;if(!shopId)throw new Error('Negozio non specificato.');
+ const snap=await api.getDoc(api.doc(api.db,'shopCatalog',shopId));
+ enabledDeviceIds=snap.exists()&&Array.isArray(snap.data().enabledDeviceIds)?snap.data().enabledDeviceIds.map(String):[];
+ shopCatalogLoaded=true;return enabledDeviceIds;
 }
 
-async function importStock(){let f=document.getElementById('stockFile').files[0];if(!f){alert('Seleziona prima il file Excel.');return}if(!window.XLSX){alert('Libreria Excel non caricata: verifica la connessione internet e riprova.');return}try{let wb=XLSX.read(await f.arrayBuffer(),{type:'array'});let ws=wb.Sheets['Magazzino']||wb.Sheets[wb.SheetNames[0]];let rows=XLSX.utils.sheet_to_json(ws,{defval:''});let get=(r,k)=>r[k]??r[Object.keys(r).find(x=>norm(x)===norm(k))]??'';let next=rows.filter(r=>{let d=String(get(r,'Descrizione'));return /iphone|galaxy|samsung|honor|motorola|oppo|realme|xiaomi|redmi|pixel|oneplus/i.test(d)&&!/buds|auricolari|caricabatter|vetro|cover|custodia|screen protector|screenglass|skinny|t-shirt/i.test(d)}).map(r=>({sku:String(get(r,'Codice Prodotto')),description:String(get(r,'Descrizione')),shop:String(get(r,'Negozio')),warehouse:String(get(r,'Tipo Magazzino')),stock:Number(get(r,'Giacenza'))||0,reserved:Number(get(r,'Quantità Impegnata'))||0,future:Number(get(r,'Giacenza Futura'))||0,ordered:Number(get(r,'Quantità Ordinata'))||0,incoming:Number(get(r,'Quantità In Arrivo'))||0}));if(!next.length)throw new Error('Nessuna riga smartphone riconosciuta. Controlla intestazioni e foglio Magazzino.');stock=next;next.forEach(s=>{const i=autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}});renderAll();document.getElementById('importMsg').textContent=`Importate ${next.length} varianti smartphone. Disponibili: ${next.reduce((a,s)=>a+available(s),0)} pezzi. Verifica gli abbinamenti prima di usare la vista Cliente.`}catch(e){alert('Errore importazione: '+e.message)}}
-
-
-let pendingCatalog=null;
-function euroValue(s){const m=String(s).match(/€\s*([\d.]+(?:,\d{2})?)/);return m?Number(m[1].replace(',','.')):null}
-function productLine(s){return /(Apple|Samsung|SamsungGalaxy|Galaxy|Motorola|HONOR|Honor|Xiaomi|Redmi|TCL|OPPO|Oppo|Realme|Google|OnePlus|Strong|ZTE|Nokia|Doro|Alcatel)\b/i.test(s)}
-function parseRetailText(raw){
- const lines=raw.split(/\r?\n/).map(x=>x.replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim()).filter(Boolean),out=[];
- const parseMoney=t=>{let v=String(t).replace(/€|\s/g,'');if(v.includes(',')&&v.includes('.'))v=v.replace(/,/g,'');else if(v.includes(','))v=v.replace(',','.');return Number(v)};
- for(let i=0;i<lines.length;i++){
-  const priceLine=lines[i];
-  const pm=priceLine.match(/Prezzo listino vendor:\s*€?\s*([\d.,]+)(?:\s+(\d{1,3})\.00)?/i);
-  if(!pm)continue;
-  // PDF.js può dividere il prezzo in due frammenti: "1,28 9.00" = 1,289.00
-  let vendorToken=pm[1];
-  if(pm[2] && /,\d{1,2}$/.test(vendorToken)){
-   vendorToken=vendorToken.replace(/,/g,'')+pm[2]+'.00';
-  }
-  let name='',band='';
-  for(let j=i-1;j>=Math.max(0,i-18);j--){
-   const line=lines[j];
-   if(!name&&productLine(line))name=line.replace(/\s+Fascia di prezzo:.*$/i,'').trim();
-   const bm=line.match(/Fascia di prezzo:\s*([A-Z])/i);if(bm)band=bm[1];
-  }
-  const vendor=parseMoney(vendorToken);
-  if(!name||!Number.isFinite(vendor)||vendor<=0)continue;
-  let end=i+1;while(end<lines.length&&!/Prezzo listino vendor:/i.test(lines[end]))end++;
-  const offers=[];
-  for(let j=i+1;j<end;j++){
-   const m=lines[j].match(/^(Fastweb Mobile .+?)\s+(one shot|finanziato|rateale)\b(.*)$/i);
-   if(!m)continue;
-   const plan=m[1].trim(),method=m[2].toLowerCase(),tail=m[3];
-   const nums=[...tail.matchAll(/€\s*([\d.,]+)/g)].map(x=>parseMoney(x[1]));
-   const ints=[...tail.matchAll(/\b(\d{1,2})\b/g)].map(x=>Number(x[1])).filter(x=>x>=6&&x<=60);
-   if(method==='one shot'){if(nums.length)offers.push({plan,method,amounts:[nums[0]],installments:null})}
-   else offers.push({plan,method,amounts:nums.slice(0,3),installments:ints[0]??null});
-  }
-  out.push({name,band,vendorPrice:vendor,offers});
- }
- const unique=new Map();out.forEach(p=>unique.set(norm(p.name),p));return [...unique.values()];
+async function loadClientCatalogForShop(shopId){
+ const api=window.firebaseApi;
+ if(currentUserProfile?.role!=='client')throw new Error('Caricamento riservato alla sessione Cliente.');
+ if(!shopId)throw new Error('Negozio non specificato.');
+ await loadShopCatalog(shopId);
+ const ids=[...new Set(enabledDeviceIds)];
+ const docs=await Promise.all(ids.map(id=>api.getDoc(api.doc(api.db,'devices',id))));
+ catalog=docs.filter(d=>d.exists()).map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+ const modelIds=[...new Set(catalog.map(p=>p.modelId||modelDocumentId(p.name)).filter(Boolean))];
+ const modelDocs=await Promise.all(modelIds.map(id=>api.getDoc(api.doc(api.db,'deviceModels',id))));
+ window.currentModelSpecs={};
+ modelDocs.forEach(d=>{if(d.exists())window.currentModelSpecs[d.id]=d.data();});
+ catalog.forEach(p=>{const id=p.modelId||modelDocumentId(p.name);if(window.currentModelSpecs[id])p.modelSpecs=window.currentModelSpecs[id];});
+ if(!catalog.length)throw new Error('Nessun prodotto è attualmente abilitato per questo negozio.');
+ return catalog;
 }
-async function previewRetailPdf(){
- const f=document.getElementById('retailPdf').files[0];if(!f){alert('Seleziona un PDF.');return}
- if(!window.pdfjsLib){document.getElementById('pdfMsg').textContent='Lettore PDF non caricato: controlla la connessione.';return}
- const b=document.querySelector('button[onclick="previewRetailPdf()"]');b.disabled=true;document.getElementById('pdfMsg').textContent='Lettura PDF in corso…';
- try{pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let raw='';
-  for(let n=1;n<=pdf.numPages;n++){
-   const pg=await pdf.getPage(n),tc=await pg.getTextContent();
-   const positioned=tc.items.filter(item=>item.str&&item.str.trim()).map(item=>({
-    text:item.str.trim(),x:item.transform?.[4]??0,y:item.transform?.[5]??0
-   })).sort((a,b)=>b.y-a.y||a.x-b.x);
-   const visualRows=[];
-   for(const item of positioned){
-    let row=visualRows.find(r=>Math.abs(r.y-item.y)<2.5);
-    if(!row){row={y:item.y,parts:[]};visualRows.push(row)}
-    row.parts.push(item);
-   }
-   visualRows.sort((a,b)=>b.y-a.y);
-   raw+=visualRows.map(row=>row.parts.sort((a,b)=>a.x-b.x).map(part=>part.text).join(' ').replace(/\s+/g,' ').trim()).join('\n')+'\n';
-  }
-  const parsed=parseRetailText(raw);if(parsed.length<10)throw new Error('Riconosciute solo '+parsed.length+' varianti. Formato PDF non riconosciuto; catalogo invariato.');
-  pendingCatalog=parsed.map(p=>{const old=catalog.find(x=>norm(x.name)===norm(p.name));if(!old)return p;const keep={};['ram','storage','display','camera','cpu','battery','os','description','image'].forEach(k=>{if(old[k]!==undefined)keep[k]=old[k]});return {...p,...keep}});
-  const oldMap=new Map(catalog.map(p=>[norm(p.name),p]));let added=0,changed=0,warn=0;
-  const rows=pendingCatalog.map(p=>{const old=oldMap.get(norm(p.name));const status=!old?'Nuovo':Number(old.vendorPrice)!==Number(p.vendorPrice)?'Prezzo modificato':'Aggiornato';if(!old)added++;else if(status==='Prezzo modificato')changed++;if(p.vendorPrice<20||!p.offers.length)warn++;return {p,old,status}});
-  document.getElementById('pdfCount').textContent=pendingCatalog.length;document.getElementById('pdfNew').textContent=added;document.getElementById('pdfChanged').textContent=changed;document.getElementById('pdfWarnings').textContent=warn;
-  document.getElementById('pdfRows').innerHTML=rows.map(x=>'<tr><td>'+esc(x.p.name)+'</td><td>'+(x.old?money(x.old.vendorPrice):'—')+'</td><td>'+money(x.p.vendorPrice)+'</td><td class="'+(x.p.vendorPrice<20?'bad':'ok')+'">'+x.status+(x.p.vendorPrice<20?' · prezzo sospetto':'')+'</td></tr>').join('');
-  document.getElementById('pdfPreview').classList.remove('hidden');document.getElementById('pdfMsg').textContent='Analizzate '+pdf.numPages+' pagine. Controlla prima di confermare.';
- }catch(e){pendingCatalog=null;document.getElementById('pdfPreview').classList.add('hidden');document.getElementById('pdfMsg').textContent='Importazione non pronta: '+e.message}
- finally{b.disabled=false}
+function productsForShop(){
+ if(!shopCatalogLoaded)return [];
+ const allowed=new Set(enabledDeviceIds);
+ return catalog.map((p,i)=>({p,i})).filter(({p})=>allowed.has(catalogDocId(p)));
 }
-function cancelPdfImport(){pendingCatalog=null;document.getElementById('pdfPreview').classList.add('hidden');document.getElementById('retailPdf').value='';document.getElementById('pdfMsg').textContent='Annullata: catalogo invariato.'}
-async function confirmPdfImport(){if(!pendingCatalog)return;const linked={};stock.forEach(s=>{const i=mapped(s);if(i>=0&&catalog[i])linked[s.sku]=catalog[i].name});catalog=pendingCatalog;pendingCatalog=null;mappings={};stock.forEach(s=>{const n=linked[s.sku],i=n?catalog.findIndex(p=>norm(p.name)===norm(n)):-1;if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}});renderAll();setupEditor();document.getElementById('pdfPreview').classList.add('hidden');document.getElementById('retailPdf').value='';await publishCatalogToFirestore();document.getElementById('pdfMsg').textContent='Catalogo aggiornato su Firebase. Magazzino invariato.'}
-
+async function setShopDeviceEnabled(index,enabled){
+ if(!['admin','seller'].includes(currentUserProfile?.role))throw new Error('Operazione non autorizzata.');
+ const shopId=currentUserProfile.role==='seller'?currentUserProfile.shopId:String(selectedShopFilter||currentShopId||'').trim();
+ if(!shopId||shopId==='__all__')throw new Error('Seleziona un singolo negozio prima di modificare il catalogo.');
+ const p=catalog[index];if(!p)throw new Error('Dispositivo non valido.');
+ const api=window.firebaseApi,ref=api.doc(api.db,'shopCatalog',shopId),next=new Set(enabledDeviceIds);
+ if(enabled)next.add(catalogDocId(p));else next.delete(catalogDocId(p));
+ await api.setDoc(ref,{shopId,enabledDeviceIds:[...next],updatedAt:api.serverTimestamp(),updatedBy:currentUserProfile.uid},{merge:true});
+ enabledDeviceIds=[...next];shopCatalogLoaded=true;renderCatalog();
+}
 let imageBlobs={};
 function isTechnicalSmartphone(name){
  return !/\brouter\b|\bmifi\b/i.test(String(name||''));
@@ -1721,14 +1871,61 @@ async function saveOfferValues(){
 }
 async function exportBundle(){if(!window.JSZip){alert('Libreria ZIP non caricata. Verifica la connessione internet.');return}let zip=new JSZip();zip.file('devices.json',JSON.stringify(catalog,null,2));zip.file('stock.json',JSON.stringify(stock,null,2));Object.entries(imageBlobs).forEach(([path,data])=>zip.file(path,data));zip.file('README-GITHUB.txt','Carica devices.json e stock.json nella root del repository e la cartella images/.\\nNon sovrascrivere index.html con questi file.\\nDopo il caricamento GitHub Pages pubblicherà gli aggiornamenti.');let blob=await zip.generateAsync({type:'blob'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='device-proposer-data.zip';a.click();URL.revokeObjectURL(a.href);document.getElementById('exportMsg').textContent='Pacchetto generato. Estrai lo ZIP e carica i file nel repository GitHub.'}
 async function importCatalogJson(){let f=document.getElementById('catalogJson').files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d)||!d.every(x=>x.name))throw new Error('Formato catalogo non valido');catalog=d;imageBlobs={};setupEditor();renderAll();document.getElementById('exportMsg').textContent='Catalogo JSON caricato.'}catch(e){alert('Errore catalogo: '+e.message)}}
-async function importStockJson(){let f=document.getElementById('stockJson').files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(!Array.isArray(d)||!d.every(x=>x.sku))throw new Error('Formato magazzino non valido');stock=d;d.forEach(s=>{if(mappings[s.sku]===undefined)mappings[s.sku]=autoMatch(s)});renderAll();document.getElementById('exportMsg').textContent='Magazzino JSON caricato.'}catch(e){alert('Errore magazzino: '+e.message)}}
 async function init(){
  try{
   while(!window.firebaseApi){await new Promise(resolve=>window.addEventListener('firebase-ready',resolve,{once:true}))}
+  if(qrShopFromUrl()){await startQrClientEntry();return}
   // Nessun dato operativo viene caricato prima dell'autenticazione.
   document.getElementById('homeView').classList.remove('hidden');
  }catch(e){console.error('Device Proposer startup error:',e)}
 }
 
 init();
+
+function shopQrTargetId(){
+ if(currentUserProfile?.role==='seller')return String(currentUserProfile.shopId||'');
+ if(currentUserProfile?.role==='admin'){
+  const id=String(document.getElementById('shopFilter')?.value||'');
+  return id&&id!=='__all__'?id:'';
+ }
+ return '';
+}
+function refreshShopQrTarget(){
+ const id=shopQrTargetId(),el=document.getElementById('shopQrTarget');
+ if(el)el.innerHTML=id?'<b>'+esc(id)+'</b><span>Negozio destinatario</span>':'<b>Non selezionato</b><span>Seleziona un negozio specifico nel filtro catalogo</span>';
+}
+async function saveShopPin(){
+ const shopId=shopQrTargetId(),pin=document.getElementById('shopPinValue').value.trim(),msg=document.getElementById('shopPinMsg');
+ if(!shopId){msg.textContent='Seleziona prima un negozio specifico nel filtro catalogo.';return}
+ if(!/^[0-9]{6}$/.test(pin)){msg.textContent='Il PIN deve contenere esattamente 6 cifre.';return}
+ try{
+  msg.textContent='Salvataggio PIN…';
+  await callUserAdminApi('/shop/pin/set',{shopId,pin});
+  document.getElementById('shopPinValue').value='';
+  msg.textContent='PIN impostato. Le sessioni precedenti sono state revocate.';
+  renderShopQr();
+ }catch(e){msg.textContent='Operazione non riuscita: '+e.message}
+}
+async function disableShopPin(){
+ const shopId=shopQrTargetId(),msg=document.getElementById('shopPinMsg');
+ if(!shopId){msg.textContent='Seleziona prima un negozio specifico.';return}
+ if(!confirm('Disabilitare l’accesso cliente e revocare tutte le sessioni del negozio '+shopId+'?'))return;
+ try{msg.textContent='Disattivazione…';await callUserAdminApi('/shop/pin/disable',{shopId});msg.textContent='Accesso PIN disabilitato. Tutte le sessioni precedenti sono state revocate.';document.getElementById('shopQrResult').classList.add('hidden')}
+ catch(e){msg.textContent='Operazione non riuscita: '+e.message}
+}
+function printShopQr(){
+ const result=document.getElementById('shopQrResult');
+ if(!result||result.classList.contains('hidden')){document.getElementById('shopPinMsg').textContent='Mostra prima il QR code, poi avvia la stampa.';return}
+ window.print();
+}
+function renderShopQr(){
+ const shopId=shopQrTargetId(),msg=document.getElementById('shopPinMsg');
+ if(!shopId){msg.textContent='Seleziona prima un negozio specifico.';return}
+ if(typeof QRCode==='undefined'){msg.textContent='Libreria QR non caricata. Ricarica la pagina.';return}
+ const url=location.origin+location.pathname+'?shop='+encodeURIComponent(shopId);
+ const host=document.getElementById('shopQrCanvas');host.innerHTML='';
+ new QRCode(host,{text:url,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
+ document.getElementById('shopQrUrl').textContent=url;
+ document.getElementById('shopQrResult').classList.remove('hidden');
+}
 </script></body></html>
