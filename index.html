@@ -660,8 +660,23 @@ async function changeStorePassword(){
  const confirmPassword=prompt('Conferma la nuova password:');
  if(confirmPassword===null)return;
  if(confirmPassword!==next){msg.textContent='Le password non coincidono.';return}
- try{await callUserAdminApi('/password/change',{newPassword:next});msg.textContent='Password aggiornata. Comunicala al personale autorizzato.';}
- catch(e){msg.textContent='Cambio password non riuscito: '+e.message;}
+ try{
+  const api=window.firebaseApi;
+  const user=api?.auth?.currentUser;
+  if(!user)throw new Error('Sessione scaduta. Esci e accedi nuovamente.');
+  await api.updatePassword(user,next);
+  msg.textContent='Password aggiornata correttamente. Comunicala soltanto al personale autorizzato.';
+ }
+ catch(e){
+  const detail=e.code==='auth/requires-recent-login'
+   ? 'Per sicurezza la sessione è scaduta: esci e accedi nuovamente, poi ripeti il cambio password.'
+   : e.code==='auth/weak-password'
+    ? 'La password scelta non è abbastanza sicura.'
+    : e.code==='auth/network-request-failed'
+     ? 'Firebase Authentication non è raggiungibile dalla rete corrente.'
+     : (e.message||'Errore sconosciuto.');
+  msg.textContent='Cambio password non riuscito: '+detail;
+ }
 }
 async function goHome(){
  if(clientExpiryTimer){clearTimeout(clientExpiryTimer);clientExpiryTimer=null;}
