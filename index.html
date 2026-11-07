@@ -676,7 +676,7 @@ async function startSellerMode(){
   document.getElementById('storeView').classList.remove('hidden');
   document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
   renderDataFreshness();renderAll();
- }catch(e){msg.textContent='Impossibile aprire il negozio associato ('+phase+'): '+e.message;console.error('startSellerMode:',phase,e);throw e;}
+ }catch(e){msg.textContent='Impossibile aprire il negozio associato ('+phase+'): '+e.message;console.error('startSellerMode:',phase,e);throw new Error('Apertura negozio - '+phase+': '+e.message);}
 }
 async function confirmSellerShop(){
  const id=document.getElementById('sellerShopSelect').value;
