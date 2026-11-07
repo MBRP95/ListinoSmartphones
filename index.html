@@ -97,6 +97,11 @@ footer{max-width:1180px;margin:28px auto 40px;padding:0 22px;color:#8a96a9;font-
 #adminView .panel h3{margin-top:18px}
 #adminView .grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 #storeView .panel{margin-bottom:18px}
+/* Seller header: keep the shop title clear of decorative/background layers. */
+#storeView .hero{position:relative;isolation:isolate;overflow:visible;background:transparent!important}
+#storeView .hero h1{position:relative;z-index:1;display:block;background:transparent!important;overflow-wrap:anywhere;word-break:normal;max-width:100%;margin-top:8px}
+#storeView .hero .sub{position:relative;z-index:1;max-width:760px}
+
 #detailPanel{scroll-margin-top:90px}
 #selectedDevicePanel{scroll-margin-top:90px}
 .hidden{display:none!important}
@@ -353,7 +358,7 @@ body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreen
 .qr-poster-brand{font-size:16px;letter-spacing:2px;font-weight:900;color:#fff}.qr-poster-brand b{color:#ffb52e}
 .qr-poster-tag,.qr-poster-eyebrow{font-size:10px;font-weight:900;letter-spacing:2px;color:#ffc04a}
 .qr-poster-hero{padding:28px 8px 18px}.qr-poster-hero h2{font-size:clamp(30px,5vw,48px);line-height:1.04;margin:10px 0 12px;color:#fff!important}.qr-poster-hero h2 em{font-style:normal;color:#ffb52e}.qr-poster-copy{max-width:480px;color:#e0d2c1!important;font-size:16px}
-.qr-poster-main{display:grid;grid-template-columns:250px 1fr;align-items:center;gap:28px;margin:10px 0 18px}.qr-poster-qr{background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 10px 30px #0008}.qr-poster-qr canvas,.qr-poster-qr img{display:block!important;width:100%!important;height:auto!important;max-width:226px!important;margin:auto!important}
+.qr-poster-main{display:grid;grid-template-columns:250px 1fr;align-items:center;gap:28px;margin:10px 0 18px}.qr-poster-qr{background:#fff;border-radius:18px;padding:12px;text-align:center;box-shadow:0 10px 30px #0008}.qr-poster-qr canvas{display:block!important;width:100%!important;height:auto!important;max-width:226px!important;margin:auto!important}.qr-poster-qr img{display:none!important}
 .qr-poster-steps{display:grid;gap:14px;color:#f5e9d8}.qr-poster-steps>b{font-size:20px;color:#fff}.qr-poster-steps span{display:flex;align-items:center;gap:10px;line-height:1.35}.qr-poster-steps i{display:inline-grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:linear-gradient(120deg,#ffbd32,#e64a21);color:#1a0d04;font-style:normal;font-weight:900}
 .qr-poster-cta{padding:13px 16px;border-radius:10px;background:linear-gradient(110deg,#ffbd32,#ed6720,#d93c25);color:#1b0c04!important;text-align:center;font-weight:900;letter-spacing:1px}
 .qr-poster-foot{margin:16px 0 0;color:#c7b6a2!important;text-align:center;font-size:12px}.qr-poster #shopQrUrl{font-size:9px;color:#9e8d7b!important;text-align:center}
@@ -367,7 +372,7 @@ body.client-kiosk #clientFullscreenBtn:focus,body.client-kiosk #clientFullscreen
  #shopQrPrintCard .qr-poster-hero h2{font-size:39pt!important}
  #shopQrPrintCard .qr-poster-main{grid-template-columns:78mm 1fr!important;gap:10mm!important;margin-top:15mm!important}
  #shopQrPrintCard .qr-poster-qr{padding:5mm!important}
- #shopQrPrintCard .qr-poster-qr canvas,#shopQrPrintCard .qr-poster-qr img{max-width:68mm!important}
+ #shopQrPrintCard .qr-poster-qr canvas{max-width:68mm!important}#shopQrPrintCard .qr-poster-qr img{display:none!important}
  #shopQrPrintCard .qr-poster-steps{font-size:15pt!important}
  #shopQrPrintCard .qr-poster-cta{margin-top:14mm!important;font-size:15pt!important}
  #shopQrPrintCard #shopQrUrl{font-size:8pt!important}
@@ -509,8 +514,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <div class="hero"><div class="eyebrow">Accesso dipendenti</div><h1>Seleziona il negozio</h1><p class="sub">Scegli il punto vendita su cui lavorare. Potrai cambiare negozio anche dal gestionale.</p></div>
 <div class="panel" style="max-width:560px"><div class="field"><label for="sellerShopSelect">Negozio</label><select id="sellerShopSelect"></select></div><div id="sellerShopMsg" class="muted"></div><div class="actions"><button class="secondary" onclick="goHome()">Esci</button><button class="primary" onclick="confirmSellerShop()">Entra nel gestionale</button></div></div>
 </section>
-<section id="adminView" class="hidden"><div class="hero"><div class="eyebrow">Area amministratore</div><h1>Gestisci catalogo e magazzino.</h1><p class="sub">Catalogo e giacenze vengono salvati direttamente su Firebase.</p></div><div class="actions" style="justify-content:flex-start;margin:0 0 16px"><button class="primary" id="adminCatalogTab" onclick="switchAdminTab('catalog')">Catalogo e magazzino</button><button class="secondary" id="adminUsersTab" onclick="switchAdminTab('users')">Gestione utenze</button></div><div id="adminUsersSection" class="hidden"><div class="panel" id="individualUsersPanel"><h2>Account negozi e utenze</h2><p class="hint">Gli account condivisi dei negozi vengono creati automaticamente durante l’importazione Excel. Da qui puoi gestire anche gli account amministratore e reimpostare credenziali.</p><div class="panel" style="margin:14px 0"><h3>Credenziali account negozio</h3><p class="hint">Seleziona uno o più negozi per generare nuove password temporanee. Gli account non selezionati restano invariati. Le nuove password saranno mostrate una sola volta e dovranno essere cambiate al primo accesso.</p><div class="actions"><button type="button" class="secondary" onclick="toggleAllStoreAccounts(true)">Seleziona tutti</button><button type="button" class="secondary" onclick="toggleAllStoreAccounts(false)">Deseleziona tutti</button><button type="button" class="primary" id="resetStorePasswordsBtn" onclick="resetSelectedStorePasswords()">Rigenera password selezionati</button></div><div id="storeAccountResetList" class="tablewrap" style="margin-top:12px"></div><div id="storePasswordResetMsg" class="muted" role="status" style="margin-top:10px"></div><div id="storePasswordResetResult" style="margin-top:12px"></div></div><div class="grid"><div class="field"><label for="newSellerRole">Tipo account</label><select id="newSellerRole" onchange="updateNewAccountRole()"><option value="seller">Dipendente</option><option value="admin">Amministratore</option></select></div><div class="field"><label for="newSellerUsername">Username</label><input id="newSellerUsername" autocomplete="off" placeholder="es. Modena01" maxlength="40"></div><div class="field"><label for="newSellerDisplayName">Nome visualizzato</label><input id="newSellerDisplayName" placeholder="Nome Cognome"></div><div class="field" id="newSellerShopField"><label for="newSellerShop">Negozio assegnato</label><select id="newSellerShop"><option value="">Caricamento negozi…</option></select></div><div class="field"><label for="newSellerPassword">Password iniziale</label><input id="newSellerPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128"></div></div><div class="actions"><button class="primary" id="createSellerBtn" onclick="createIndividualSeller()">Crea account dipendente</button><button class="secondary" onclick="loadIndividualSellers()">Aggiorna elenco</button></div><div id="individualUsersMsg" class="muted" role="status" style="margin-top:10px"></div><div id="individualUsersList" class="tablewrap" style="margin-top:14px"></div></div><div class="panel"><h2>Gestione password</h2><p class="hint">Reimposta la password degli account condivisi. Le password non vengono mostrate né salvate nell'app.</p><div class="grid"><div class="field"><label for="passwordTarget">Account</label><select id="passwordTarget"><option value="seller">Dipendenti</option><option value="admin">Amministratore</option></select></div><div class="field"><label for="newSharedPassword">Nuova password</label><input id="newSharedPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Almeno 8 caratteri"></div><div class="field"><label for="confirmSharedPassword">Conferma nuova password</label><input id="confirmSharedPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="Ripeti la password"></div></div><div class="actions"><button class="primary" id="saveSharedPasswordBtn" onclick="resetSharedPassword()">Reimposta password</button></div><div id="sharedPasswordMsg" class="muted" role="status" style="margin-top:10px"></div></div></div><div id="adminCatalogSection"><div class="panel"><h2>Abilitazione e disabilitazione dispositivi per negozio</h2><p class="hint">Carica l’esportazione Excel del gestionale. Il sistema usa Codice Prodotto, Descrizione e Negozio per determinare quali dispositivi rendere visibili in ciascun punto vendita. Le quantità di magazzino non vengono importate. I negozi rilevati saranno selezionati automaticamente; puoi scegliere su quali applicare la sincronizzazione.</p><div class="toolbar"><div class="field"><label>File Excel (.xlsx / .xls)</label><input id="globalStockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importGlobalStock()">Analizza Excel</button></div><div id="globalStockMsg" class="muted" style="margin-top:10px"></div><div id="shopSyncPreview" class="hidden" style="margin-top:16px"></div></div><div class="panel" id="deviceManagementPanel"><div class="toolbar" style="justify-content:space-between;align-items:center"><div><h2>Gestione dispositivo</h2><p class="hint">Cerca e seleziona una variante: qui puoi gestire insieme scheda tecnica e promozioni.</p></div><button type="button" class="primary" onclick="toggleNewDeviceForm()">＋ Aggiungi nuovo device</button></div><div id="newDeviceForm" class="notice hidden" style="margin:14px 0"><h3 style="margin-top:0">Nuovo dispositivo nel listino</h3><p class="hint">Crea una variante direttamente nel catalogo, anche se non è presente in nessun magazzino. Non verrà associata automaticamente alle giacenze.</p><div class="grid"><div class="field"><label for="newDeviceName">Nome completo variante</label><input id="newDeviceName" placeholder="Es. Samsung Galaxy A57 5G 256GB Black" maxlength="180"></div><div class="field"><label for="newDeviceRam">RAM (GB)</label><input id="newDeviceRam" type="number" min="1" max="64" placeholder="Es. 8"></div><div class="field"><label for="newDeviceStorage">Memoria</label><input id="newDeviceStorage" placeholder="Es. 256 GB"></div><div class="field"><label for="newDeviceBand">Fascia</label><select id="newDeviceBand"><option value="">Da definire</option><option value="entry">Entry level</option><option value="mid">Media</option><option value="premium">Premium</option><option value="top">Top di gamma</option></select></div><div class="field"><label for="newDevicePrice">Prezzo listino (€), facoltativo</label><input id="newDevicePrice" type="number" min="0" step="0.01" placeholder="Lascia vuoto se da definire"></div></div><div class="actions"><button type="button" class="secondary" onclick="toggleNewDeviceForm(false)">Annulla</button><button type="button" class="primary" id="saveNewDeviceBtn" onclick="createCatalogDevice()">Aggiungi al listino</button></div><div id="newDeviceMsg" class="muted" role="status"></div></div><div class="grid"><div class="field"><label for="adminDeviceSearch">Cerca dispositivo</label><input id="adminDeviceSearch" type="search" placeholder="Scrivi marca, modello, RAM, memoria..." oninput="filterAdminDevices()"></div><div class="field"><label for="adminDeviceSelect">Dispositivo selezionato</label><select id="adminDeviceSelect" onchange="selectAdminDevice()"></select></div></div><div class="field" style="display:none"><label>Modello</label><select id="editDevice" onchange="loadEditor()"></select></div><p class="hint">Le caratteristiche comuni vengono salvate una volta per modello. RAM e memoria restano proprietà della singola variante.</p>
-<div class="field"><label>Modello</label><select id="editDevice" onchange="loadEditor()"></select></div>
+<section id="adminView" class="hidden"><div class="hero"><div class="eyebrow">Area amministratore</div><h1>Gestisci catalogo e magazzino.</h1><p class="sub">Catalogo e giacenze vengono salvati direttamente su Firebase.</p></div><div class="actions" style="justify-content:flex-start;margin:0 0 16px"><button class="primary" id="adminCatalogTab" onclick="switchAdminTab('catalog')">Catalogo e magazzino</button><button class="secondary" id="adminUsersTab" onclick="switchAdminTab('users')">Gestione utenze</button></div><div id="adminUsersSection" class="hidden"><div class="panel" id="individualUsersPanel"><h2>Account negozi e utenze</h2><p class="hint">Gli account condivisi dei negozi vengono creati automaticamente durante l’importazione Excel. Da qui puoi gestire anche gli account amministratore e reimpostare credenziali.</p><div class="panel" style="margin:14px 0"><h3>Credenziali account negozio</h3><p class="hint">Seleziona uno o più negozi per generare nuove password temporanee. Gli account non selezionati restano invariati. Le nuove password saranno mostrate una sola volta e dovranno essere cambiate al primo accesso.</p><div class="actions"><button type="button" class="secondary" onclick="toggleAllStoreAccounts(true)">Seleziona tutti</button><button type="button" class="secondary" onclick="toggleAllStoreAccounts(false)">Deseleziona tutti</button><button type="button" class="primary" id="resetStorePasswordsBtn" onclick="resetSelectedStorePasswords()">Rigenera password selezionati</button></div><div id="storeAccountResetList" class="tablewrap" style="margin-top:12px"></div><div id="storePasswordResetMsg" class="muted" role="status" style="margin-top:10px"></div><div id="storePasswordResetResult" style="margin-top:12px"></div></div><div class="grid"><div class="field"><label for="newSellerRole">Tipo account</label><select id="newSellerRole" onchange="updateNewAccountRole()"><option value="seller">Dipendente</option><option value="admin">Amministratore</option></select></div><div class="field"><label for="newSellerUsername">Username</label><input id="newSellerUsername" autocomplete="off" placeholder="es. Modena01" maxlength="40"></div><div class="field"><label for="newSellerDisplayName">Nome visualizzato</label><input id="newSellerDisplayName" placeholder="Nome Cognome"></div><div class="field" id="newSellerShopField"><label for="newSellerShop">Negozio assegnato</label><select id="newSellerShop"><option value="">Caricamento negozi…</option></select></div><div class="field"><label for="newSellerPassword">Password iniziale</label><input id="newSellerPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128"></div></div><div class="actions"><button class="primary" id="createSellerBtn" onclick="createIndividualSeller()">Crea account dipendente</button><button class="secondary" onclick="loadIndividualSellers()">Aggiorna elenco</button></div><div id="individualUsersMsg" class="muted" role="status" style="margin-top:10px"></div><div id="individualUsersList" class="tablewrap" style="margin-top:14px"></div></div></div><div id="adminCatalogSection"><div class="panel"><h2>Abilitazione e disabilitazione dispositivi per negozio</h2><p class="hint">Carica l’esportazione Excel del gestionale. Il sistema usa Codice Prodotto, Descrizione e Negozio per determinare quali dispositivi rendere visibili in ciascun punto vendita. Le quantità di magazzino non vengono importate. I negozi rilevati saranno selezionati automaticamente; puoi scegliere su quali applicare la sincronizzazione.</p><div class="toolbar"><div class="field"><label>File Excel (.xlsx / .xls)</label><input id="globalStockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importGlobalStock()">Analizza Excel</button></div><div id="globalStockMsg" class="muted" style="margin-top:10px"></div><div id="shopSyncPreview" class="hidden" style="margin-top:16px"></div></div><div class="panel" id="deviceManagementPanel"><div class="toolbar" style="justify-content:space-between;align-items:center"><div><h2>Gestione dispositivo</h2><p class="hint">Cerca e seleziona una variante: qui puoi gestire insieme scheda tecnica e promozioni.</p></div><button type="button" class="primary" onclick="toggleNewDeviceForm()">＋ Aggiungi nuovo device</button></div><div id="newDeviceForm" class="notice hidden" style="margin:14px 0"><h3 style="margin-top:0">Nuovo dispositivo nel listino</h3><p class="hint">Crea una variante direttamente nel catalogo, anche se non è presente in nessun magazzino. Non verrà associata automaticamente alle giacenze.</p><div class="grid"><div class="field"><label for="newDeviceName">Nome completo variante</label><input id="newDeviceName" placeholder="Es. Samsung Galaxy A57 5G 256GB Black" maxlength="180"></div><div class="field"><label for="newDeviceRam">RAM (GB)</label><input id="newDeviceRam" type="number" min="1" max="64" placeholder="Es. 8"></div><div class="field"><label for="newDeviceStorage">Memoria</label><input id="newDeviceStorage" placeholder="Es. 256 GB"></div><div class="field"><label for="newDeviceBand">Fascia</label><select id="newDeviceBand"><option value="">Da definire</option><option value="entry">Entry level</option><option value="mid">Media</option><option value="premium">Premium</option><option value="top">Top di gamma</option></select></div><div class="field"><label for="newDevicePrice">Prezzo listino (€), facoltativo</label><input id="newDevicePrice" type="number" min="0" step="0.01" placeholder="Lascia vuoto se da definire"></div></div><div class="actions"><button type="button" class="secondary" onclick="toggleNewDeviceForm(false)">Annulla</button><button type="button" class="primary" id="saveNewDeviceBtn" onclick="createCatalogDevice()">Aggiungi al listino</button></div><div id="newDeviceMsg" class="muted" role="status"></div></div><div class="grid"><div class="field"><label for="adminDeviceSearch">Cerca dispositivo</label><input id="adminDeviceSearch" type="search" placeholder="Scrivi marca, modello, RAM, memoria..." oninput="filterAdminDevices()"></div><div class="field"><label for="adminDeviceSelect">Dispositivo selezionato</label><select id="adminDeviceSelect" onchange="selectAdminDevice()"></select></div></div><div class="field" style="display:none"><label>Modello</label><select id="editDevice" onchange="loadEditor()"></select></div><p class="hint">Le caratteristiche comuni vengono salvate una volta per modello. RAM e memoria restano proprietà della singola variante.</p>
 <h3>Varianti</h3><div class="tablewrap"><table><thead><tr><th>Variante</th><th>RAM</th><th>Memoria</th></tr></thead><tbody id="variantRows"></tbody></table></div>
 <h3 style="margin-top:18px">Specifiche condivise</h3><div class="grid">
 <div class="field"><label>RAM comune (GB)</label><input id="fSharedRam" placeholder="Es. 8"></div><div class="field"><label>Tecnologia display</label><input id="fDisplayTech" placeholder="AMOLED, OLED, LCD"></div>
@@ -564,8 +568,6 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
   <div class="qr-poster-hero"><p class="qr-poster-eyebrow">IL TUO PROSSIMO SMARTPHONE TI ASPETTA</p><h2 id="shopQrPrintTitle">Scopri lo smartphone<br><em>che fa per te!</em></h2><p class="qr-poster-copy">Rispondi a poche domande e trova il modello più adatto alle tue esigenze.</p></div>
   <div class="qr-poster-main"><div class="qr-poster-qr"><div id="shopQrCanvas" style="display:inline-block;padding:12px;background:white;border-radius:12px"></div></div><div class="qr-poster-steps"><b>È semplicissimo</b><span><i>1</i> Inquadra il QR code</span><span><i>2</i> Inserisci il PIN che ti consegna il personale</span><span><i>3</i> Scopri i modelli più adatti a te</span></div></div>
   <p class="qr-poster-cta">INIZIA ORA. LA SCELTA GIUSTA PARTE DA TE.</p>
-  <p class="muted" id="shopQrUrl" style="overflow-wrap:anywhere"></p>
-  <p class="qr-poster-foot">Chiedi il PIN al nostro staff · <span id="shopQrPrintShop"></span></p>
  </div>
 </div>
 </div>
@@ -580,7 +582,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signInWithCustomToken, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getAuth, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signInWithCustomToken, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyA-FeADcnW89AOSuAZ-i3xnF7reReOcg2o",
@@ -594,6 +596,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+// Use durable browser-local auth so staff sessions survive page refreshes.
+await setPersistence(auth, browserLocalPersistence);
 window.firebaseApi = { auth, db, signInWithEmailAndPassword, signInWithCustomToken, signOut, updatePassword, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc, updateDoc };
 window.firebaseReady = true;
 window.dispatchEvent(new Event("firebase-ready"));
@@ -624,7 +628,7 @@ let activeStockVersion='';
 let catalogUpdatedAt=null;
 let stockUpdatedAt=null;
 function formatUpdateDate(value){if(!value)return 'Non disponibile';let date=null;try{date=typeof value.toDate==='function'?value.toDate():value instanceof Date?value:new Date(value)}catch(_){}if(!date||Number.isNaN(date.getTime()))return 'Non disponibile';return new Intl.DateTimeFormat('it-IT',{dateStyle:'short',timeStyle:'short'}).format(date)}
-function renderDataFreshness(){['adminView','storeView'].forEach(viewId=>{const view=document.getElementById(viewId);if(!view)return;let box=view.querySelector('.data-freshness');if(!box){box=document.createElement('div');box.className='data-freshness';const hero=view.querySelector('.hero');if(hero)hero.insertAdjacentElement('afterend',box);else view.insertAdjacentElement('afterbegin',box)}box.innerHTML='<span><b>Ultimo aggiornamento promozioni</b>'+formatUpdateDate(catalogUpdatedAt)+'</span><span><b>Ultimo aggiornamento magazzino</b>'+formatUpdateDate(stockUpdatedAt)+'</span>'})}
+
 function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/iphone\s*promax/g,'iphone pro max').replace(/samsung\s+galaxy/g,'galaxy').replace(/[^a-z0-9]+/g,' ').trim()}
 function brandOf(s,explicitBrand=''){
  const aliases=[
@@ -723,7 +727,7 @@ async function restoreStaffSession(){
   await loadShopDirectory();setupEditor();
   document.getElementById('adminView').classList.remove('hidden');
   document.querySelectorAll('.admin-only').forEach(el=>el.classList.remove('hidden'));
-  renderDataFreshness();
+  
  }else{
   await loadCatalogFromFirestore();stock=[];mappings={};
   document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
@@ -804,7 +808,7 @@ async function startSellerMode(){
   document.getElementById('sellerShopView').classList.add('hidden');
   document.getElementById('storeView').classList.remove('hidden');
   document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
-  renderDataFreshness();renderAll();
+  renderAll();
  }catch(e){msg.textContent='Impossibile aprire il negozio associato ('+phase+'): '+e.message;console.error('startSellerMode:',phase,e);throw new Error('Apertura negozio - '+phase+': '+e.message);}
 }
 async function confirmSellerShop(){
@@ -819,7 +823,7 @@ async function confirmSellerShop(){
   applyStockMappings();
   document.getElementById('sellerShopView').classList.add('hidden');
   document.getElementById('storeView').classList.remove('hidden');
-  renderDataFreshness();
+  
   renderAll();
  }catch(e){msg.textContent='Errore caricamento magazzino: '+e.message}
 }
@@ -1038,7 +1042,7 @@ async function publishCatalogToFirestore(){
   for(const d of existing.docs){if(!desired.has(d.id)){batch.delete(d.ref);ops++;if(ops===450){await batch.commit();batch=api.writeBatch(db);ops=0}}}
   if(ops)await batch.commit();
   await api.setDoc(api.doc(db,'settings','catalog'),{updatedAt:api.serverTimestamp(),deviceCount:desired.size,updatedBy:user.uid});
-  catalogUpdatedAt=new Date();renderDataFreshness();
+  catalogUpdatedAt=new Date();
   msg.textContent='Catalogo pubblicato su Firebase: '+desired.size+' varianti. Nessun token GitHub necessario.';
  }catch(e){msg.textContent='Pubblicazione non completata: '+e.message}
  finally{btn.disabled=false}
@@ -1218,7 +1222,7 @@ async function verifySellerPassword(){
    await loadShopDirectory();
    setupEditor();
    document.getElementById('adminView').classList.remove('hidden');
-   renderDataFreshness();
+   
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.remove('hidden'));
   }else if(profile.role==='seller'){
    document.getElementById('storeView').classList.add('hidden');
@@ -1868,14 +1872,14 @@ async function loadStockFromFirestore(shopId=null){
  const api=window.firebaseApi,db=api.db;
  if(currentUserProfile?.role!=='admin')throw new Error('Accesso al magazzino riservato esclusivamente all’Admin.');
  const setting=await api.getDoc(api.doc(db,'settings','stock'));
- if(!setting.exists()||!setting.data().activeVersion){stock=[];stockUpdatedAt=null;renderDataFreshness();return false;}
+ if(!setting.exists()||!setting.data().activeVersion){stock=[];stockUpdatedAt=null;return false;}
  stockUpdatedAt=setting.data().updatedAt||null;
  activeStockVersion=setting.data().activeVersion;
  const items=api.collection(db,'stockVersions',activeStockVersion,'items');
  const stockQuery=shopId?api.query(items,api.where('shopId','==',shopId)):items;
  const snap=await api.getDocs(stockQuery);
  stock=snap.docs.map(d=>d.data());
- renderDataFreshness();return true;
+ return true;
 }
 async function loadShopCatalog(shopId){
  const api=window.firebaseApi;if(!shopId)throw new Error('Negozio non specificato.');
@@ -2232,7 +2236,7 @@ async function saveOfferValues(){
   await window.firebaseApi.setDoc(window.firebaseApi.doc(window.firebaseApi.db,'devices',catalogDocId(p)),updated);
   Object.assign(p,updated);
   await window.firebaseApi.setDoc(window.firebaseApi.doc(window.firebaseApi.db,'settings','catalog'),{updatedAt:window.firebaseApi.serverTimestamp(),deviceCount:catalog.length,updatedBy:window.firebaseApi.auth.currentUser?.uid||''},{merge:true});
-  catalogUpdatedAt=new Date();renderDataFreshness();renderOfferEditor();renderCatalog();
+  catalogUpdatedAt=new Date();renderOfferEditor();renderCatalog();
   msg.textContent='Importi salvati separatamente per ogni modalità.';
  }catch(e){msg.textContent='Salvataggio non riuscito: '+e.message}
  finally{btn.disabled=false}
@@ -2342,9 +2346,6 @@ function renderShopQr(){
  const url=location.origin+location.pathname+'?shop='+encodeURIComponent(shopId);
  const host=document.getElementById('shopQrCanvas');host.innerHTML='';
  new QRCode(host,{text:url,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
- document.getElementById('shopQrUrl').textContent=url;
- const shopLabel=document.getElementById('shopQrPrintShop');
- if(shopLabel)shopLabel.textContent=shopId;
  document.getElementById('shopQrResult').classList.remove('hidden');
 }
 </script></body></html>
