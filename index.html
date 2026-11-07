@@ -444,6 +444,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <div class="home-footnote"><span>DEVICE PROPOSER</span><span>SMARTPHONE SALES ASSISTANT</span></div>
 </section>
 <section id="clientView" class="hidden">
+<div id="clientPinPanel" class="panel hidden" style="max-width:520px"><div class="eyebrow">Accesso cliente</div><h1>Benvenuto.</h1><p class="hint">Inserisci il PIN comunicato dal personale del negozio.</p><div class="field"><label for="clientPinInput">PIN a 6 cifre</label><input id="clientPinInput" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••"></div><div id="clientPinMsg" class="muted"></div><div class="actions"><button class="primary" id="clientPinButton" onclick="verifyClientPin()">Accedi al catalogo</button></div></div>
 <button id="clientFullscreenBtn" type="button" onclick="toggleClientFullscreen()" aria-label="Attiva schermo intero" title="Schermo intero">⛶</button>
 <div id="clientShopPanel" class="panel hidden" style="max-width:560px"><h2>Seleziona il negozio</h2><p class="hint">Scegli il punto vendita per visualizzare soltanto gli smartphone disponibili nelle sue giacenze.</p><div class="field"><label for="clientShopSelect">Negozio</label><select id="clientShopSelect"></select></div><div class="actions"><button class="primary" onclick="confirmClientShop()">Continua</button></div></div>
 <div id="clientStartPanel" class="panel hidden"><div class="eyebrow">Come preferisci procedere?</div><h1>Ti guidiamo nella scelta?</h1><p class="hint">Puoi rispondere a poche domande oppure scegliere direttamente il modello che hai già in mente.</p><div class="actions"><button class="primary" onclick="beginGuidedChoice()">Sì, guidami nella scelta</button><button class="secondary" onclick="beginDirectChoice()">No, so già cosa cerco</button></div></div>
@@ -501,7 +502,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signInWithCustomToken, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyA-FeADcnW89AOSuAZ-i3xnF7reReOcg2o",
@@ -515,7 +516,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-window.firebaseApi = { auth, db, signInWithEmailAndPassword, signOut, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc };
+window.firebaseApi = { auth, db, signInWithEmailAndPassword, signInWithCustomToken, signOut, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc };
 window.firebaseReady = true;
 window.dispatchEvent(new Event("firebase-ready"));
 </script>
@@ -663,6 +664,57 @@ document.addEventListener('fullscreenchange',()=>{
  const active=!!document.fullscreenElement;
  btn.textContent=active?'×':'⛶';btn.setAttribute('aria-label',active?'Esci dallo schermo intero':'Attiva schermo intero');btn.title=active?'Esci':'Schermo intero';
 });
+
+const CLIENT_WORKER_URL='https://device-proposer-admin.mariab-ragucci.workers.dev';
+let clientExpiryTimer=null;
+function qrShopFromUrl(){const id=new URLSearchParams(location.search).get('shop')||'';return /^[A-Z0-9_-]{2,32}$/.test(id)?id:''}
+async function verifyClientPin(){
+ const shopId=qrShopFromUrl(),pin=document.getElementById('clientPinInput').value.trim(),msg=document.getElementById('clientPinMsg'),btn=document.getElementById('clientPinButton');
+ if(!shopId){msg.textContent='QR code non valido.';return}
+ if(!/^\d{6}$/.test(pin)){msg.textContent='Inserisci un PIN di 6 cifre.';return}
+ btn.disabled=true;msg.textContent='Verifica del PIN…';
+ try{
+  const response=await fetch(CLIENT_WORKER_URL+'/client/access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({shopId,pin})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.success)throw new Error(data.error||'Accesso non riuscito.');
+  const api=window.firebaseApi;
+  await api.signOut(api.auth).catch(()=>{});
+  await api.signInWithCustomToken(api.auth,data.customToken);
+  currentUserProfile={role:'client',shopId:data.shopId,shopName:data.shopName,active:true};
+  currentShopId=data.shopId;
+  await loadClientCatalogForShop(data.shopId);
+  stock=[];mappings={};
+  document.getElementById('clientPinPanel').classList.add('hidden');
+  document.getElementById('clientStartPanel').classList.remove('hidden');
+  document.getElementById('clientPinMsg').textContent='';
+  document.getElementById('homeBtn').style.display='inline-block';
+  if(clientExpiryTimer)clearTimeout(clientExpiryTimer);
+  clientExpiryTimer=setTimeout(async()=>{
+   try{await api.signOut(api.auth)}catch(e){}
+   currentUserProfile=null;catalog=[];enabledDeviceIds=[];shopCatalogLoaded=false;stock=[];mappings={};
+   document.getElementById('clientView').classList.add('hidden');
+   document.getElementById('homeView').classList.remove('hidden');
+   alert('Sessione scaduta. Scansiona nuovamente il QR code.');
+  },Math.max(0,Date.parse(data.expiresAt)-Date.now()));
+ }catch(e){msg.textContent=e.message||'Accesso non riuscito.';try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(ignore){}}
+ finally{btn.disabled=false}
+}
+async function startQrClientEntry(){
+ const shopId=qrShopFromUrl();if(!shopId)return false;
+ try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}
+ currentShopId=shopId;currentUserProfile=null;catalog=[];stock=[];mappings={};
+ document.getElementById('homeView').classList.add('hidden');
+ document.getElementById('sellerAuthView').classList.add('hidden');
+ document.getElementById('storeView').classList.add('hidden');
+ document.getElementById('clientView').classList.remove('hidden');
+ document.getElementById('clientPinPanel').classList.remove('hidden');
+ document.getElementById('clientShopPanel').classList.add('hidden');
+ document.getElementById('clientStartPanel').classList.add('hidden');
+ document.querySelector('#clientView .hero').classList.add('hidden');
+ document.getElementById('homeBtn').style.display='none';
+ document.getElementById('clientPinInput').focus();
+ return true;
+}
 async function startClientMode(){
  if(!clientLoginVerified||currentUserProfile?.role!=='client'||!window.firebaseApi?.auth?.currentUser){
   enterClient();
@@ -1834,6 +1886,7 @@ async function importStockJson(){let f=document.getElementById('stockJson').file
 async function init(){
  try{
   while(!window.firebaseApi){await new Promise(resolve=>window.addEventListener('firebase-ready',resolve,{once:true}))}
+  if(qrShopFromUrl()){await startQrClientEntry();return}
   // Nessun dato operativo viene caricato prima dell'autenticazione.
   document.getElementById('homeView').classList.remove('hidden');
  }catch(e){console.error('Device Proposer startup error:',e)}
