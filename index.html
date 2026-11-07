@@ -495,6 +495,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <section id="storeView" class="hidden">
 <div class="hero"><div class="eyebrow">Area negozio</div><h1>Catalogo, listino e magazzino.</h1><p class="sub">Il catalogo e le offerte sono gestiti dall’amministratore. Le abilitazioni dei dispositivi per negozio si aggiornano caricando il file Excel commerciale.</p></div>
 
+<div class="panel seller-account-controls"><h2>Accesso del negozio</h2><p class="hint">Questo account è condiviso dal personale del punto vendita. Puoi cambiare la password in qualsiasi momento.</p><button class="secondary" onclick="changeStorePassword()">Cambia password</button><span id="storePasswordMsg" class="muted" role="status" style="margin-left:10px"></span></div>
 <div class="panel admin-only"><h2>Disponibilità e associazioni</h2><p class="hint">L’abilitazione dei dispositivi per ciascun negozio si gestisce dalla sezione amministratore “Abilitazione dispositivi per negozio”, caricando il file Excel commerciale. Questo pannello mostra le associazioni SKU già presenti.</p></div><div class="panel admin-only"><div class="toolbar"><div class="field"><h2>Associa SKU al listino</h2><p class="hint">Il collegamento automatico è solo un suggerimento. Controlla le varianti non abbinate o dubbie: capacità e colore devono corrispondere.</p></div><button class="secondary" onclick="autoMatchAll()">Prova abbinamento automatico</button></div>
 <div class="tablewrap"><table><thead><tr><th>SKU</th><th>Descrizione magazzino</th><th>Giacenza</th><th>Impegnata</th><th>Disponibili</th><th>Variante listino associata</th><th>Esito</th></tr></thead><tbody id="stockRows"></tbody></table></div></div>
 
@@ -608,7 +609,18 @@ function clearClientSessionState(){
  const input=document.getElementById('clientPinInput');if(input)input.value='';
  const pinMsg=document.getElementById('clientPinMsg');if(pinMsg)pinMsg.textContent='';
 }
-async function goHome(){
+async async function changeStorePassword(){
+ const msg=document.getElementById('storePasswordMsg');
+ const next=prompt('Nuova password del negozio (almeno 8 caratteri):');
+ if(next===null)return;
+ if(next.length<8){msg.textContent='La password deve contenere almeno 8 caratteri.';return}
+ const confirmPassword=prompt('Conferma la nuova password:');
+ if(confirmPassword===null)return;
+ if(confirmPassword!==next){msg.textContent='Le password non coincidono.';return}
+ try{await callUserAdminApi('/password/change',{newPassword:next});msg.textContent='Password aggiornata. Comunicala al personale autorizzato.';}
+ catch(e){msg.textContent='Cambio password non riuscito: '+e.message;}
+}
+function goHome(){
  if(clientExpiryTimer){clearTimeout(clientExpiryTimer);clientExpiryTimer=null;}
  if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}
  clearClientSessionState();
