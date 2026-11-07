@@ -1043,7 +1043,7 @@ function downloadResetStoreCredentials(){
  if(!lastResetStoreCredentials.length){alert('Non ci sono nuove password da scaricare.');return}
  const lines=['DEVICE PROPOSER - PASSWORD TEMPORANEE ACCOUNT NEGOZIO','Generato: '+new Date().toLocaleString('it-IT'),'','IMPORTANTE: password temporanee. Al primo accesso è obbligatorio impostare una nuova password.','Conservare il file in modo riservato e cancellarlo dopo la consegna.',''];
  lastResetStoreCredentials.forEach(x=>{lines.push('Negozio: '+x.shopId);lines.push('Username: '+x.username);lines.push('Password temporanea: '+x.tempPassword);lines.push('')});
- const blob=new Blob(['\\uFEFF'+lines.join('\\r\\n')],{type:'text/plain;charset=utf-8'});
+ const blob=new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/plain;charset=utf-8'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='password-temporanee-negozi-'+new Date().toISOString().slice(0,10)+'.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 async function resetSelectedStorePasswords(){
