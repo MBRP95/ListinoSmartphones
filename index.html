@@ -720,7 +720,7 @@ function qrShopFromUrl(){const id=new URLSearchParams(location.search).get('shop
 async function verifyClientPin(){
  const shopId=qrShopFromUrl(),pin=document.getElementById('clientPinInput').value.trim(),msg=document.getElementById('clientPinMsg'),btn=document.getElementById('clientPinButton');
  if(!shopId){msg.textContent='QR code non valido.';return}
- if(!/^\\d{6}$/.test(pin)){msg.textContent='Inserisci un PIN di 6 cifre.';return}
+ if(!/^\d{6}$/.test(pin)){msg.textContent='Inserisci un PIN di 6 cifre.';return}
  btn.disabled=true;msg.textContent='Verifica del PIN…';
  const api=window.firebaseApi;
  try{
