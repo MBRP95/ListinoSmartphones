@@ -609,7 +609,7 @@ body.client-mode #homeAccessBtn{display:none!important}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, signInWithEmailAndPassword, signInWithCustomToken, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getAuth, setPersistence, browserLocalPersistence, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword, signInWithCustomToken, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const firebaseConfig = {
   apiKey: "AIzaSyA-FeADcnW89AOSuAZ-i3xnF7reReOcg2o",
@@ -623,8 +623,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-// Use durable browser-local auth so staff sessions survive page refreshes.
-await setPersistence(auth, browserLocalPersistence);
+// Prefer durable local auth; fall back to in-memory auth if the browser blocks storage.
+try {
+  await setPersistence(auth, browserLocalPersistence);
+} catch (persistenceError) {
+  console.warn("Persistenza locale Firebase non disponibile; uso sessione temporanea.", persistenceError);
+  try { await setPersistence(auth, inMemoryPersistence); }
+  catch (fallbackError) { console.error("Fallback Firebase persistence failed.", fallbackError); }
+}
+// Always expose Firebase and release app startup, even if persistence setup failed.
 window.firebaseApi = { auth, db, onAuthStateChanged, signInWithEmailAndPassword, signInWithCustomToken, signOut, updatePassword, doc, getDoc, collection, getDocs, query, where, writeBatch, serverTimestamp, setDoc, deleteDoc, updateDoc };
 window.firebaseReady = true;
 window.dispatchEvent(new Event("firebase-ready"));
