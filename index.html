@@ -540,6 +540,7 @@ let requestedAccessRole='staff';
 let clientLoginVerified=false;
 let currentShopId=new URLSearchParams(location.search).get('shop')||'';
 let selectedShopFilter='';
+let shopDirectory=[];
 let activeStockVersion='';
 let catalogUpdatedAt=null;
 let stockUpdatedAt=null;
@@ -920,6 +921,7 @@ async function verifySellerPassword(){
   document.getElementById('sellerUsername').value='';
   document.getElementById('homeBtn').style.display='inline-block';
   if(profile.role==='admin'){
+   await loadShopDirectory();
    setupEditor();
    document.getElementById('adminView').classList.remove('hidden');
    renderDataFreshness();
@@ -1234,12 +1236,16 @@ async function changeShopFilter(){
  }else if(currentUserProfile?.role==='admin'){enabledDeviceIds=[];shopCatalogLoaded=false;}
  renderCatalog();
 }
+async function loadShopDirectory(){
+ const api=window.firebaseApi;
+ const snap=await api.getDocs(api.collection(api.db,'shops'));
+ shopDirectory=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'it'));
+}
 function setupShopFilter(){
  const sel=document.getElementById('shopFilter');if(!sel)return;
- const shops=new Map();
- stock.forEach(item=>{const id=String(item.shopId||'').trim();if(id)shops.set(id,String(item.shop||id))});
+ const shops=new Map(shopDirectory.map(x=>[String(x.id),String(x.name||x.id)]));
  const preferred=String(selectedShopFilter||currentUserProfile?.shopId||currentShopId||'').trim();
- sel.innerHTML='<option value="__all__">Tutti i negozi</option>'+[...shops].sort((a,b)=>a[1].localeCompare(b[1],'it')).map(([id,name])=>'<option value="'+esc(id)+'">'+esc(name)+' ('+esc(id)+')</option>').join('');
+ sel.innerHTML='<option value="__all__">Tutti i negozi</option>'+[...shops].map(([id,name])=>'<option value="'+esc(id)+'">'+esc(name)+' ('+esc(id)+')</option>').join('');
  sel.value=preferred&&shops.has(preferred)?preferred:'__all__';
  selectedShopFilter=sel.value;
 }
@@ -1333,8 +1339,7 @@ async function importGlobalStock(){
    if(!shopId)throw new Error('Codice negozio non riconosciuto nella riga: '+shop);
    shops.set(shopId,shop.replace(/^([A-Z]{2}\d{3})\s*[-–:]?\s*/i,'').trim()||shop);
    const key=shopId+'|'+sku;if(seen.has(key))continue;seen.add(key);
-   let catalogIndex=catalog.findIndex(p=>String(p.sku||'').trim()===sku);
-   if(catalogIndex<0)catalogIndex=autoMatch({description});
+   const catalogIndex=catalog.findIndex(p=>String(p.sku||'').trim()===sku);
    rows.push({sku,description,shop,shopId,catalogIndex});
   }
   if(!rows.length||!shops.size)throw new Error('Nessuno smartphone valido trovato. Verifica le colonne Codice Prodotto, Descrizione e Negozio.');
@@ -1382,8 +1387,15 @@ async function confirmShopCatalogImport(){
    updates.push({ref,shopId,enabledDeviceIds:[...desired]});
   }
   const batch=api.writeBatch(db);
+  const names=new Map(data.shops);
+  for(const shopId of selected){
+   const shopRef=api.doc(db,'shops',shopId);
+   batch.set(shopRef,{name:names.get(shopId)||shopId,active:true,source:'excel-import',updatedAt:api.serverTimestamp()},{merge:true});
+  }
   for(const x of updates)batch.set(x.ref,{shopId:x.shopId,enabledDeviceIds:x.enabledDeviceIds,updatedAt:api.serverTimestamp(),updatedBy:currentUserProfile.uid,source:'excel-import',sourceFile:data.fileName},{merge:true});
   await batch.commit();
+  await loadShopDirectory();
+  setupShopFilter();
   box.textContent='Sincronizzazione completata. Negozi aggiornati: '+selected.length+'. Dispositivi abilitati: '+enabled+'. Disabilitati: '+disabled+'. Negozi con variazioni: '+changed+'. Schede catalogo e offerte non eliminate.';
   pendingShopCatalogImport=null;
   if(currentUserProfile?.role==='admin'&&selectedShopFilter&&selected.includes(selectedShopFilter))await loadShopCatalog(selectedShopFilter);
