@@ -823,6 +823,7 @@ async function startSellerMode(){
   msg.textContent='Caricamento catalogo commerciale di '+shopId+'…';
   phase='lettura shopCatalog/'+shopId+' (controllo associazione account/negozio)';
   await loadShopCatalog(shopId);
+   setupOtherStorePicker();
   phase='lettura negozi e disponibilità cataloghi';
   stock=[];mappings={};stockUpdatedAt=null;
   phase='apertura interfaccia negozio';
@@ -1596,7 +1597,6 @@ function storeAvailabilityFor(index){
   if(items.includes(previous))select.value=previous;
  }
  function setupOtherStorePicker(){updateOtherStoreOptions();}
-}
 async function searchOtherStores(){
  const host=document.getElementById('otherStoresResults');
  const input=document.getElementById('otherStoresQuery');
