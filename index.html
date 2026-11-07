@@ -1690,7 +1690,6 @@ async function confirmShopCatalogImport(){
  const selected=[...document.querySelectorAll('.shop-sync-check:checked')].map(x=>x.value);
  if(!selected.length){box.textContent='Seleziona almeno un negozio.';return}
  const missing=data.rows.filter(x=>selected.includes(x.shopId)&&x.catalogIndex<0);
- if(missing.length){box.textContent='Prima associa tutti i codici non riconosciuti dei negozi selezionati. '+missing.length+' codici ancora da associare.';return}
  if(selected.length>240){box.textContent='Troppi negozi selezionati per una singola operazione. Dividi il file in più importazioni (massimo 240 per volta).';return}
  const api=window.firebaseApi,db=api.db;let changed=0,enabled=0,disabled=0;
  try{
@@ -1731,7 +1730,7 @@ async function confirmShopCatalogImport(){
   }catch(accountError){
    accountInfo='<div class="notice">Catalogo sincronizzato, ma creazione account non completata: '+esc(accountError.message)+'. Puoi ripetere l’importazione: gli account già creati non verranno duplicati.</div>';
   }
-  box.innerHTML='Sincronizzazione completata. Negozi aggiornati: '+selected.length+'. Dispositivi abilitati: '+enabled+'. Disabilitati: '+disabled+'. Negozi con variazioni: '+changed+'. Schede catalogo e offerte non eliminate.'+accountInfo;
+  box.innerHTML='Sincronizzazione completata. Negozi aggiornati: '+selected.length+'. Dispositivi abilitati: '+enabled+'. Disabilitati: '+disabled+'. Codici non associati e ignorati: '+missing.length+'. Negozi con variazioni: '+changed+'. Schede catalogo e offerte non eliminate.'+accountInfo;
   pendingShopCatalogImport=null;
   if(currentUserProfile?.role==='admin'&&selectedShopFilter&&selected.includes(selectedShopFilter))await loadShopCatalog(selectedShopFilter);
   renderCatalog();
