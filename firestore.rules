@@ -99,6 +99,12 @@ function sellerOwnsShop(shopId) {
       allow delete: if isAdmin();
     }
 
+    // I soli amministratori autenticati possono gestire PIN e revoca sessioni QR.
+    // I client QR leggono i dati tramite il backend e non possono leggere l'hash del PIN.
+    match /shopAccess/{shopId} {
+      allow read, write: if isAdmin();
+    }
+
     match /stock/{stockId} {
       allow read: if isAdmin();
       allow create, update, delete: if isAdmin();
