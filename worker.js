@@ -780,6 +780,115 @@ async function isRootAdmin(uid, env, googleToken) {
 
 
 
+
+
+/* Accesso cliente QR/PIN: sessioni server-side con scadenza e revoca. */
+const CLIENT_SESSION_SECONDS = 30 * 60;
+const PIN_HASH_ITERATIONS = 310000;
+
+function randomHex(bytes = 24) {
+  const data = crypto.getRandomValues(new Uint8Array(bytes));
+  return [...data].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+function bytesToBase64Url(bytes) {
+  return b64url(bytes);
+}
+
+async function hashShopPin(pin, saltHex, iterations = PIN_HASH_ITERATIONS) {
+  const salt = Uint8Array.from(saltHex.match(/.{2}/g) || [], x => parseInt(x, 16));
+  const material = await crypto.subtle.importKey('raw', enc(pin), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    material,
+    256
+  );
+  return bytesToBase64Url(bits);
+}
+
+async function signClientCustomToken(uid, shopId, sid, env) {
+  const sa = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_JSON || '{}');
+  if (!sa.client_email || !sa.private_key) throw new Error('Service account JSON non valido.');
+  const now = Math.floor(Date.now() / 1000);
+  const header = b64url(enc(JSON.stringify({ alg: 'RS256', typ: 'JWT' })));
+  const payload = b64url(enc(JSON.stringify({
+    iss: sa.client_email,
+    sub: sa.client_email,
+    aud: 'https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit',
+    iat: now,
+    exp: now + 3600,
+    uid,
+    claims: { role: 'client', shopId, sid }
+  })));
+  const unsigned = header + '.' + payload;
+  const pem = sa.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\\s/g, '');
+  const key = await crypto.subtle.importKey(
+    'pkcs8',
+    Uint8Array.from(atob(pem), c => c.charCodeAt(0)),
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, enc(unsigned));
+  return unsigned + '.' + b64url(signature);
+}
+
+async function readShopAccess(project, shopId, token) {
+  try {
+    const d = await fsRequest(
+      `projects/${project}/databases/(default)/documents/shopAccess/${encodeURIComponent(shopId)}`,
+      token
+    );
+    return decodeFields(d.fields || {});
+  } catch (e) {
+    if (/NOT_FOUND|404/.test(e.message)) return null;
+    throw e;
+  }
+}
+
+async function writeShopAccess(project, shopId, value, token) {
+  return fsRequest(
+    `projects/${project}/databases/(default)/documents/shopAccess/${encodeURIComponent(shopId)}`,
+    token,
+    'PATCH',
+    { fields: firestoreFields(value) }
+  );
+}
+
+async function writeClientSession(project, sid, value, token) {
+  return fsRequest(
+    `projects/${project}/databases/(default)/documents/clientSessions/${encodeURIComponent(sid)}`,
+    token,
+    'PATCH',
+    { fields: firestoreFields(value) }
+  );
+}
+
+async function requireShopManager(request, env, googleToken, shopId) {
+  const idToken = parseBearer(request);
+  if (!idToken) throw new Error('Autenticazione richiesta.');
+  const authUser = await identityLookup(idToken, env);
+  const profile = await getProfile(env.FIREBASE_PROJECT_ID, authUser.localId, googleToken);
+  if (!profile || profile.active !== true) throw new Error('Account non attivo.');
+  if (profile.role === 'admin') return { authUser, profile };
+  if (profile.role === 'seller' && profile.shopId === shopId) return { authUser, profile };
+  throw new Error('Non autorizzato a gestire il PIN di questo negozio.');
+}
+
+async function checkPinRateLimit(env, request, shopId) {
+  // Fail closed: senza binding configurato il PIN non viene verificato.
+  if (!env.PIN_LIMITER || typeof env.PIN_LIMITER.limit !== 'function') {
+    throw new Error('Protezione tentativi PIN non configurata: PIN access temporaneamente disabilitato.');
+  }
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const result = await env.PIN_LIMITER.limit({ key: `${shopId}:${ip}` });
+  if (!result.success) {
+    const error = new Error('Troppi tentativi. Riprova più tardi.');
+    error.status = 429;
+    throw error;
+  }
+}
+
 async function handle(request, env) {
 
   const allowed = env.ALLOWED_ORIGIN || '*';
@@ -923,6 +1032,67 @@ async function handle(request, env) {
     diagnosticStage = 'ROUTE:' + url.pathname;
 
 
+
+
+    /* Configura o ruota il PIN cliente: la rotazione revoca tutte le sessioni precedenti. */
+    if (url.pathname === '/shop/pin/set') {
+      const shopId = String(body.shopId || '').trim();
+      const pin = String(body.pin || '');
+      if (!/^[A-Z0-9_-]{2,32}$/.test(shopId)) throw new Error('Codice negozio non valido.');
+      if (!/^\\d{6}$/.test(pin)) throw new Error('Il PIN deve contenere esattamente 6 cifre.');
+      const { authUser } = await requireShopManager(request, env, googleToken, shopId);
+      const previous = await readShopAccess(env.FIREBASE_PROJECT_ID, shopId, googleToken);
+      const salt = randomHex(16);
+      const pinHash = await hashShopPin(pin, salt);
+      const sessionVersion = Number(previous?.sessionVersion || 0) + 1;
+      await writeShopAccess(env.FIREBASE_PROJECT_ID, shopId, {
+        shopId, pinSalt: salt, pinHash, pinIterations: PIN_HASH_ITERATIONS,
+        sessionVersion, updatedAt: new Date(), updatedBy: authUser.localId, active: true
+      }, googleToken);
+      return json({ success: true, shopId, sessionVersion }, 200, allowed);
+    }
+
+    /* Disabilita accesso QR/PIN e revoca tutte le sessioni già emesse. */
+    if (url.pathname === '/shop/pin/disable') {
+      const shopId = String(body.shopId || '').trim();
+      if (!/^[A-Z0-9_-]{2,32}$/.test(shopId)) throw new Error('Codice negozio non valido.');
+      const { authUser } = await requireShopManager(request, env, googleToken, shopId);
+      const previous = await readShopAccess(env.FIREBASE_PROJECT_ID, shopId, googleToken);
+      if (!previous) throw new Error('PIN non ancora configurato.');
+      await writeShopAccess(env.FIREBASE_PROJECT_ID, shopId, {
+        ...previous, active: false, sessionVersion: Number(previous.sessionVersion || 0) + 1,
+        updatedAt: new Date(), updatedBy: authUser.localId
+      }, googleToken);
+      return json({ success: true, shopId }, 200, allowed);
+    }
+
+    /* Verifica PIN e crea una sessione cliente limitata a 30 minuti. */
+    if (url.pathname === '/client/access') {
+      const shopId = String(body.shopId || '').trim();
+      const pin = String(body.pin || '');
+      if (!/^[A-Z0-9_-]{2,32}$/.test(shopId) || !/^\\d{6}$/.test(pin)) {
+        throw new Error('Negozio o PIN non validi.');
+      }
+      await checkPinRateLimit(env, request, shopId);
+      const shop = await getShop(env.FIREBASE_PROJECT_ID, shopId, googleToken);
+      const access = await readShopAccess(env.FIREBASE_PROJECT_ID, shopId, googleToken);
+      if (!access || access.active !== true || !access.pinSalt || !access.pinHash) {
+        throw new Error('Accesso cliente non configurato per questo negozio.');
+      }
+      const candidate = await hashShopPin(pin, access.pinSalt, Number(access.pinIterations || PIN_HASH_ITERATIONS));
+      if (candidate !== access.pinHash) throw new Error('PIN non corretto.');
+      const sid = randomHex(24);
+      const expiresAt = new Date(Date.now() + CLIENT_SESSION_SECONDS * 1000);
+      await writeClientSession(env.FIREBASE_PROJECT_ID, sid, {
+        shopId, active: true, sessionVersion: Number(access.sessionVersion || 0),
+        createdAt: new Date(), expiresAt
+      }, googleToken);
+      const customToken = await signClientCustomToken('client_' + sid, shopId, sid, env);
+      return json({
+        success: true, customToken, shopId, shopName: shop.name || shopId,
+        expiresAt: expiresAt.toISOString(), expiresIn: CLIENT_SESSION_SECONDS
+      }, 200, allowed);
+    }
 
     /* Caricamento immagini prodotto su GitHub: solo admin, file nuovi, niente overwrite. */
 
