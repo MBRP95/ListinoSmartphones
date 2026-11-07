@@ -596,11 +596,9 @@ function brandOf(s,explicitBrand=''){
  ];
  const clean=v=>String(v||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
  const explicit=clean(explicitBrand);
- for(const [brand,terms] of aliases){if(terms.some(term=>explicit===term||explicit.startsWith(term+' ')))return brand;}
- const value=clean(s);
- for(const [brand,terms] of aliases){
-  if(terms.some(term=>new RegExp('(^| )'+term.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\function brandOf(s){let n=norm(s);return ['apple','samsung','motorola','honor','oppo','realme','xiaomi','google'].find(b=>n.includes(b))||''}')+'( |$)').test(value)))return brand;
- }
+ for(const [brand,terms] of aliases){if(terms.some(term=>explicit.split(' ').includes(term)))return brand;}
+ const words=clean(s).split(' ');
+ for(const [brand,terms] of aliases){if(terms.some(term=>words.includes(term)))return brand;}
  return '';
 }
 function available(s){return Math.max(0,(Number(s.stock)||0)-(Number(s.reserved)||0))}
