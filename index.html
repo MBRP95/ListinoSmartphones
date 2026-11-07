@@ -2172,8 +2172,13 @@ async function saveShopPin(){
  if(!shopId){msg.textContent='Seleziona prima un negozio specifico nel filtro catalogo.';return}
  if(!/^[0-9]{6}$/.test(pin)){msg.textContent='Il PIN deve contenere esattamente 6 cifre.';return}
  const api=window.firebaseApi;
- if(String(currentUserProfile?.role||'').trim().toLowerCase()!=='admin'){
-  msg.textContent='Profilo non amministratore: ruolo corrente '+(currentUserProfile?.role||'non disponibile')+'. Esci e rientra con Modena01.';
+ const role=String(currentUserProfile?.role||'').trim().toLowerCase();
+ if(!['admin','seller'].includes(role)){
+  msg.textContent='Operazione riservata agli account negozio e agli amministratori.';
+  return;
+ }
+ if(role==='seller' && String(currentUserProfile?.shopId||'')!==shopId){
+  msg.textContent='Puoi gestire il PIN soltanto del tuo negozio.';
   return;
  }
  try{
@@ -2197,8 +2202,13 @@ async function disableShopPin(){
  if(!shopId){msg.textContent='Seleziona prima un negozio specifico.';return}
  if(!confirm('Disabilitare l’accesso cliente e revocare tutte le sessioni del negozio '+shopId+'?'))return;
  const api=window.firebaseApi;
- if(String(currentUserProfile?.role||'').trim().toLowerCase()!=='admin'){
-  msg.textContent='Profilo non amministratore: ruolo corrente '+(currentUserProfile?.role||'non disponibile')+'. Esci e rientra con Modena01.';
+ const role=String(currentUserProfile?.role||'').trim().toLowerCase();
+ if(!['admin','seller'].includes(role)){
+  msg.textContent='Operazione riservata agli account negozio e agli amministratori.';
+  return;
+ }
+ if(role==='seller' && String(currentUserProfile?.shopId||'')!==shopId){
+  msg.textContent='Puoi gestire il PIN soltanto del tuo negozio.';
   return;
  }
  try{
