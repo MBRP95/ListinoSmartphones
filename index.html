@@ -493,8 +493,8 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 #storeView > .hero .eyebrow,#storeView > .hero h1,#storeView > .hero .sub{position:relative!important;z-index:10!important;background:transparent!important;background-image:none!important;float:none!important;clear:both!important;transform:none!important}
 #storeView > .hero h1{display:block!important;width:100%!important;max-width:100%!important;margin:9px 0 12px!important;padding:0!important;line-height:1.2!important;overflow:visible!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;text-shadow:none!important}
 #storeView > .hero .sub{display:block!important;width:100%!important;max-width:760px!important;margin:0!important}
-</style></head><body>
-<header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav><button id="homeBtn" onclick="goBack()" style="display:none">Indietro</button><button id="logoutBtn" class="secondary" onclick="logoutStaff()" style="display:none;margin-left:8px">Esci</button></nav></header>
+.other-store-suggestions{position:absolute;top:100%;left:0;right:0;z-index:1000;max-height:260px;overflow-y:auto;background:#171717;border:1px solid #8b672f;border-radius:10px;box-shadow:0 12px 28px #0009;margin-top:4px}.other-store-suggestions button{display:block;width:100%;text-align:left;padding:11px 13px;border:0;border-bottom:1px solid #ffffff12;background:transparent;color:#f5eee4;cursor:pointer}.other-store-suggestions button:hover{background:#3a2a13;color:#ffd66b}.other-store-suggestions .empty{padding:12px;color:#b9ad9d;font-size:13px}</style></head><body>
+<header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav> <button id="logoutBtn" class="secondary" onclick="logoutStaff()" style="display:none;margin-left:8px">Esci</button></nav></header>
 <main>
 <section id="sellerAuthView" class="hidden">
 <div class="hero"><div class="eyebrow">Accesso riservato</div><h1>Area riservata</h1><p class="sub">Inserisci le credenziali previste per la modalità scelta.</p></div>
@@ -554,7 +554,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <div class="panel" id="offerValuesEditor"><h2>Modifica prezzi e rate delle offerte</h2><p class="hint">Seleziona una variante e correggi manualmente il totale del dispositivo e, per i finanziamenti, la rata mensile. Le modifiche vengono salvate direttamente su Firebase e restano associate alla singola variante.</p><div class="field" style="display:none"><label for="offerEditDevice">Variante smartphone</label><select id="offerEditDevice" onchange="renderOfferEditor()"></select></div><div id="offerEditRows" style="margin-top:14px"></div><div class="actions"><button class="primary" id="saveOfferValuesBtn" onclick="saveOfferValues()">Salva prezzi e rate su Firebase</button></div><div id="offerValuesMsg" class="muted" role="status" style="margin-top:8px"></div>
 </div></section>
 <section id="storeView" class="hidden">
-<div class="hero"><div class="eyebrow">Area negozio</div><h1>Catalogo, listino e magazzino.</h1><p class="sub">Il catalogo e le offerte sono gestiti dall’amministratore. Le abilitazioni dei dispositivi per negozio si aggiornano caricando il file Excel commerciale.</p></div>
+<div class="hero"><div class="eyebrow">Area negozio</div><h1>Catalogo, listino e magazzino.</h1><p class="sub"> </p></div>
 
 
 <div class="panel admin-only"><h2>Disponibilità e associazioni</h2><p class="hint">L’abilitazione dei dispositivi per ciascun negozio si gestisce dalla sezione amministratore “Abilitazione dispositivi per negozio”, caricando il file Excel commerciale. Questo pannello mostra le associazioni SKU già presenti.</p></div><div class="panel admin-only"><div class="toolbar"><div class="field"><h2>Associa SKU al listino</h2><p class="hint">Il collegamento automatico è solo un suggerimento. Controlla le varianti non abbinate o dubbie: capacità e colore devono corrispondere.</p></div><button class="secondary" onclick="autoMatchAll()">Prova abbinamento automatico</button></div>
@@ -586,10 +586,10 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
  </div>
 </div>
 </div>
-<details class="panel seller-only manual-shop-device-details" id="manualShopDevicePanel"><summary><span><b>Aggiungi dispositivo al negozio</b><small>Apri per cercare e abilitare un dispositivo già presente nel catalogo generale.</small></span><span class="details-chevron">＋</span></summary><div class="manual-shop-device-body"><p class="hint">Questa operazione abilita il dispositivo per il tuo punto vendita. Non modifica il catalogo globale né richiede l'Excel.</p><div class="field"><label for="manualShopDeviceSearch">Cerca dispositivo</label><input id="manualShopDeviceSearch" placeholder="Es. iPhone 17, Galaxy A56..." oninput="renderManualShopDevicePicker()"></div><div id="manualShopDeviceList" class="grid" style="margin-top:12px"></div><div id="manualShopDeviceMsg" class="muted" role="status"></div></div></details>
-<div class="panel"><h2>Catalogo e promozioni disponibili</h2><p class="hint">La ricerca considera tutti i negozi. Per ogni variante puoi vedere dove è disponibile e in quale quantità. Il negozio scelto all'accesso resta evidenziato.</p><div class="toolbar catalog-filters"><div class="field"><label>Cerca modello / marca</label><input id="catalogSearch" placeholder="Es. iPhone 17, Galaxy S26..." oninput="renderCatalog()"></div><div class="field"><label>Marca</label><select id="brandFilter" onchange="renderCatalog()"><option value="">Tutte</option></select></div><div class="field"><label>Stato catalogo</label><select id="catalogStatusFilter" onchange="renderCatalog()"><option value="all">Tutti</option><option value="enabled" selected>Attivi</option><option value="disabled">Disattivati</option></select></div></div>
+<details class="panel seller-only manual-shop-device-details" id="manualShopDevicePanel"><summary><span><b>Aggiungi dispositivo al negozio</b><small>Apri per cercare e abilitare un dispositivo già presente nel catalogo generale.</small></span><span class="details-chevron">＋</span></summary><div class="manual-shop-device-body"><p class="hint">Questa operazione abilita il dispositivo per il tuo punto vendita. </p><div class="field"><label for="manualShopDeviceSearch">Cerca dispositivo</label><input id="manualShopDeviceSearch" placeholder="Es. iPhone 17, Galaxy A56..." oninput="renderManualShopDevicePicker()"></div><div id="manualShopDeviceList" class="grid" style="margin-top:12px"></div><div id="manualShopDeviceMsg" class="muted" role="status"></div></div></details>
+<div class="panel"><h2>Catalogo e promozioni disponibili</h2><p class="hint"> </p><div class="toolbar catalog-filters"><div class="field"><label>Cerca modello / marca</label><input id="catalogSearch" placeholder="Es. iPhone 17, Galaxy S26..." oninput="renderCatalog()"></div><div class="field"><label>Marca</label><select id="brandFilter" onchange="renderCatalog()"><option value="">Tutte</option></select></div><div class="field"><label>Stato catalogo</label><select id="catalogStatusFilter" onchange="renderCatalog()"><option value="all">Tutti</option><option value="enabled" selected>Attivi</option><option value="disabled">Disattivati</option></select></div></div>
 <div class="tablewrap"><table><thead><tr><th>Modello / variante</th><th>Fascia</th><th>Prezzo vendor</th><th>Offerte</th><th>Stato nel tuo negozio</th><th></th></tr></thead><tbody id="catalogRows"></tbody></table></div></div>
-<div class="panel" id="otherStoresSearchPanel"><h2>Cerca in altri store</h2><p class="hint">Cerca un modello per sapere in quali altri negozi è abilitato. Non vengono mostrati cataloghi completi né quantità di magazzino.</p><div class="toolbar"><div class="field" style="flex:1"><label for="otherStoresFilter">Filtra i dispositivi</label><input id="otherStoresFilter" placeholder="Scrivi marca o modello..." oninput="updateOtherStoreOptions()"></div><div class="field" style="flex:1"><label for="otherStoresQuery">Seleziona dispositivo</label><select id="otherStoresQuery" onchange="clearOtherStoreResults()"><option value="">Prima filtra, poi seleziona un modello</option></select></div><button class="primary" onclick="searchOtherStores()">Cerca</button></div><div id="otherStoresResults" class="muted" role="status" style="margin-top:12px"></div></div>
+<div class="panel" id="otherStoresSearchPanel"><h2>Cerca in altri store</h2><p class="hint">Cerca un modello per sapere in quali altri negozi è abilitato.  </p><div class="toolbar" style="align-items:flex-start"><div class="field" style="flex:1;position:relative"><label for="otherStoresFilter">Modello o marca</label><input id="otherStoresFilter" autocomplete="off" placeholder="Scrivi per cercare un dispositivo..." oninput="updateOtherStoreOptions()" onfocus="updateOtherStoreOptions()"><div id="otherStoresSuggestions" class="other-store-suggestions hidden"></div><input type="hidden" id="otherStoresQuery"></div><button class="primary" onclick="searchOtherStores()">Cerca</button></div><div id="otherStoresResults" class="muted" role="status" style="margin-top:12px"></div></div>
 <div id="detailPanel" class="panel hidden"><div class="toolbar" style="justify-content:space-between;align-items:center"><h2>Dettaglio variante e condizioni</h2><button class="secondary" onclick="closeDetail()">Chiudi</button></div><div id="detailBox"></div></div>
 </section>
 </main>
@@ -1590,14 +1590,25 @@ function storeAvailabilityFor(index){
  }
  function updateOtherStoreOptions(){
   const filter=norm(document.getElementById('otherStoresFilter')?.value||'');
-  const select=document.getElementById('otherStoresQuery');if(!select)return;
-  const previous=select.value;
-  const items=catalog.map(p=>p.name).filter((name,i,all)=>all.indexOf(name)===i).filter(name=>!filter||norm(name).includes(filter)).sort((a,b)=>a.localeCompare(b,'it'));
-  select.innerHTML='<option value="">Seleziona un dispositivo…</option>'+items.map(name=>'<option value="'+esc(name)+'">'+esc(name)+'</option>').join('');
-  if(items.includes(previous))select.value=previous;
+  const host=document.getElementById('otherStoresSuggestions');
+  const hidden=document.getElementById('otherStoresQuery');
+  if(!host||!hidden)return;
+  hidden.value='';
+  clearOtherStoreResults();
+  if(filter.length<1){host.classList.add('hidden');host.innerHTML='';return;}
+  const items=catalog.map(p=>p.name).filter((name,i,all)=>all.indexOf(name)===i)
+   .filter(name=>norm(name).includes(filter)).sort((a,b)=>a.localeCompare(b,'it')).slice(0,30);
+  host.innerHTML=items.length?items.map(name=>'<button type="button" onclick="selectOtherStoreOption(\''+esc(name).replace(/'/g,"&#39;")+'\')">'+esc(name)+'</button>').join(''):'<div class="empty">Nessun dispositivo trovato</div>';
+  host.classList.remove('hidden');
  }
- function setupOtherStorePicker(){updateOtherStoreOptions();}
-async function searchOtherStores(){
+ function selectOtherStoreOption(name){
+  document.getElementById('otherStoresFilter').value=name;
+  document.getElementById('otherStoresQuery').value=name;
+  document.getElementById('otherStoresSuggestions').classList.add('hidden');
+  clearOtherStoreResults();
+ }
+ function setupOtherStorePicker(){}
+ async function searchOtherStores(){
  const host=document.getElementById('otherStoresResults');
  const input=document.getElementById('otherStoresQuery');
  if(!host||!input)return;
