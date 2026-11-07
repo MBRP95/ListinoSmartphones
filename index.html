@@ -1768,11 +1768,17 @@ async function confirmShopCatalogImport(){
 }
 async function loadCatalogFromFirestore(){
  const api=window.firebaseApi;
- const [snap,metaSnap]=await Promise.all([api.getDocs(api.collection(api.db,'devices')),api.getDoc(api.doc(api.db,'settings','catalog'))]);
+ let snap,metaSnap;
+ try{snap=await api.getDocs(api.collection(api.db,'devices'));}
+ catch(e){throw new Error('Firestore nega la lettura della raccolta devices: '+(e.code||e.message||e));}
+ try{metaSnap=await api.getDoc(api.doc(api.db,'settings','catalog'));}
+ catch(e){throw new Error('Firestore nega la lettura di settings/catalog: '+(e.code||e.message||e));}
  catalogUpdatedAt=metaSnap.exists()?metaSnap.data().updatedAt||null:null;
  if(!snap.empty){
   catalog=snap.docs.map(d=>d.data()).sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
-  const models=await api.getDocs(api.collection(api.db,'deviceModels'));
+  let models;
+  try{models=await api.getDocs(api.collection(api.db,'deviceModels'));}
+  catch(e){throw new Error('Firestore nega la lettura della raccolta deviceModels: '+(e.code||e.message||e));}
   window.currentModelSpecs={};
   models.docs.forEach(d=>window.currentModelSpecs[d.id]=d.data());
   catalog.forEach(v=>{const id=v.modelId||modelDocumentId(v.name);if(window.currentModelSpecs[id])v.modelSpecs=window.currentModelSpecs[id];});
