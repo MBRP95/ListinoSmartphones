@@ -20,7 +20,7 @@ test('QR is static and contains the shop identifier but never the PIN', () => {
 
 test('QR customer flow validates a six-digit PIN and exchanges it for a Firebase custom token', () => {
   assert.match(html, /async function verifyClientPin\(\)/);
-  assert.match(html, /!\/\^\d\{6\}\$\/\.test\(pin\)/);
+  assert.match(html, /!\/\^\\d\{6\}\$\/\.test\(pin\)/);
   assert.match(html, /fetch\(CLIENT_WORKER_URL\+'\/client\/access'/);
   assert.match(html, /signInWithCustomToken\(api\.auth,data\.customToken\)/);
   assert.match(html, /await loadClientCatalogForShop\(data\.shopId\)/);
