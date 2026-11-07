@@ -1317,7 +1317,7 @@ function renderShopCatalogImportPreview(){
  box.innerHTML='<div class="notice"><b>'+data.rows.length+'</b> righe smartphone riconosciute · <b>'+shops.length+'</b> negozi · <b>'+unknown.length+'</b> codici non associati. Le quantità del file vengono ignorate.</div>'+
  '<h3>Negozi su cui applicare la sincronizzazione</h3><p class="hint">Sono selezionati in automatico tutti i negozi presenti nel file. Deseleziona quelli da lasciare invariati.</p>'+
  '<div class="grid">'+shops.map(([id,name])=>'<label class="choice" style="min-height:0"><input type="checkbox" class="shop-sync-check" value="'+esc(id)+'" checked> <b>'+esc(name)+'</b><small>'+esc(id)+' · '+data.rows.filter(x=>x.shopId===id).length+' codici nel file</small></label>').join('')+'</div>'+
- (unknown.length?'<h3 style="margin-top:18px">Codici da associare al catalogo</h3><div class="tablewrap"><table><thead><tr><th>Codice</th><th>Descrizione Excel</th><th>Azione</th></tr></thead><tbody>'+unknown.map(x=>'<tr><td>'+esc(x.sku)+'</td><td>'+esc(x.description)+'</td><td><button class="rowbtn" onclick="createMissingImportedDevice(\''+esc(x.sku)+'\')">Inserisci dispositivo</button></td></tr>').join('')+'</tbody></table></div>':'<p class="ok">Tutti i codici sono associati al catalogo.</p>')+
+ (unknown.length?'<h3 style="margin-top:18px">Codici da associare al catalogo</h3><div class="tablewrap"><table><thead><tr><th>Codice</th><th>Descrizione Excel</th><th>Azione</th></tr></thead><tbody>'+unknown.map(x=>'<tr><td>'+esc(x.sku)+'</td><td>'+esc(x.description)+'</td><td><select onchange="assignImportedSku(\''+esc(x.sku)+'\',this.value)"><option value="">Associa a una variante esistente…</option>'+catalog.map((p,i)=>'<option value="'+i+'">'+esc(p.name)+'</option>').join('')+'</select><button class="rowbtn" onclick="createMissingImportedDevice(\''+esc(x.sku)+'\')">Crea nuova variante</button></td></tr>').join('')+'</tbody></table></div>':'<p class="ok">Tutti i codici sono associati al catalogo.</p>')+
  '<div class="actions"><button class="secondary" onclick="cancelShopCatalogImport()">Annulla</button><button class="primary" onclick="confirmShopCatalogImport()">Conferma sincronizzazione</button></div><div id="shopSyncResult" class="muted" style="margin-top:10px"></div>';
 }
 function cancelShopCatalogImport(){pendingShopCatalogImport=null;const box=document.getElementById('shopSyncPreview');box.classList.add('hidden');box.innerHTML='';document.getElementById('globalStockMsg').textContent='Importazione annullata: nessuna modifica applicata.';}
@@ -1350,6 +1350,12 @@ async function importGlobalStock(){
  }catch(e){pendingShopCatalogImport=null;msg.textContent='File non valido: '+e.message}
  finally{btn.disabled=false}
 }
+function assignImportedSku(sku,indexValue){
+ const index=Number(indexValue);
+ if(!Number.isInteger(index)||index<0||!catalog[index])return;
+ pendingShopCatalogImport?.rows.filter(x=>x.sku===sku).forEach(x=>x.catalogIndex=index);
+ renderShopCatalogImportPreview();
+}
 async function createMissingImportedDevice(sku){
  const item=pendingShopCatalogImport?.rows.find(x=>x.sku===sku&&x.catalogIndex<0);if(!item)return;
  const name=prompt('Nome completo della variante da inserire nel catalogo:',item.description);if(name===null)return;
@@ -1373,7 +1379,7 @@ async function confirmShopCatalogImport(){
  if(!selected.length){box.textContent='Seleziona almeno un negozio.';return}
  const missing=data.rows.filter(x=>selected.includes(x.shopId)&&x.catalogIndex<0);
  if(missing.length){box.textContent='Prima associa tutti i codici non riconosciuti dei negozi selezionati. '+missing.length+' codici ancora da associare.';return}
- if(selected.length>450){box.textContent='Troppi negozi selezionati per una singola operazione. Dividi il file in più importazioni.';return}
+ if(selected.length>240){box.textContent='Troppi negozi selezionati per una singola operazione. Dividi il file in più importazioni (massimo 240 per volta).';return}
  const api=window.firebaseApi,db=api.db;let changed=0,enabled=0,disabled=0;
  try{
   box.textContent='Lettura stato attuale e preparazione aggiornamenti…';
