@@ -53,7 +53,10 @@ function sellerOwnsShop(shopId) {
     }
 
     match /shops/{shopId} {
-      allow read: if canReadCatalog();
+      // Il cliente QR può leggere soltanto il negozio associato al proprio token.
+      allow get: if isAdmin() || isSeller() ||
+        (isClient() && clientShopId() == shopId);
+      allow list: if isAdmin() || isSeller();
       allow write: if isAdmin();
     }
 
