@@ -1480,6 +1480,29 @@ function closeDetail(){document.getElementById('detailPanel').classList.add('hid
 function renderAll(){const count=document.getElementById('catalogCount');if(count)count.textContent=catalog.length;setupShopFilter();refreshShopQrTarget();let brands=[...new Set(catalog.map(p=>brandOf(p.name)).filter(Boolean))].sort();let sel=document.getElementById('brandFilter');if(sel){let old=sel.value;sel.innerHTML='<option value="">Tutte</option>'+brands.map(b=>`<option value="${b}">${b[0].toUpperCase()+b.slice(1)}</option>`).join('');sel.value=old;}renderStock();renderCatalog()}
 
 let pendingShopCatalogImport=null;
+let lastCreatedStoreCredentials=[];
+function downloadStoreCredentials(){
+ if(!lastCreatedStoreCredentials.length){alert('Non ci sono nuove password temporanee da scaricare.');return}
+ const lines=[
+  'DEVICE PROPOSER - CREDENZIALI INIZIALI NEGOZI',
+  'Generato: '+new Date().toLocaleString('it-IT'),
+  '',
+  'IMPORTANTE: credenziali temporanee. Al primo accesso è obbligatorio impostare una nuova password.',
+  'Conservare il file in modo riservato e cancellarlo dopo la consegna.',
+  ''
+ ];
+ lastCreatedStoreCredentials.forEach(x=>{
+  lines.push('Negozio: '+x.shopId);
+  lines.push('Username: '+x.username);
+  lines.push('Password temporanea: '+x.tempPassword);
+  lines.push('');
+ });
+ const blob=new Blob(['\\uFEFF'+lines.join('\\r\\n')],{type:'text/plain;charset=utf-8'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='credenziali-temporanee-negozi-'+new Date().toISOString().slice(0,10)+'.txt';
+ document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 function renderShopCatalogImportPreview(){
  const box=document.getElementById('shopSyncPreview'),data=pendingShopCatalogImport;if(!box||!data)return;
  const shops=[...data.shops.entries()].sort((a,b)=>a[1].localeCompare(b[1],'it'));
@@ -1581,11 +1604,12 @@ async function confirmShopCatalogImport(){
     stores:selected.map(shopId=>({shopId,shopName:names.get(shopId)||shopId}))
    });
    const created=accountResult.created||[],existing=accountResult.existing||[];
+   lastCreatedStoreCredentials=created.map(x=>({shopId:x.shopId,username:x.username,tempPassword:x.tempPassword}));
    accountInfo='<h3 style="margin-top:16px">Account negozio</h3>'+
     '<p>'+created.length+' nuovi account creati · '+existing.length+' account già esistenti lasciati invariati.</p>'+
     (created.length?'<div class="tablewrap"><table><thead><tr><th>Negozio</th><th>Username</th><th>Password temporanea</th></tr></thead><tbody>'+
      created.map(x=>'<tr><td>'+esc(x.shopId)+'</td><td><code>'+esc(x.username)+'</code></td><td><code>'+esc(x.tempPassword)+'</code></td></tr>').join('')+
-     '</tbody></table></div><p class="hint">Salva queste password ora: verranno mostrate soltanto in questa schermata e al primo accesso il negozio dovrà cambiarle.</p>':'')+
+     '</tbody></table></div><button type="button" class="secondary" onclick="downloadStoreCredentials()">Scarica password temporanee (.txt)</button><p class="hint">Il file contiene soltanto le password appena create. Salvalo in un luogo protetto e consegnalo ai negozi; al primo accesso dovranno cambiarle.</p>':'')+
     (existing.length?'<p class="hint">Account già presenti: '+existing.map(x=>esc(x.username)).join(', ')+'. Password non modificate.</p>':'');
   }catch(accountError){
    accountInfo='<div class="notice">Catalogo sincronizzato, ma creazione account non completata: '+esc(accountError.message)+'. Puoi ripetere l’importazione: gli account già creati non verranno duplicati.</div>';
