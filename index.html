@@ -714,6 +714,7 @@ async function verifyClientPin(){
   const api=window.firebaseApi;
   await api.signOut(api.auth).catch(()=>{});
   await api.signInWithCustomToken(api.auth,data.customToken);
+  requestedAccessRole='client';
   currentUserProfile={role:'client',shopId:data.shopId,shopName:data.shopName,active:true};
   currentShopId=data.shopId;
   await loadClientCatalogForShop(data.shopId);
