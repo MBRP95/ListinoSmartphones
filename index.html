@@ -2158,24 +2158,48 @@ function refreshShopQrTarget(){
  const id=shopQrTargetId(),el=document.getElementById('shopQrTarget');
  if(el)el.innerHTML=id?'<b>'+esc(id)+'</b><span>Negozio destinatario</span>':'<b>Non selezionato</b><span>Seleziona un negozio specifico nel filtro catalogo</span>';
 }
+async function hashShopPin(salt,pin){
+ const bytes=new TextEncoder().encode(salt+':'+pin);
+ const digest=await crypto.subtle.digest('SHA-256',bytes);
+ return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function newShopPinSalt(){
+ const bytes=crypto.getRandomValues(new Uint8Array(16));
+ return [...bytes].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 async function saveShopPin(){
  const shopId=shopQrTargetId(),pin=document.getElementById('shopPinValue').value.trim(),msg=document.getElementById('shopPinMsg');
  if(!shopId){msg.textContent='Seleziona prima un negozio specifico nel filtro catalogo.';return}
  if(!/^[0-9]{6}$/.test(pin)){msg.textContent='Il PIN deve contenere esattamente 6 cifre.';return}
+ const api=window.firebaseApi,user=api?.auth?.currentUser;
+ if(!user||currentUserProfile?.role!=='admin'){msg.textContent='Devi accedere con un account amministratore.';return}
  try{
   msg.textContent='Salvataggio PIN…';
-  await callUserAdminApi('/shop/pin/set',{shopId,pin});
+  const ref=api.doc(api.db,'shopAccess',shopId);
+  const previous=await api.getDoc(ref);
+  const previousData=previous.exists()?previous.data():{};
+  const salt=newShopPinSalt(),pinHash=await hashShopPin(salt,pin);
+  const sessionVersion=Number(previousData.sessionVersion||0)+1;
+  await api.setDoc(ref,{active:true,pinSalt:salt,pinHash,sessionVersion,updatedAt:api.serverTimestamp()},{merge:true});
   document.getElementById('shopPinValue').value='';
   msg.textContent='PIN impostato. Le sessioni precedenti sono state revocate.';
   renderShopQr();
- }catch(e){msg.textContent='Operazione non riuscita: '+e.message}
+ }catch(e){msg.textContent='Operazione non riuscita: '+(e.code||e.message||e)}
 }
 async function disableShopPin(){
  const shopId=shopQrTargetId(),msg=document.getElementById('shopPinMsg');
  if(!shopId){msg.textContent='Seleziona prima un negozio specifico.';return}
  if(!confirm('Disabilitare l’accesso cliente e revocare tutte le sessioni del negozio '+shopId+'?'))return;
- try{msg.textContent='Disattivazione…';await callUserAdminApi('/shop/pin/disable',{shopId});msg.textContent='Accesso PIN disabilitato. Tutte le sessioni precedenti sono state revocate.';document.getElementById('shopQrResult').classList.add('hidden')}
- catch(e){msg.textContent='Operazione non riuscita: '+e.message}
+ const api=window.firebaseApi,user=api?.auth?.currentUser;
+ if(!user||currentUserProfile?.role!=='admin'){msg.textContent='Devi accedere con un account amministratore.';return}
+ try{
+  msg.textContent='Disattivazione…';
+  const ref=api.doc(api.db,'shopAccess',shopId),snap=await api.getDoc(ref);
+  const previous=snap.exists()?snap.data():{};
+  await api.setDoc(ref,{active:false,sessionVersion:Number(previous.sessionVersion||0)+1,updatedAt:api.serverTimestamp()},{merge:true});
+  msg.textContent='Accesso PIN disabilitato. Tutte le sessioni precedenti sono state revocate.';
+  document.getElementById('shopQrResult').classList.add('hidden');
+ }catch(e){msg.textContent='Operazione non riuscita: '+(e.code||e.message||e)}
 }
 function printShopQr(){
  const result=document.getElementById('shopQrResult');
