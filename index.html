@@ -706,7 +706,7 @@ function beginDirectChoice(){document.getElementById('clientStartPanel').classLi
 function renderClientDeviceList(){
  const q=norm(document.getElementById('clientDeviceSearch').value);
  const rows=productsForShop().filter(({p})=>!q||norm(p.name).includes(q));
- document.getElementById('clientDeviceList').innerHTML=rows.length?rows.map(({p,i})=>'<button class="device product-card" onclick="selectDevice('+i+',\\'CATALOGO\\')"><div class="devicehead"><h3>'+esc(p.name)+'</h3></div><div class="price">'+money(priceFor(p))+'</div><div class="card-cta">Scegli questo modello →</div></button>').join(''):'<div class="notice">Nessun dispositivo trovato.</div>';
+ document.getElementById('clientDeviceList').innerHTML=rows.length?rows.map(({p,i})=>'<button class="device product-card" onclick="selectDevice('+i+',\'CATALOGO\')"><div class="devicehead"><h3>'+esc(p.name)+'</h3></div><div class="price">'+money(priceFor(p))+'</div><div class="card-cta">Scegli questo modello →</div></button>').join(''):'<div class="notice">Nessun dispositivo trovato.</div>';
 }
 function startClientWizard(){
  step=0;answers={};
