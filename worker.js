@@ -1200,8 +1200,6 @@ async function handle(request, env) {
           shopId: u.shopId || '',
 
           shopName: u.shopName || '',
-
-          canViewStock: u.canViewStock === true,
           active: u.active === true
 
         }));
@@ -1311,8 +1309,6 @@ async function handle(request, env) {
           shopId: role === 'seller' ? shopId : null,
 
           shopName: role === 'seller' ? shopName : null,
-
-          canViewStock: role === 'seller' && body.canViewStock === true,
           active: true,
 
           createdAt: new Date(),
@@ -1362,19 +1358,6 @@ async function handle(request, env) {
     }
 
 
-
-    /* Modifica permesso magazzino: solo Admin. */
-    if (url.pathname === '/users/stock-permission') {
-      await requireAdmin(request, env, googleToken);
-      const uid = String(body.uid || '').trim();
-      const canViewStock = body.canViewStock === true;
-      if (!uid) throw new Error('UID account non valido.');
-      const profile = await getProfile(env.FIREBASE_PROJECT_ID, uid, googleToken);
-      if (!profile || profile.role !== 'seller') throw new Error('Account Seller non trovato.');
-      const path = userDocPath(env.FIREBASE_PROJECT_ID, uid) + '?updateMask.fieldPaths=canViewStock&updateMask.fieldPaths=updatedAt';
-      await fsRequest(path, googleToken, 'PATCH', { fields: firestoreFields({ canViewStock, updatedAt: new Date() }) });
-      return json({ success: true, canViewStock }, 200, allowed);
-    }
 
     /* Eliminazione definitiva account dipendente o amministratore */
 
