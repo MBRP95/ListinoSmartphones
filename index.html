@@ -1301,49 +1301,94 @@ function sellerChooseOffer(i){const p=catalog[selectedDeviceIndex];if(!p?.offers
 function closeDetail(){document.getElementById('detailPanel').classList.add('hidden');document.getElementById('detailBox').innerHTML=''}
 function renderAll(){const count=document.getElementById('catalogCount');if(count)count.textContent=catalog.length;setupShopFilter();let brands=[...new Set(catalog.map(p=>brandOf(p.name)).filter(Boolean))].sort();let sel=document.getElementById('brandFilter');if(sel){let old=sel.value;sel.innerHTML='<option value="">Tutte</option>'+brands.map(b=>`<option value="${b}">${b[0].toUpperCase()+b.slice(1)}</option>`).join('');sel.value=old;}renderStock();renderCatalog()}
 
+let pendingShopCatalogImport=null;
+function renderShopCatalogImportPreview(){
+ const box=document.getElementById('shopSyncPreview'),data=pendingShopCatalogImport;if(!box||!data)return;
+ const shops=[...data.shops.entries()].sort((a,b)=>a[1].localeCompare(b[1],'it'));
+ const unknown=data.rows.filter(x=>x.catalogIndex<0);
+ box.classList.remove('hidden');
+ box.innerHTML='<div class="notice"><b>'+data.rows.length+'</b> righe smartphone riconosciute · <b>'+shops.length+'</b> negozi · <b>'+unknown.length+'</b> codici non associati. Le quantità del file vengono ignorate.</div>'+
+ '<h3>Negozi su cui applicare la sincronizzazione</h3><p class="hint">Sono selezionati in automatico tutti i negozi presenti nel file. Deseleziona quelli da lasciare invariati.</p>'+
+ '<div class="grid">'+shops.map(([id,name])=>'<label class="choice" style="min-height:0"><input type="checkbox" class="shop-sync-check" value="'+esc(id)+'" checked> <b>'+esc(name)+'</b><small>'+esc(id)+' · '+data.rows.filter(x=>x.shopId===id).length+' codici nel file</small></label>').join('')+'</div>'+
+ (unknown.length?'<h3 style="margin-top:18px">Codici da associare al catalogo</h3><div class="tablewrap"><table><thead><tr><th>Codice</th><th>Descrizione Excel</th><th>Azione</th></tr></thead><tbody>'+unknown.map(x=>'<tr><td>'+esc(x.sku)+'</td><td>'+esc(x.description)+'</td><td><button class="rowbtn" onclick="createMissingImportedDevice(\''+esc(x.sku)+'\')">Inserisci dispositivo</button></td></tr>').join('')+'</tbody></table></div>':'<p class="ok">Tutti i codici sono associati al catalogo.</p>')+
+ '<div class="actions"><button class="secondary" onclick="cancelShopCatalogImport()">Annulla</button><button class="primary" onclick="confirmShopCatalogImport()">Conferma sincronizzazione</button></div><div id="shopSyncResult" class="muted" style="margin-top:10px"></div>';
+}
+function cancelShopCatalogImport(){pendingShopCatalogImport=null;const box=document.getElementById('shopSyncPreview');box.classList.add('hidden');box.innerHTML='';document.getElementById('globalStockMsg').textContent='Importazione annullata: nessuna modifica applicata.';}
 async function importGlobalStock(){
  const file=document.getElementById('globalStockFile').files[0],msg=document.getElementById('globalStockMsg');
  if(!file){msg.textContent='Seleziona prima il file Excel.';return}
  if(!window.XLSX){msg.textContent='Libreria Excel non caricata.';return}
  if(currentUserProfile?.role!=='admin'){msg.textContent='Operazione consentita soltanto all’amministratore.';return}
- const btn=document.querySelector('button[onclick="importGlobalStock()"]');btn.disabled=true;msg.textContent='Controllo del file in corso…';
+ const btn=document.querySelector('button[onclick="importGlobalStock()"]');btn.disabled=true;msg.textContent='Analisi del file in corso…';
  try{
-  const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});
-  const ws=wb.Sheets['Magazzino']||wb.Sheets[wb.SheetNames[0]];
-  const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-  const get=(r,k)=>r[k]??r[Object.keys(r).find(x=>norm(x)===norm(k))]??'';
-  const shops=new Map();
-  const all=rows.map(r=>{
-   const shop=String(get(r,'Negozio')).trim();
+  const wb=XLSX.read(await file.arrayBuffer(),{type:'array'}),ws=wb.Sheets['Magazzino']||wb.Sheets[wb.SheetNames[0]];
+  const raw=XLSX.utils.sheet_to_json(ws,{defval:''}),get=(r,k)=>r[k]??r[Object.keys(r).find(x=>norm(x)===norm(k))]??'';
+  const shops=new Map(),rows=[],seen=new Set();
+  for(const r of raw){
+   const sku=String(get(r,'Codice Prodotto')).trim(),description=String(get(r,'Descrizione')).trim(),shop=String(get(r,'Negozio')).trim();
+   if(!sku||!description||!shop)continue;
+   if(!/iphone|galaxy|samsung|honor|motorola|oppo|realme|xiaomi|redmi|pixel|oneplus/i.test(description)||/buds|auricolari|caricabatter|vetro|cover|custodia|screen protector|screenglass|skinny|t-shirt/i.test(description))continue;
    const shopId=(shop.match(/^[A-Z]{2}\d{3}/i)||[])[0]?.toUpperCase()||'';
-   return {sku:String(get(r,'Codice Prodotto')).trim(),description:String(get(r,'Descrizione')).trim(),shop,shopId,warehouse:String(get(r,'Tipo Magazzino')).trim(),stock:Number(get(r,'Giacenza'))||0,future:Number(get(r,'Giacenza Futura'))||0,ordered:Number(get(r,'Quantità Ordinata'))||0,incoming:Number(get(r,'Quantità In Arrivo'))||0,reserved:Number(get(r,'Quantità Impegnata'))||0,shipped:Number(get(r,'Quantità Spedita'))||0};
-  }).filter(x=>x.sku&&x.shopId&&x.shop&&x.warehouse);
-  if(!all.length)throw new Error('Nessuna riga valida: verifica intestazioni e foglio Magazzino.');
-  all.forEach(x=>shops.set(x.shopId,x.shop));
-  const dup=new Set();for(const x of all){const k=x.shopId+'|'+x.sku+'|'+x.warehouse;if(dup.has(k))throw new Error('Riga duplicata per SKU/negozio/magazzino: '+k);dup.add(k)}
-  if(shops.size<2)throw new Error('Il file sembra incompleto: sono stati riconosciuti meno di 2 negozi.');
-  const version='v'+Date.now();
-  const db=window.firebaseApi.db,writeBatch=window.firebaseApi.writeBatch,doc=window.firebaseApi.doc;
-  // Sincronizza l'anagrafica negozi dal file completo caricato dall'admin.
-  let shopBatch=writeBatch(db),shopCount=0;
-  for(const [id,name] of shops){shopBatch.set(doc(db,'shops',id),{name,active:true},{merge:true});shopCount++;if(shopCount%450===0){await shopBatch.commit();shopBatch=writeBatch(db)}}
-  if(shopCount%450!==0)await shopBatch.commit();
-  let batch=writeBatch(db),count=0,batches=0;
-  for(const x of all){
-   const id=encodeURIComponent(x.shopId+'_'+x.sku+'_'+x.warehouse).replace(/%/g,'_');
-   batch.set(doc(db,'stockVersions',version,'items',id),x);
-   count++;
-   if(count%450===0){await batch.commit();batches++;batch=writeBatch(db)}
+   if(!shopId)throw new Error('Codice negozio non riconosciuto nella riga: '+shop);
+   shops.set(shopId,shop.replace(/^([A-Z]{2}\d{3})\s*[-–:]?\s*/i,'').trim()||shop);
+   const key=shopId+'|'+sku;if(seen.has(key))continue;seen.add(key);
+   let catalogIndex=catalog.findIndex(p=>String(p.sku||'').trim()===sku);
+   if(catalogIndex<0)catalogIndex=autoMatch({description});
+   rows.push({sku,description,shop,shopId,catalogIndex});
   }
-  if(count%450!==0){await batch.commit();batches++}
-  await window.firebaseApi.setDoc(doc(db,'settings','stock'),{activeVersion:version,rowCount:all.length,shopCount:shops.size,updatedAt:window.firebaseApi.serverTimestamp(),updatedBy:currentUserProfile.uid});
-  activeStockVersion=version;
-  await loadStockFromFirestore();
-  msg.textContent='Pubblicazione completata: '+all.length+' righe, '+shops.size+' negozi, versione '+version+'.';
- }catch(e){msg.textContent='Importazione non pubblicata: '+e.message}
+  if(!rows.length||!shops.size)throw new Error('Nessuno smartphone valido trovato. Verifica le colonne Codice Prodotto, Descrizione e Negozio.');
+  pendingShopCatalogImport={rows,shops,fileName:file.name};
+  renderShopCatalogImportPreview();
+  msg.textContent='Analisi completata. Nessuna modifica è stata ancora applicata.';
+ }catch(e){pendingShopCatalogImport=null;msg.textContent='File non valido: '+e.message}
  finally{btn.disabled=false}
 }
-
+async function createMissingImportedDevice(sku){
+ const item=pendingShopCatalogImport?.rows.find(x=>x.sku===sku&&x.catalogIndex<0);if(!item)return;
+ const name=prompt('Nome completo della variante da inserire nel catalogo:',item.description);if(name===null)return;
+ if(!name.trim()){alert('Il nome del dispositivo è obbligatorio.');return}
+ const priceText=prompt('Prezzo vendor in euro (solo numero, es. 349.99):','');if(priceText===null)return;
+ const vendorPrice=Number(String(priceText).replace(',','.'));if(!Number.isFinite(vendorPrice)||vendorPrice<=0){alert('Prezzo non valido.');return}
+ const product={name:name.trim(),sku,brand:brandOf(name),band:'',vendorPrice,offers:[]};
+ try{
+  const api=window.firebaseApi,id=catalogDocId(product),ref=api.doc(api.db,'devices',id);
+  const existing=await api.getDoc(ref);if(existing.exists())throw new Error('Esiste già un dispositivo con questo identificativo. Aggiorna il catalogo e ripeti l’associazione.');
+  await api.setDoc(ref,product);
+  catalog.push(product);catalog.sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+  const index=catalog.findIndex(p=>catalogDocId(p)===id);
+  pendingShopCatalogImport.rows.filter(x=>x.sku===sku).forEach(x=>x.catalogIndex=index);
+  renderShopCatalogImportPreview();renderAll();
+ }catch(e){alert('Creazione non riuscita: '+e.message)}
+}
+async function confirmShopCatalogImport(){
+ const data=pendingShopCatalogImport,box=document.getElementById('shopSyncResult');if(!data||!box)return;
+ const selected=[...document.querySelectorAll('.shop-sync-check:checked')].map(x=>x.value);
+ if(!selected.length){box.textContent='Seleziona almeno un negozio.';return}
+ const missing=data.rows.filter(x=>selected.includes(x.shopId)&&x.catalogIndex<0);
+ if(missing.length){box.textContent='Prima associa tutti i codici non riconosciuti dei negozi selezionati. '+missing.length+' codici ancora da associare.';return}
+ if(selected.length>450){box.textContent='Troppi negozi selezionati per una singola operazione. Dividi il file in più importazioni.';return}
+ const api=window.firebaseApi,db=api.db;let changed=0,enabled=0,disabled=0;
+ try{
+  box.textContent='Lettura stato attuale e preparazione aggiornamenti…';
+  const updates=[];
+  for(const shopId of selected){
+   const ref=api.doc(db,'shopCatalog',shopId),snap=await api.getDoc(ref);
+   const before=new Set(snap.exists()&&Array.isArray(snap.data().enabledDeviceIds)?snap.data().enabledDeviceIds.map(String):[]);
+   const desired=new Set(data.rows.filter(x=>x.shopId===shopId&&x.catalogIndex>=0).map(x=>catalogDocId(catalog[x.catalogIndex])));
+   for(const id of desired)if(!before.has(id))enabled++;
+   for(const id of before)if(!desired.has(id))disabled++;
+   if([...before].sort().join('|')!==[...desired].sort().join('|'))changed++;
+   updates.push({ref,shopId,enabledDeviceIds:[...desired]});
+  }
+  const batch=api.writeBatch(db);
+  for(const x of updates)batch.set(x.ref,{shopId:x.shopId,enabledDeviceIds:x.enabledDeviceIds,updatedAt:api.serverTimestamp(),updatedBy:currentUserProfile.uid,source:'excel-import',sourceFile:data.fileName},{merge:true});
+  await batch.commit();
+  box.textContent='Sincronizzazione completata. Negozi aggiornati: '+selected.length+'. Dispositivi abilitati: '+enabled+'. Disabilitati: '+disabled+'. Negozi con variazioni: '+changed+'. Schede catalogo e offerte non eliminate.';
+  pendingShopCatalogImport=null;
+  if(currentUserProfile?.role==='admin'&&selectedShopFilter&&selected.includes(selectedShopFilter))await loadShopCatalog(selectedShopFilter);
+  renderCatalog();
+ }catch(e){box.textContent='Sincronizzazione non completata: '+e.message}
+}
 async function loadCatalogFromFirestore(){
  const api=window.firebaseApi;
  const [snap,metaSnap]=await Promise.all([api.getDocs(api.collection(api.db,'devices')),api.getDoc(api.doc(api.db,'settings','catalog'))]);
