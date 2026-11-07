@@ -26,5 +26,7 @@ jobs:
           java-version: 21
       - name: Install dependencies
         run: npm install
+      - name: Run frontend QR smoke tests
+        run: npm run test:frontend
       - name: Run Firestore rules tests
         run: npm run test:rules
