@@ -1520,15 +1520,55 @@ function downloadStoreCredentials(){
  document.body.appendChild(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
+function importedTextParts(value){
+ let raw=String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ raw=raw.split('+')[0].replace(/\b(?:moto\s+buds|earbuds|buds|active)\b.*$/i,' ');
+ const storageMatch=raw.match(/\b(?:64|128|256|512|1024|2048)\s*gb\b/i);
+ const storage=storageMatch?Number(storageMatch[0].replace(/[^0-9]/g,'')):0;
+ const colors=['black titanium','natural titanium','white titanium','black olive','stellar black','twilight black','midnight black','space black','cloud white','cosmic orange','deep blue','jet black','sky blue','light gold','night sky','mist blue','graphite','midnight','starlight','natural','titanium','beige','cream','lavender','mint','orange','teal','burgundy','corsair','olive','sage','black','white','blue','green','red','purple','pink','yellow','silver','gold','gray','grey','twilight'];
+ let color=colors.find(c=>new RegExp('\\b'+c.replace(/ /g,'\\s+')+'\\b','i').test(raw))||'';
+ if(color==='twilight')color='twilight black';
+ raw=raw.replace(/\b\d{1,2}\s*[+\/-]\s*\d{2,4}\s*gb\b/ig,' ')
+  .replace(/\b\d{1,2}\s*[\/-]\s*\d{2,4}\s*gb\b/ig,' ')
+  .replace(/\b\d{1,2}\s*gb\b/ig,' ')
+  .replace(/\b(?:64|128|256|512|1024|2048)\s*gb\b/ig,' ')
+  .replace(/\b(?:4g|5g|lte|wifi|wi-fi)\b/ig,' ')
+  .replace(/\b(?:apple|samsung|galaxy|motorola|moto|honor|oppo|realme|xiaomi|redmi|poco|google|pixel)\b/ig,' ')
+  .replace(/\b(?:black titanium|natural titanium|white titanium|black olive|stellar black|twilight black|midnight black|space black|cloud white|cosmic orange|deep blue|jet black|sky blue|light gold|night sky|mist blue|graphite|midnight|starlight|natural|titanium|beige|cream|lavender|mint|orange|teal|burgundy|corsair|olive|sage|black|white|blue|green|red|purple|pink|yellow|silver|gold|gray|grey|twilight)\b/ig,' ')
+  .replace(/[^a-z0-9]+/g,' ').trim();
+ raw=raw.replace(/\bz\s*(flip|fold)\s*(\d+)/g,'z$1 $2').replace(/\bpro\s*max\b/g,'promax').replace(/\s+/g,' ').trim();
+ return {tokens:raw.split(' ').filter(Boolean),storage,color};
+}
+function suggestImportedCatalogMatch(description){
+ const query=importedTextParts(description);
+ if(!query.tokens.length)return {index:-1,status:'none',candidates:[]};
+ const optionalVariantWords=new Set(['pro','promax','max','plus','ultra','fe','lite','smart','edge','air','duo','flip','fold']);
+ const candidates=[];
+ catalog.forEach((p,i)=>{
+  const item=importedTextParts(p.name);
+  if(!item.tokens.length)return;
+  if(query.storage&&item.storage!==query.storage)return;
+  if(!query.storage&&item.storage)return;
+  if(query.color&&item.color!==query.color)return;
+  const full=item.tokens.join(' '),wanted=query.tokens.join(' ');
+  const reduced=item.tokens.filter(t=>!optionalVariantWords.has(t)).join(' ');
+  if(full===wanted||reduced===wanted)candidates.push(i);
+ });
+ if(candidates.length===1)return {index:candidates[0],status:'auto',candidates};
+ return {index:-1,status:candidates.length?'ambiguous':'none',candidates:candidates.slice(0,12)};
+}
 function renderShopCatalogImportPreview(){
  const box=document.getElementById('shopSyncPreview'),data=pendingShopCatalogImport;if(!box||!data)return;
  const shops=[...data.shops.entries()].sort((a,b)=>a[1].localeCompare(b[1],'it'));
  const unknown=data.rows.filter(x=>x.catalogIndex<0);
+ const automatic=data.rows.filter(x=>x.matchStatus==='auto').length;
+ const bySku=data.rows.filter(x=>x.matchStatus==='sku').length;
+ const ambiguous=unknown.filter(x=>x.matchStatus==='ambiguous').length;
  box.classList.remove('hidden');
- box.innerHTML='<div class="notice"><b>'+data.rows.length+'</b> righe smartphone riconosciute · <b>'+shops.length+'</b> negozi · <b>'+unknown.length+'</b> codici non associati. Le quantità del file vengono ignorate.</div>'+
+ box.innerHTML='<div class="notice"><b>'+data.rows.length+'</b> codici · <b>'+shops.length+'</b> negozi · <b>'+bySku+'</b> associati per SKU · <b>'+automatic+'</b> associati automaticamente dalla descrizione · <b>'+ambiguous+'</b> da confermare. Le quantità del file vengono ignorate.</div>'+
  '<h3>Negozi su cui applicare la sincronizzazione</h3><p class="hint">Sono selezionati in automatico tutti i negozi presenti nel file. Deseleziona quelli da lasciare invariati.</p>'+
  '<div class="grid">'+shops.map(([id,name])=>'<label class="choice" style="min-height:0"><input type="checkbox" class="shop-sync-check" value="'+esc(id)+'" checked> <b>'+esc(name)+'</b><small>'+esc(id)+' · '+data.rows.filter(x=>x.shopId===id).length+' codici nel file</small></label>').join('')+'</div>'+
- (unknown.length?'<h3 style="margin-top:18px">Codici da associare al catalogo</h3><div class="tablewrap"><table><thead><tr><th>Codice</th><th>Descrizione Excel</th><th>Azione</th></tr></thead><tbody>'+unknown.map(x=>'<tr><td>'+esc(x.sku)+'</td><td>'+esc(x.description)+'</td><td><select onchange="assignImportedSku(\''+esc(x.sku)+'\',this.value)"><option value="">Associa a una variante esistente…</option>'+catalog.map((p,i)=>'<option value="'+i+'">'+esc(p.name)+'</option>').join('')+'</select><button class="rowbtn" onclick="createMissingImportedDevice(\''+esc(x.sku)+'\')">Crea nuova variante</button></td></tr>').join('')+'</tbody></table></div>':'<p class="ok">Tutti i codici sono associati al catalogo.</p>')+
+ (unknown.length?'<h3 style="margin-top:18px">Codici da associare al catalogo</h3><div class="tablewrap"><table><thead><tr><th>Codice</th><th>Descrizione Excel</th><th>Azione</th></tr></thead><tbody>'+unknown.map(x=>'<tr><td>'+esc(x.sku)+'</td><td>'+esc(x.description)+'<br><small class="muted">'+(x.matchStatus==='ambiguous'?'Più varianti plausibili: scegli manualmente.':'Nessuna corrispondenza sicura: scegli manualmente.')+'</small></td><td><select onchange="assignImportedSku(\''+esc(x.sku)+'\',this.value)"><option value="">Associa a una variante esistente…</option>'+[...new Set([...(x.matchCandidates||[]),...catalog.map((p,i)=>i)])].map(i=>'<option value="'+i+'">'+((x.matchCandidates||[]).includes(i)?'★ Suggerimento · ':'')+esc(catalog[i].name)+'</option>').join('')+'</select><button class="rowbtn" onclick="createMissingImportedDevice(\''+esc(x.sku)+'\')">Crea nuova variante</button></td></tr>').join('')+'</tbody></table></div>':'<p class="ok">Tutti i codici sono associati al catalogo.</p>')+
  '<div class="actions"><button class="secondary" onclick="cancelShopCatalogImport()">Annulla</button><button class="primary" onclick="confirmShopCatalogImport()">Conferma sincronizzazione</button></div><div id="shopSyncResult" class="muted" style="margin-top:10px"></div>';
 }
 function cancelShopCatalogImport(){pendingShopCatalogImport=null;const box=document.getElementById('shopSyncPreview');box.classList.add('hidden');box.innerHTML='';document.getElementById('globalStockMsg').textContent='Importazione annullata: nessuna modifica applicata.';}
@@ -1551,8 +1591,9 @@ async function importGlobalStock(){
    if(!shopId)throw new Error('Codice negozio non riconosciuto nella riga: '+shop);
    shops.set(shopId,shop.replace(/^([A-Z]{2}\d{3})\s*[-–:]?\s*/i,'').trim()||shop);
    const key=shopId+'|'+sku;if(seen.has(key))continue;seen.add(key);
-   const catalogIndex=catalog.findIndex(p=>String(p.sku||'').trim()===sku);
-   rows.push({sku,description,shop,shopId,catalogIndex});
+   const skuIndex=catalog.findIndex(p=>String(p.sku||'').trim()===sku);
+   const suggestion=skuIndex>=0?{index:skuIndex,status:'sku',candidates:[skuIndex]}:suggestImportedCatalogMatch(description);
+   rows.push({sku,description,shop,shopId,catalogIndex:suggestion.index,matchStatus:suggestion.status,matchCandidates:suggestion.candidates});
   }
   if(!rows.length||!shops.size)throw new Error('Nessuno smartphone valido trovato. Verifica le colonne Codice Prodotto, Descrizione e Negozio.');
   pendingShopCatalogImport={rows,shops,fileName:file.name};
