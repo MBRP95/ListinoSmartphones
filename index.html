@@ -523,6 +523,8 @@ window.dispatchEvent(new Event("firebase-ready"));
 let catalog=[];
 let stock=[];
 let mappings={};
+let enabledDeviceIds=[];
+let shopCatalogLoaded=false;
 const questions=[
  {key:'budget',name:'Budget',title:'Quanto vuoi investire nel tuo prossimo smartphone?',desc:'Consideriamo il prezzo di listino dei dispositivi disponibili.',icon:'€',opts:[['200','Fino a 200 €','Essenziale e conveniente'],['350','Fino a 350 €','Un buon equilibrio'],['500','Fino a 500 €','Più prestazioni e qualità'],['800','Fino a 800 €','Fascia alta'],['over800','Oltre 800 €','Il meglio senza compromessi'],['any','Valuto tutte le fasce','Prima vediamo cosa offre il negozio']]},
  {key:'use',name:'Utilizzo',title:'Come utilizzi più spesso il telefono?',desc:'Ci aiuta a dare il giusto peso a prestazioni, schermo e autonomia.',icon:'✦',opts:[['everyday','Un po’ di tutto','Chat, social, navigazione e app'],['photos','Foto e video','Scatto spesso e voglio bei ricordi'],['work','Lavoro e produttività','Email, documenti e tante app'],['gaming','Giochi e intrattenimento','Fluidità e schermo di qualità'],['simple','Uso semplice','Chiamate, messaggi e poche app'],['any','Un utilizzo equilibrato','Non ho esigenze particolari']]},
@@ -612,19 +614,19 @@ async function startSellerMode(){
   const shopId=String(currentUserProfile?.shopId||'').trim();
   if(!shopId)throw new Error('Questo account Seller non è associato a un negozio. Assegna il negozio dal profilo Admin.');
   currentShopId=shopId;selectedShopFilter=shopId;
-  msg.textContent='Caricamento disponibilità di '+shopId+'…';
-  const loaded=await loadStockFromFirestore();
-  if(!loaded)throw new Error('Magazzino non pubblicato su Firebase.');
-  applyStockMappings();
+  msg.textContent='Caricamento catalogo commerciale di '+shopId+'…';
+  await loadShopCatalog(shopId);stock=[];
+  if(currentUserProfile.canViewStock===true){
+   msg.textContent='Caricamento catalogo e magazzino di '+shopId+'…';
+   const loaded=await loadStockFromFirestore(shopId);
+   if(!loaded)throw new Error('Magazzino non pubblicato su Firebase.');
+   applyStockMappings();
+  }else{mappings={};stock=[];stockUpdatedAt=null;}
   document.getElementById('sellerShopView').classList.add('hidden');
   document.getElementById('storeView').classList.remove('hidden');
   document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
   renderDataFreshness();renderAll();
- }catch(e){
-  msg.textContent='Impossibile aprire il negozio associato: '+e.message;
-  console.error('startSellerMode:',e);
-  throw e;
- }
+ }catch(e){msg.textContent='Impossibile aprire il negozio associato: '+e.message;console.error('startSellerMode:',e);throw e;}
 }
 async function confirmSellerShop(){
  const id=document.getElementById('sellerShopSelect').value;
@@ -694,19 +696,22 @@ async function confirmClientShop(){
  if(!id){alert('Seleziona un negozio.');return}
  currentShopId=id;
  try{
-  await loadStockFromFirestore(id);
-  applyStockMappings();
+  await loadShopCatalog(id);stock=[];mappings={};
   document.getElementById('clientShopPanel').classList.add('hidden');
   document.getElementById('clientStartPanel').classList.remove('hidden');
- }catch(e){alert('Errore caricamento disponibilità: '+e.message)}
+ }catch(e){alert('Errore caricamento catalogo: '+e.message)}
 }
 function beginGuidedChoice(){document.getElementById('clientStartPanel').classList.add('hidden');document.getElementById('clientDirectPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.remove('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel):not(#clientStartPanel):not(#clientDirectPanel)').classList.remove('hidden');startClientWizard()}
 function beginDirectChoice(){document.getElementById('clientStartPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.add('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel):not(#clientStartPanel):not(#clientDirectPanel)').classList.add('hidden');document.getElementById('clientDirectPanel').classList.remove('hidden');document.getElementById('clientDeviceSearch').value='';renderClientDeviceList()}
-function renderClientDeviceList(){const q=norm(document.getElementById('clientDeviceSearch').value);const rows=currentAvailable().filter(({p})=>!q||norm(p.name).includes(q));document.getElementById('clientDeviceList').innerHTML=rows.length?rows.map(({s,p})=>{const i=catalog.indexOf(p);return '<button class="device product-card" onclick="selectDevice('+i+',\''+esc(s.sku)+'\')"><div class="devicehead"><h3>'+esc(p.name)+'</h3></div><div class="price">'+money(priceFor(p))+'</div><div class="card-cta">Scegli questo modello →</div></button>'}).join(''):'<div class="notice">Nessun dispositivo trovato.</div>'}
+function renderClientDeviceList(){
+ const q=norm(document.getElementById('clientDeviceSearch').value);
+ const rows=productsForShop().filter(({p})=>!q||norm(p.name).includes(q));
+ document.getElementById('clientDeviceList').innerHTML=rows.length?rows.map(({p,i})=>'<button class="device product-card" onclick="selectDevice('+i+',\\'CATALOGO\\')"><div class="devicehead"><h3>'+esc(p.name)+'</h3></div><div class="price">'+money(priceFor(p))+'</div><div class="card-cta">Scegli questo modello →</div></button>').join(''):'<div class="notice">Nessun dispositivo trovato.</div>';
+}
 function startClientWizard(){
  step=0;answers={};
  document.getElementById('clientDirectPanel').classList.add('hidden');
- const availableDevices=currentAvailable().map(x=>x.p);
+ const availableDevices=productsForShop().map(x=>x.p);
  const has=(keys)=>availableDevices.some(p=>{const t=deviceFeatureText(p);return keys.some(k=>t.includes(k));});
  activeQuestions=questions.filter(q=>{
   if(q.key==='camera')return has(['fotocamera','teleobiettivo','ultra-grandangolare','video']);
@@ -1255,21 +1260,22 @@ function storeAvailabilityFor(index){
 function renderCatalog(){
  const searchInput=document.getElementById('catalogSearch'),brandInput=document.getElementById('brandFilter');
  const q=norm(searchInput?.value||''),b=norm(brandInput?.value||'');
- const selected=String(selectedShopFilter||'__all__').trim().toUpperCase();
- const rows=catalog.map((p,i)=>({p,i,stores:storeAvailabilityFor(i)})).map(item=>({
-  ...item,
-  visibleStores:selected==='__ALL__'?item.stores:item.stores.filter(st=>String(st.id||'').trim().toUpperCase()===selected)
- })).filter(({p,visibleStores})=>{
+ const role=currentUserProfile?.role,isScoped=role==='seller'||role==='client';
+ const source=isScoped?productsForShop():catalog.map((p,i)=>({p,i}));
+ const canStock=role==='admin'||(role==='seller'&&currentUserProfile?.canViewStock===true);
+ const rows=source.filter(({p})=>{
   const searchable=norm([p.name,p.brand,p.model,p.sku].filter(Boolean).join(' '));
   const brand=norm(brandOf(p.name)||p.brand||'');
-  return visibleStores.length>0&&(!q||searchable.includes(q))&&(!b||brand===b);
+  return (!q||searchable.includes(q))&&(!b||brand===b);
  });
- const target=document.getElementById('catalogRows');
- if(!target)return;
- target.innerHTML=rows.length?rows.map(({p,i,visibleStores})=>{
-  const availability=visibleStores.map(st=>(String(st.id||'').trim().toUpperCase()===selected?'★ ':'')+esc(st.name)+': '+st.qty).join(' · ');
-  return `<tr><td>${esc(p.name)}</td><td>${esc(p.band||'—')}</td><td>${money(p.vendorPrice)}</td><td>${(p.offers||[]).length}</td><td>${availability}</td><td><button class="rowbtn" onclick="showDetail(${i})">Dettaglio</button></td></tr>`;
- }).join(''):'<tr><td colspan="6" class="muted">Nessuno smartphone disponibile per il negozio selezionato con i filtri correnti.</td></tr>';
+ const target=document.getElementById('catalogRows');if(!target)return;
+ target.innerHTML=rows.length?rows.map(({p,i})=>{
+  const enabled=isScoped||enabledDeviceIds.includes(catalogDocId(p));
+  const stores=canStock?storeAvailabilityFor(i):[];
+  const availability=canStock?stores.map(st=>esc(st.name)+': '+st.qty).join(' · '):(isScoped?(enabled?'Attivo nel catalogo':'Non attivo'):'—');
+  const toggle=role==='admin'||role==='seller'?'<button class="rowbtn" onclick="setShopDeviceEnabled('+i+','+(!enabled)+').catch(e=>alert(e.message))">'+(enabled?'Disattiva':'Attiva')+'</button>':'';
+  return `<tr><td>${esc(p.name)}</td><td>${esc(p.band||'—')}</td><td>${money(p.vendorPrice)}</td><td>${(p.offers||[]).length}</td><td>${availability}</td><td><button class="rowbtn" onclick="showDetail(${i})">Dettaglio</button> ${toggle}</td></tr>`;
+ }).join(''):'<tr><td colspan="6" class="muted">Nessuno smartphone trovato con i filtri correnti.</td></tr>';
 }
 function sellerOfferGroupsHtml(deviceIndex){return '';}
 function sellerGenerateOffer(deviceIndex,offerIndex){
@@ -1282,10 +1288,12 @@ function sellerGenerateOffer(deviceIndex,offerIndex){
 }
 function showDetail(index){
  const p=catalog[index];if(!p)return;
- const stores=storeAvailabilityFor(index);
- const availability=stores.length?stores.map(s=>`<tr><td>${esc(s.name)} (${esc(s.id)})${s.id===selectedShopFilter?' · negozio selezionato':''}</td><td>${s.qty}</td></tr>`).join(''):'<tr><td colspan="2">Nessuna disponibilità vendibile</td></tr>';
+ const role=currentUserProfile?.role,canStock=role==='admin'||(role==='seller'&&currentUserProfile?.canViewStock===true);
+ const stores=canStock?storeAvailabilityFor(index):[];
+ const availability=stores.length?stores.map(s=>`<tr><td>${esc(s.name)} (${esc(s.id)})</td><td>${s.qty}</td></tr>`).join(''):'<tr><td colspan="2">Nessun dato magazzino disponibile.</td></tr>';
  const specs=getDeviceSpecs(p);
- document.getElementById('detailBox').innerHTML=`<h3>${esc(p.name)}</h3><div class="chips"><span class="chip">Fascia ${esc(p.band||'—')}</span><span class="chip">Prezzo vendor ${money(p.vendorPrice)}</span><span class="chip">${stores.reduce((a,s)=>a+s.qty,0)} pezzi totali</span></div><h3 style="margin-top:18px">Caratteristiche tecniche</h3><div class="chips">${specs.length?specs.map(x=>`<span class="chip">${esc(x[0])}: ${esc(x[1])}</span>`).join(''):'<span class="muted">Scheda tecnica non ancora disponibile.</span>'}</div><h3>Disponibilità nei negozi</h3><div class="tablewrap"><table><thead><tr><th>Negozio</th><th>Quantità vendibile</th></tr></thead><tbody>${availability}</tbody></table></div><h3 style="margin-top:18px">Offerte e condizioni</h3><div id="sellerOfferGroups" class="seller-offer-groups">${sellerOfferGroupsHtml(index)}</div>`;
+ const stockBlock=canStock?`<h3>Disponibilità nel negozio</h3><div class="tablewrap"><table><thead><tr><th>Negozio</th><th>Quantità vendibile</th></tr></thead><tbody>${availability}</tbody></table></div>`:'';
+ document.getElementById('detailBox').innerHTML=`<h3>${esc(p.name)}</h3><div class="chips"><span class="chip">Fascia ${esc(p.band||'—')}</span><span class="chip">Prezzo vendor ${money(p.vendorPrice)}</span>${canStock?'<span class="chip">'+stores.reduce((a,s)=>a+s.qty,0)+' pezzi nel negozio</span>':''}</div><h3 style="margin-top:18px">Caratteristiche tecniche</h3><div class="chips">${specs.length?specs.map(x=>`<span class="chip">${esc(x[0])}: ${esc(x[1])}</span>`).join(''):'<span class="muted">Scheda tecnica non ancora disponibile.</span>'}</div>${stockBlock}<h3 style="margin-top:18px">Offerte e condizioni</h3><div id="sellerOfferGroups" class="seller-offer-groups">${sellerOfferGroupsHtml(index)}</div>`;
  document.getElementById('detailPanel').classList.remove('hidden');
  renderPromoSelection('sellerOfferGroups',index,'seller');
  document.getElementById('detailPanel').scrollIntoView({behavior:'smooth',block:'start'});
@@ -1355,18 +1363,44 @@ async function loadCatalogFromFirestore(){
 
 async function loadStockFromFirestore(shopId=null){
  const api=window.firebaseApi,db=api.db;
+ if(currentUserProfile?.role==='seller'){
+  if(currentUserProfile.canViewStock!==true)throw new Error('Il tuo profilo non è abilitato alla consultazione del magazzino.');
+  const ownShop=String(currentUserProfile.shopId||'').trim();
+  if(!ownShop||(shopId&&shopId!==ownShop))throw new Error('Accesso al magazzino consentito soltanto al negozio assegnato.');
+  shopId=ownShop;
+ }
+ if(currentUserProfile?.role==='client')throw new Error('Il profilo Cliente non può consultare il magazzino.');
  const setting=await api.getDoc(api.doc(db,'settings','stock'));
- if(!setting.exists()||!setting.data().activeVersion){stockUpdatedAt=null;renderDataFreshness();return false;}
+ if(!setting.exists()||!setting.data().activeVersion){stock=[];stockUpdatedAt=null;renderDataFreshness();return false;}
  stockUpdatedAt=setting.data().updatedAt||null;
  activeStockVersion=setting.data().activeVersion;
  const items=api.collection(db,'stockVersions',activeStockVersion,'items');
  const stockQuery=shopId?api.query(items,api.where('shopId','==',shopId)):items;
  const snap=await api.getDocs(stockQuery);
  stock=snap.docs.map(d=>d.data());
- renderDataFreshness();
- return true;
+ renderDataFreshness();return true;
 }
-
+async function loadShopCatalog(shopId){
+ const api=window.firebaseApi;if(!shopId)throw new Error('Negozio non specificato.');
+ const snap=await api.getDoc(api.doc(api.db,'shopCatalog',shopId));
+ enabledDeviceIds=snap.exists()&&Array.isArray(snap.data().enabledDeviceIds)?snap.data().enabledDeviceIds.map(String):[];
+ shopCatalogLoaded=true;return enabledDeviceIds;
+}
+function productsForShop(){
+ if(!shopCatalogLoaded)return [];
+ const allowed=new Set(enabledDeviceIds);
+ return catalog.map((p,i)=>({p,i})).filter(({p})=>allowed.has(catalogDocId(p)));
+}
+async function setShopDeviceEnabled(index,enabled){
+ if(!['admin','seller'].includes(currentUserProfile?.role))throw new Error('Operazione non autorizzata.');
+ const shopId=currentUserProfile.role==='seller'?currentUserProfile.shopId:currentShopId;
+ if(!shopId)throw new Error('Negozio non selezionato.');
+ const p=catalog[index];if(!p)throw new Error('Dispositivo non valido.');
+ const api=window.firebaseApi,ref=api.doc(api.db,'shopCatalog',shopId),next=new Set(enabledDeviceIds);
+ if(enabled)next.add(catalogDocId(p));else next.delete(catalogDocId(p));
+ await api.setDoc(ref,{shopId,enabledDeviceIds:[...next],updatedAt:api.serverTimestamp(),updatedBy:currentUserProfile.uid},{merge:true});
+ enabledDeviceIds=[...next];shopCatalogLoaded=true;renderCatalog();
+}
 async function importStock(){let f=document.getElementById('stockFile').files[0];if(!f){alert('Seleziona prima il file Excel.');return}if(!window.XLSX){alert('Libreria Excel non caricata: verifica la connessione internet e riprova.');return}try{let wb=XLSX.read(await f.arrayBuffer(),{type:'array'});let ws=wb.Sheets['Magazzino']||wb.Sheets[wb.SheetNames[0]];let rows=XLSX.utils.sheet_to_json(ws,{defval:''});let get=(r,k)=>r[k]??r[Object.keys(r).find(x=>norm(x)===norm(k))]??'';let next=rows.filter(r=>{let d=String(get(r,'Descrizione'));return /iphone|galaxy|samsung|honor|motorola|oppo|realme|xiaomi|redmi|pixel|oneplus/i.test(d)&&!/buds|auricolari|caricabatter|vetro|cover|custodia|screen protector|screenglass|skinny|t-shirt/i.test(d)}).map(r=>({sku:String(get(r,'Codice Prodotto')),description:String(get(r,'Descrizione')),shop:String(get(r,'Negozio')),warehouse:String(get(r,'Tipo Magazzino')),stock:Number(get(r,'Giacenza'))||0,reserved:Number(get(r,'Quantità Impegnata'))||0,future:Number(get(r,'Giacenza Futura'))||0,ordered:Number(get(r,'Quantità Ordinata'))||0,incoming:Number(get(r,'Quantità In Arrivo'))||0}));if(!next.length)throw new Error('Nessuna riga smartphone riconosciuta. Controlla intestazioni e foglio Magazzino.');stock=next;next.forEach(s=>{const i=autoMatch(s);if(i>=0){mappings[s.sku]=i;s.catalogName=catalog[i].name}});renderAll();document.getElementById('importMsg').textContent=`Importate ${next.length} varianti smartphone. Disponibili: ${next.reduce((a,s)=>a+available(s),0)} pezzi. Verifica gli abbinamenti prima di usare la vista Cliente.`}catch(e){alert('Errore importazione: '+e.message)}}
 
 
