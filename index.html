@@ -1426,8 +1426,7 @@ async function loadCatalogFromFirestore(){
 
 async function loadStockFromFirestore(shopId=null){
  const api=window.firebaseApi,db=api.db;
- if(currentUserProfile?.role==='seller')throw new Error('Il profilo Seller non consulta quantità di magazzino.');
- if(currentUserProfile?.role==='client')throw new Error('Il profilo Cliente non può consultare il magazzino.');
+ if(currentUserProfile?.role!=='admin')throw new Error('Accesso al magazzino riservato esclusivamente all’Admin.');
  const setting=await api.getDoc(api.doc(db,'settings','stock'));
  if(!setting.exists()||!setting.data().activeVersion){stock=[];stockUpdatedAt=null;renderDataFreshness();return false;}
  stockUpdatedAt=setting.data().updatedAt||null;
