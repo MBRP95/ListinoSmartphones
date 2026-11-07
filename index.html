@@ -632,6 +632,7 @@ let clientLoginVerified=false;
 let currentShopId=new URLSearchParams(location.search).get('shop')||'';
 let selectedShopFilter='';
 let shopDirectory=[];
+let shopCatalogByShop={};
 let activeStockVersion='';
 let catalogUpdatedAt=null;
 let stockUpdatedAt=null;
@@ -815,6 +816,9 @@ async function startSellerMode(){
   msg.textContent='Caricamento catalogo commerciale di '+shopId+'…';
   phase='lettura shopCatalog/'+shopId+' (controllo associazione account/negozio)';
   await loadShopCatalog(shopId);
+  phase='lettura negozi e disponibilità cataloghi';
+  await loadShopDirectory();
+  await loadSellerShopCatalogs();
   stock=[];mappings={};stockUpdatedAt=null;
   phase='apertura interfaccia negozio';
   document.getElementById('sellerShopView').classList.add('hidden');
@@ -1549,6 +1553,7 @@ async function changeShopFilter(){
  refreshShopQrTarget();
  const sel=document.getElementById('shopFilter');
  selectedShopFilter=String(sel?.value||'__all__').trim();
+ if(currentUserProfile?.role==='seller'){renderCatalog();return;}
  if(currentUserProfile?.role==='admin'&&selectedShopFilter!=='__all__'){
   try{await loadShopCatalog(selectedShopFilter);}catch(e){alert('Impossibile caricare il catalogo del negozio: '+e.message);return;}
  }else if(currentUserProfile?.role==='admin'){enabledDeviceIds=[];shopCatalogLoaded=false;}
@@ -1558,6 +1563,12 @@ async function loadShopDirectory(){
  const api=window.firebaseApi;
  const snap=await api.getDocs(api.collection(api.db,'shops'));
  shopDirectory=snap.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.active!==false).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id),'it'));
+}
+async function loadSellerShopCatalogs(){
+ const api=window.firebaseApi;
+ const snap=await api.getDocs(api.collection(api.db,'shopCatalog'));
+ shopCatalogByShop={};
+ snap.docs.forEach(d=>{const data=d.data()||{};shopCatalogByShop[d.id]=new Set(Array.isArray(data.enabledDeviceIds)?data.enabledDeviceIds.map(String):[]);});
 }
 function setupShopFilter(){
  const sel=document.getElementById('shopFilter');if(!sel)return;
@@ -1607,13 +1618,16 @@ function renderCatalog(){
   const searchable=norm([p.name,p.brand,p.model,p.sku].filter(Boolean).join(' '));
   const brand=brandOf(p.name,p.brand);
   const active=enabledDeviceIds.includes(catalogDocId(p));
-  return (!q||searchable.includes(q))&&(!b||brand===b)&&(role!=='seller'||status==='all'||(status==='enabled'&&active)||(status==='disabled'&&!active));
+  const selectedStore=String(document.getElementById('shopFilter')?.value||'__all__');
+  const activeInSelected=selectedStore==='__all__'||!!shopCatalogByShop[selectedStore]?.has(catalogDocId(p));
+  return (!q||searchable.includes(q))&&(!b||brand===b)&&(role!=='seller'||status==='all'||(status==='enabled'&&active)||(status==='disabled'&&!active))&&(role!=='seller'||activeInSelected);
  });
  const target=document.getElementById('catalogRows');if(!target)return;
  target.innerHTML=rows.length?rows.map(({p,i})=>{
   const enabled=role==='client'||enabledDeviceIds.includes(catalogDocId(p));
   const stores=canStock?storeAvailabilityFor(i):[];
-  const availability=canStock?stores.map(st=>esc(st.name)+': '+st.qty).join(' · '):((role==='seller'||role==='client')?(enabled?'Attivo nel catalogo':'Non attivo'):'—');
+  const activeShops=role==='seller'?shopDirectory.filter(st=>shopCatalogByShop[st.id]?.has(catalogDocId(p))):[];
+  const availability=canStock?stores.map(st=>esc(st.name)+': '+st.qty).join(' · '):role==='seller'?(activeShops.length?activeShops.map(st=>esc(st.name||st.id)).join(' · '):'Non attivo in altri negozi'):(role==='client'?(enabled?'Attivo nel catalogo':'Non attivo'):'—');
   const toggle=role==='admin'||role==='seller'?'<button class="rowbtn" onclick="setShopDeviceEnabled('+i+','+(!enabled)+').catch(e=>alert(e.message))">'+(enabled?'Disattiva':'Attiva')+'</button>':'';
   return `<tr><td>${esc(p.name)}</td><td>${esc(p.band||'—')}</td><td>${money(p.vendorPrice)}</td><td>${(p.offers||[]).length}</td><td>${availability}</td><td><button class="rowbtn" onclick="showDetail(${i})">Dettaglio</button> ${toggle}</td></tr>`;
  }).join(''):'<tr><td colspan="6" class="muted">Nessuno smartphone trovato con i filtri correnti.</td></tr>';
