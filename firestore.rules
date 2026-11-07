@@ -20,10 +20,25 @@ service cloud.firestore {
     function isSeller() {
       return activeUser() && userData().role == 'seller';
     }
-    function isClient() {
-      return activeUser() && userData().role == 'client';
+    function sellerCanViewStock() {
+      return isSeller() && userData().canViewStock == true;
     }
-    function canReadAppData() {
+    function sellerOwnsShop(shopId) {
+      return isSeller() && userData().shopId == shopId;
+    }
+    function isClient() {
+      return signedIn() &&
+        (
+          (activeUser() && userData().role == 'client') ||
+          request.auth.token.role == 'client'
+        );
+    }
+    function clientShopId() {
+      return request.auth.token.shopId != null
+        ? request.auth.token.shopId
+        : (activeUser() && userData().role == 'client' ? userData().shopId : null);
+    }
+    function canReadCatalog() {
       return isAdmin() || isSeller() || isClient();
     }
 
@@ -34,27 +49,43 @@ service cloud.firestore {
     }
 
     match /shops/{shopId} {
-      allow read: if canReadAppData();
+      allow read: if canReadCatalog();
       allow write: if isAdmin();
     }
+
     match /devices/{deviceId} {
-      allow read: if canReadAppData();
+      allow read: if canReadCatalog();
       allow write: if isAdmin();
     }
+
     match /deviceModels/{modelId} {
-      allow read: if canReadAppData();
+      allow read: if canReadCatalog();
       allow write: if isAdmin();
     }
+
+    match /shopCatalog/{shopId} {
+      allow get, list: if isAdmin() ||
+        sellerOwnsShop(shopId) ||
+        (isClient() && clientShopId() == shopId);
+      allow create, update: if isAdmin() || sellerOwnsShop(shopId);
+      allow delete: if isAdmin();
+    }
+
     match /stock/{stockId} {
-      allow read: if canReadAppData();
+      allow read: if isAdmin() ||
+        (sellerCanViewStock() && resource.data.shopId == userData().shopId);
       allow create, update, delete: if isAdmin();
     }
+
     match /settings/{settingId} {
-      allow read: if canReadAppData();
+      allow read: if isAdmin() ||
+        (settingId == 'stock' && sellerCanViewStock());
       allow write: if isAdmin();
     }
+
     match /stockVersions/{versionId}/items/{stockId} {
-      allow read: if canReadAppData();
+      allow read: if isAdmin() ||
+        (sellerCanViewStock() && resource.data.shopId == userData().shopId);
       allow create, update, delete: if isAdmin();
     }
 
