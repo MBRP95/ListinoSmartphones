@@ -1107,12 +1107,12 @@ async function verifySellerPassword(){
  try{
   if(!window.firebaseApi)throw new Error('Firebase non è ancora pronto. Riprova.');
   const email=username.includes('@')?username:username+'@deviceproposer.invalid';
-  const {auth,signInWithEmailAndPassword,doc,getDoc}=window.firebaseApi;
+  const {auth,signInWithEmailAndPassword}=window.firebaseApi;
   const credential=await signInWithEmailAndPassword(auth,email,pw);
-  phase='lettura profilo users/'+credential.user.uid;
-  const profileSnap=await getDoc(doc(window.firebaseApi.db,'users',credential.user.uid));
-  if(!profileSnap.exists())throw new Error('Profilo utente non configurato in Firestore.');
-  const profile=profileSnap.data();
+  phase='lettura profilo tramite backend sicuro';
+  const profileResult=await callUserAdminApi('/users/me',{});
+  if(!profileResult.profile)throw new Error('Profilo utente non configurato in Firestore.');
+  const profile={...profileResult.profile,uid:profileResult.uid};
   if(profile.active!==true)throw new Error('Account disattivato. Contatta l’amministratore.');
   if(!['admin','seller'].includes(profile.role)) {
    throw new Error(profile.role==='client'
