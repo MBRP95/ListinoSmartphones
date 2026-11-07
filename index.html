@@ -179,6 +179,7 @@ main{max-width:1240px;margin:38px auto 54px}
 .art-chip{position:absolute;right:9%;bottom:48px;padding:12px 15px;border:1px solid #ffffff30;border-radius:12px;background:#ffffff12;color:#e5edff;font-size:10px;font-weight:850;letter-spacing:1.5px;line-height:1.6;backdrop-filter:blur(8px)}
 .home-section-head{display:flex;justify-content:space-between;align-items:end;margin:38px 0 16px}
 .home-section-head .eyebrow{color:#7185a6;font-size:10px;letter-spacing:1.7px}
+.home-access-top{display:flex;justify-content:flex-start;margin:0 0 12px}.home-access-top button{min-height:28px;padding:5px 11px;border-radius:7px;font-size:11px;line-height:1}
 .home-section-head h2{margin:5px 0 0;font-size:24px;letter-spacing:-.7px}
 .home-caption{padding-bottom:5px;color:#9aa6b8;font-size:9px;font-weight:850;letter-spacing:1.5px}
 .home-choices{display:grid;grid-template-columns:minmax(0,520px);justify-content:center;gap:17px;width:100%}.home-choice{width:100%;max-width:520px;margin-inline:auto}
@@ -328,6 +329,7 @@ h1,h2,h3,h4,strong,b,label,th,td,p,small{color:inherit}
 input,select,textarea{background:#171411!important;color:#fff!important;border:1px solid #62472b!important}
 input::placeholder,textarea::placeholder{color:#b5a99a!important}
 button{color:#f9f3e9}
+button.danger,.danger{background:#4a1715!important;color:#fff!important;border:1px solid #e06a5f!important;font-weight:800;text-shadow:none!important;box-shadow:0 2px 8px #0006!important}button.danger:hover,.danger:hover{background:#70201b!important;color:#fff!important;border-color:#ff8b7e!important}
 button.primary,.primary{background:linear-gradient(100deg,#ffb000,#ef4b24)!important;color:#170b04!important}
 button.secondary,.secondary,.rowbtn{background:#292018!important;color:#ffe1a3!important;border:1px solid #79512b}
 nav button{background:#211a14!important;color:#f5e7d2!important}
@@ -505,14 +507,13 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 </div></section>
 
 <section id="homeView" class="home-dashboard hidden">
+<div class="home-access-top"><button type="button" class="primary" onclick="requestUnifiedAccess()">Accedi</button></div>
 <div class="home-intro">
  <div class="home-copy"><div class="eyebrow">SMARTPHONE · CONSULENZA · GESTIONE</div><h1>La scelta giusta<br>parte da qui.</h1><p class="sub">Uno spazio unico per guidare il cliente verso il dispositivo più adatto e gestire catalogo, prezzi e disponibilità del punto vendita.</p><span class="home-status"><i></i> Piattaforma operativa</span></div>
  <div class="home-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-phone"><span></span><b></b><i></i></div><div class="art-chip">DEVICE<br>PROPOSER</div></div>
 </div>
 <div class="home-section-head"><div><div class="eyebrow">ACCESSO ALLA PIATTAFORMA</div><h2>Entra in Device Proposer</h2></div><span class="home-caption">ACCESSO UNICO</span></div>
-<div class="home-choices" style="grid-template-columns:minmax(0,520px)">
-<button class="choice home-choice staff-choice" onclick="requestUnifiedAccess()"><span class="choice-icon">↗</span><span class="choice-content"><b>Accedi</b><small>Inserisci le tue credenziali. Device Proposer riconoscerà automaticamente il tuo profilo e aprirà la modalità corretta.</small><strong>Accedi alla piattaforma <em>↗</em></strong></span></button>
-</div>
+
 <div class="home-footnote"><span>DEVICE PROPOSER</span><span>SMARTPHONE SALES ASSISTANT</span></div>
 </section>
 <section id="clientView" class="hidden">
