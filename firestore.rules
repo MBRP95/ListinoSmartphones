@@ -23,17 +23,24 @@ service cloud.firestore {
 function sellerOwnsShop(shopId) {
       return isSeller() && userData().shopId == shopId;
     }
+    function clientShopId() {
+      return signedIn() && request.auth.token.role == 'client'
+        ? request.auth.token.shopId
+        : null;
+    }
     function isClient() {
       return signedIn() &&
-        (
-          (activeUser() && userData().role == 'client') ||
-          request.auth.token.role == 'client'
-        );
-    }
-    function clientShopId() {
-      return request.auth.token.shopId != null
-        ? request.auth.token.shopId
-        : (activeUser() && userData().role == 'client' ? userData().shopId : null);
+        request.auth.token.role == 'client' &&
+        request.auth.token.sid != null &&
+        clientShopId() != null &&
+        exists(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)) &&
+        exists(/databases/$(database)/documents/shopAccess/$(clientShopId())) &&
+        get(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)).data.active == true &&
+        get(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)).data.shopId == clientShopId() &&
+        request.time < get(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)).data.expiresAt &&
+        get(/databases/$(database)/documents/shopAccess/$(clientShopId())).data.active == true &&
+        get(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)).data.sessionVersion ==
+          get(/databases/$(database)/documents/shopAccess/$(clientShopId())).data.sessionVersion;
     }
     function canReadCatalog() {
       return isAdmin() || isSeller() || isClient();
