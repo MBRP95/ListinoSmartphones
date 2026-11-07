@@ -1041,6 +1041,7 @@ async function handle(request, env) {
       if (!/^[A-Z0-9_-]{2,32}$/.test(shopId)) throw new Error('Codice negozio non valido.');
       if (!/^\\d{6}$/.test(pin)) throw new Error('Il PIN deve contenere esattamente 6 cifre.');
       const { authUser } = await requireShopManager(request, env, googleToken, shopId);
+      await getShop(env.FIREBASE_PROJECT_ID, shopId, googleToken);
       const previous = await readShopAccess(env.FIREBASE_PROJECT_ID, shopId, googleToken);
       const salt = randomHex(16);
       const pinHash = await hashShopPin(pin, salt);
@@ -1733,7 +1734,7 @@ async function handle(request, env) {
 
       },
 
-      400,
+      Number.isInteger(e?.status) ? e.status : 400,
 
       allowed
 
