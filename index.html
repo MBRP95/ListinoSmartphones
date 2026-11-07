@@ -1598,7 +1598,7 @@ function storeAvailabilityFor(index){
   if(filter.length<1){host.classList.add('hidden');host.innerHTML='';return;}
   const items=catalog.map(p=>p.name).filter((name,i,all)=>all.indexOf(name)===i)
    .filter(name=>norm(name).includes(filter)).sort((a,b)=>a.localeCompare(b,'it')).slice(0,30);
-  host.innerHTML=items.length?items.map(name=>'<button type="button" onclick="selectOtherStoreOption(\''+esc(name).replace(/'/g,"&#39;")+'\')">'+esc(name)+'</button>').join(''):'<div class="empty">Nessun dispositivo trovato</div>';
+  host.innerHTML=items.length?items.map(name=>'<button type="button" data-device="'+esc(name)+'" onclick="selectOtherStoreOption(this.dataset.device)">'+esc(name)+'</button>').join(''):'<div class="empty">Nessun dispositivo trovato</div>';
   host.classList.remove('hidden');
  }
  function selectOtherStoreOption(name){
