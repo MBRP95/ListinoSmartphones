@@ -609,7 +609,7 @@ function clearClientSessionState(){
  const input=document.getElementById('clientPinInput');if(input)input.value='';
  const pinMsg=document.getElementById('clientPinMsg');if(pinMsg)pinMsg.textContent='';
 }
-async async function changeStorePassword(){
+async function changeStorePassword(){
  const msg=document.getElementById('storePasswordMsg');
  const next=prompt('Nuova password del negozio (almeno 8 caratteri):');
  if(next===null)return;
