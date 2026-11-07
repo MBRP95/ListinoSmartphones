@@ -721,7 +721,7 @@ async function logoutStaff(){
  if(clientExpiryTimer){clearTimeout(clientExpiryTimer);clientExpiryTimer=null;}
  ['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
  document.getElementById('homeView')?.classList.remove('hidden');
- document.getElementById('homeBtn')?.style.display='none';
+ 
  document.getElementById('logoutBtn').style.display='none';
  document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';
 }
@@ -754,7 +754,7 @@ async function restoreStaffSession(){
  }
  document.getElementById('homeView').classList.add('hidden');
  document.getElementById('sellerAuthView').classList.add('hidden');
- document.getElementById('homeBtn')?.style.display='inline-block';
+ 
  document.getElementById('logoutBtn').style.display='inline-block';
  return true;
 }
@@ -763,7 +763,7 @@ async function goHome(){
  if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}
  clearClientSessionState();
  ['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));
- document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn')?.style.display='none';document.getElementById('logoutBtn').style.display='none';
+ document.getElementById('homeView').classList.remove('hidden');document.getElementById('logoutBtn').style.display='none';
  document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';
 }
 function goBack(){
@@ -798,7 +798,7 @@ function requestUnifiedAccess(){
  document.getElementById('homeView').classList.add('hidden');
  ['clientView','sellerShopView','storeView','adminView'].forEach(id=>document.getElementById(id).classList.add('hidden'));
  document.getElementById('sellerAuthView').classList.remove('hidden');
- document.getElementById('homeBtn')?.style.display='none';
+ 
  document.getElementById('logoutBtn').style.display='none';
  document.querySelector('#sellerAuthView .eyebrow').textContent='Accesso piattaforma';
  document.querySelector('#sellerAuthView h1').textContent='Benvenuto.';
@@ -896,7 +896,7 @@ async function verifyClientPin(){
   document.getElementById('clientPinPanel').classList.add('hidden');
   document.getElementById('clientStartPanel').classList.remove('hidden');
   document.getElementById('clientPinMsg').textContent='';
-  document.getElementById('homeBtn')?.style.display='inline-block';
+  
   if(clientExpiryTimer)clearTimeout(clientExpiryTimer);
   const expiresAt=Date.parse(data.expiresAt);
   if(!Number.isFinite(expiresAt)||expiresAt<=Date.now())throw new Error('La sessione ricevuta non è valida o è già scaduta.');
@@ -905,7 +905,7 @@ async function verifyClientPin(){
    clearClientSessionState();
    document.getElementById('clientView').classList.add('hidden');
    document.getElementById('homeView').classList.remove('hidden');
-   document.getElementById('homeBtn')?.style.display='none';
+   
    alert('Sessione scaduta. Scansiona nuovamente il QR code.');
   },expiresAt-Date.now());
  }catch(e){
@@ -913,7 +913,7 @@ async function verifyClientPin(){
   try{await api.signOut(api.auth)}catch(ignore){}
   document.getElementById('clientPinPanel').classList.remove('hidden');
   document.getElementById('clientStartPanel').classList.add('hidden');
-  document.getElementById('homeBtn')?.style.display='none';
+  
   msg.textContent=e.message||'Accesso non riuscito.';
  }finally{btn.disabled=false}
 }
@@ -931,7 +931,7 @@ async function startQrClientEntry(){
  document.getElementById('clientShopPanel').classList.add('hidden');
  document.getElementById('clientStartPanel').classList.add('hidden');
  document.querySelector('#clientView .hero').classList.add('hidden');
- document.getElementById('homeBtn')?.style.display='none';
+ 
  document.getElementById('clientPinInput').focus();
  return true;
 }
@@ -944,7 +944,7 @@ async function startClientMode(){
  document.getElementById('sellerAuthView').classList.add('hidden');
  document.getElementById('clientView').classList.remove('hidden');
  document.getElementById('storeView').classList.add('hidden');
- document.getElementById('homeBtn')?.style.display='inline-block';
+ 
  step=0;answers={};document.getElementById('results').classList.add('hidden');
  currentShopId='';
  const panel=document.getElementById('clientShopPanel'),sel=document.getElementById('clientShopSelect');
@@ -1001,7 +1001,7 @@ function requestSellerAccess(){
  document.getElementById('storeView').classList.add('hidden');
  document.getElementById('adminView').classList.add('hidden');
  document.getElementById('sellerAuthView').classList.remove('hidden');
- document.getElementById('homeBtn')?.style.display='none';
+ 
  document.getElementById('sellerPassword').value='';
  document.getElementById('sellerUsername').value='';
  document.getElementById('sellerAuthMsg').textContent='Accesso dipendenti o amministratore.';
@@ -1238,7 +1238,7 @@ async function verifySellerPassword(){
   document.getElementById('sellerAuthView').classList.add('hidden');
   document.getElementById('sellerPassword').value='';
   document.getElementById('sellerUsername').value='';
-  document.getElementById('homeBtn')?.style.display='inline-block';
+  
   document.getElementById('logoutBtn').style.display='inline-block';
   if(profile.role==='admin'){
    await loadShopDirectory();
@@ -1261,7 +1261,7 @@ async function verifySellerPassword(){
   try{if(window.firebaseApi)await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(_){}
   ['sellerShopView','storeView','adminView','clientView'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
   document.getElementById('sellerAuthView').classList.remove('hidden');
-  document.getElementById('homeBtn')?.style.display='none';
+  
  }
 }
 function applyStockMappings(){
