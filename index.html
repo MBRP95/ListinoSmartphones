@@ -479,7 +479,14 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 #shopSyncPreview .tablewrap .rowbtn{background:#292018!important;color:#ffe1a3!important;border:1px solid #79512b!important}
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-</head><body>
+<style>
+/* Seller header: isolate title and text from decorative layers. */
+#storeView > .hero{position:relative!important;display:block!important;isolation:isolate!important;overflow:visible!important;min-height:0!important;height:auto!important;background:#080808!important;background-image:none!important;padding:12px 0 26px!important;border:0!important;box-shadow:none!important}
+#storeView > .hero::before,#storeView > .hero::after{display:none!important;content:none!important;background:none!important}
+#storeView > .hero .eyebrow,#storeView > .hero h1,#storeView > .hero .sub{position:relative!important;z-index:10!important;background:transparent!important;background-image:none!important;float:none!important;clear:both!important;transform:none!important}
+#storeView > .hero h1{display:block!important;width:100%!important;max-width:100%!important;margin:9px 0 12px!important;padding:0!important;line-height:1.2!important;overflow:visible!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;text-shadow:none!important}
+#storeView > .hero .sub{display:block!important;width:100%!important;max-width:760px!important;margin:0!important}
+</style></head><body>
 <header><div class="brand">DEVICE PROPOSER<small>SMARTPHONE SALES ASSISTANT</small></div><nav><button id="homeBtn" onclick="goBack()" style="display:none">Indietro</button><button id="logoutBtn" class="secondary" onclick="logoutStaff()" style="display:none;margin-left:8px">Esci</button></nav></header>
 <main>
 <section id="sellerAuthView" class="hidden">
@@ -490,7 +497,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <div class="actions"><button class="secondary" onclick="goHome()">Indietro</button><button class="primary" onclick="verifySellerPassword()">Accedi</button></div>
 </div></section>
 
-<section id="homeView" class="home-dashboard">
+<section id="homeView" class="home-dashboard hidden">
 <div class="home-intro">
  <div class="home-copy"><div class="eyebrow">SMARTPHONE · CONSULENZA · GESTIONE</div><h1>La scelta giusta<br>parte da qui.</h1><p class="sub">Uno spazio unico per guidare il cliente verso il dispositivo più adatto e gestire catalogo, prezzi e disponibilità del punto vendita.</p><span class="home-status"><i></i> Piattaforma operativa</span></div>
  <div class="home-art" aria-hidden="true"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-phone"><span></span><b></b><i></i></div><div class="art-chip">DEVICE<br>PROPOSER</div></div>
@@ -796,6 +803,8 @@ function requestUnifiedAccess(){
 function enterClient(){requestUnifiedAccess()}
 async function startSellerMode(){
  const msg=document.getElementById('sellerShopMsg');
+ const statusFilter=document.getElementById('catalogStatusFilter');
+ if(statusFilter)statusFilter.value='all';
  let phase='inizializzazione sessione dipendente';
  try{
   const api=window.firebaseApi;
@@ -1804,6 +1813,11 @@ async function confirmShopCatalogImport(){
  const selected=[...document.querySelectorAll('.shop-sync-check:checked')].map(x=>x.value);
  if(!selected.length){box.textContent='Seleziona almeno un negozio.';return}
  const missing=data.rows.filter(x=>selected.includes(x.shopId)&&x.catalogIndex<0);
+ if(missing.length){
+  const preview=missing.slice(0,8).map(x=>x.sku+' — '+x.description).join('\n');
+  box.textContent='Sincronizzazione bloccata: '+missing.length+' codici del file non sono associati a una variante del catalogo. Associali tutti prima di confermare, altrimenti rischi di disattivare dispositivi presenti in negozio.\n'+preview+(missing.length>8?'\n…':'');
+  return;
+ }
  if(selected.length>240){box.textContent='Troppi negozi selezionati per una singola operazione. Dividi il file in più importazioni (massimo 240 per volta).';return}
  const api=window.firebaseApi,db=api.db;let changed=0,enabled=0,disabled=0;
  try{
@@ -2250,12 +2264,14 @@ async function init(){
  try{
   while(!window.firebaseApi){await new Promise(resolve=>window.addEventListener('firebase-ready',resolve,{once:true}))}
   if(qrShopFromUrl()){await startQrClientEntry();return}
-  // Firebase conserva la sessione sul dispositivo: dopo un refresh riapriamo
-  // l'area Admin o Negozio senza richiedere nuovamente le credenziali.
+  // Mostra la home soltanto dopo aver verificato la sessione salvata.
   try{if(await restoreStaffSession())return;}
   catch(e){console.error('Ripristino sessione non riuscito:',e);try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(_){}}
   document.getElementById('homeView').classList.remove('hidden');
- }catch(e){console.error('Device Proposer startup error:',e)}
+ }catch(e){
+  console.error('Device Proposer startup error:',e);
+  document.getElementById('homeView').classList.remove('hidden');
+ }
 }
 
 init();
