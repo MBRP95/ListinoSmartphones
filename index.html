@@ -1521,40 +1521,73 @@ function downloadStoreCredentials(){
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function importedTextParts(value){
- let raw=String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
- raw=raw.split('+')[0].replace(/\b(?:moto\s+buds|earbuds|buds|active)\b.*$/i,' ');
- const storageMatch=raw.match(/\b(?:64|128|256|512|1024|2048)\s*gb\b/i);
- const storage=storageMatch?Number(storageMatch[0].replace(/[^0-9]/g,'')):0;
+ const original=String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ let raw=original;
+ // Legge la memoria prima di rimuovere accessori: alcuni nomi catalogo hanno "G77 + moto buds 256GB".
+ const storageMatches=[...original.matchAll(/(64|128|256|512|1024|2048)\s*gb|([1-2])\s*tb/ig)];
+ let storage=0;
+ if(storageMatches.length){
+  const m=storageMatches[storageMatches.length-1];
+  storage=m[2]?Number(m[2])*1024:Number(m[1]);
+ }else{
+  // Alcune varianti Honor/Oppo/Samsung riportano la memoria senza "GB".
+  const bare=original.match(/\b(64|128|256|512|1024|2048)\b(?=\s*(?:black|white|silver|gray|grey|blue|graphite|titanium|stellar|twilight|corsair|olive|night|cloud|light|cosmic|burgundy))/i);
+  if(bare)storage=Number(bare[1]);
+ }
+ // Accessori inclusi nel bundle, non parte del modello.
+ raw=raw.replace(/\+\s*(?:x7e|moto\s+buds).*$/i,' ')
+        .replace(/\b(?:earbuds|moto\s+buds|buds)\b.*$/i,' ');
+ // Rimuove RAM e memoria (anche con GB attaccato al colore).
+ raw=raw.replace(/\b\d{1,2}\s*[+\/-]\s*(?:64|128|256|512|1024|2048)\s*gb/ig,' ')
+        .replace(/\b\d{1,2}\s*gb/ig,' ')
+        .replace(/\b(?:64|128|256|512|1024|2048)\s*gb/ig,' ')
+        .replace(/\b[1-2]\s*tb/ig,' ');
+ if(storage){
+  raw=raw.replace(/\b(?:64|128|256|512|1024|2048)\b(?=\s*(?:black|white|silver|gray|grey|blue|graphite|titanium|stellar|twilight|corsair|olive|night|cloud|light|cosmic|burgundy))/ig,' ');
+  raw=raw.replace(/(?<=s26)\s+(?:256|512)\b/ig,' ');
+ }
  const colors=['black titanium','natural titanium','white titanium','black olive','stellar black','twilight black','midnight black','space black','cloud white','cosmic orange','deep blue','jet black','sky blue','light gold','night sky','mist blue','graphite','midnight','starlight','natural','titanium','beige','cream','lavender','mint','orange','teal','burgundy','corsair','olive','sage','black','white','blue','green','red','purple','pink','yellow','silver','gold','gray','grey','twilight'];
  let color=colors.find(c=>new RegExp('\\b'+c.replace(/ /g,'\\s+')+'\\b','i').test(raw))||'';
  if(color==='twilight')color='twilight black';
- raw=raw.replace(/\b\d{1,2}\s*[+\/-]\s*\d{2,4}\s*gb\b/ig,' ')
-  .replace(/\b\d{1,2}\s*[\/-]\s*\d{2,4}\s*gb\b/ig,' ')
-  .replace(/\b\d{1,2}\s*gb\b/ig,' ')
-  .replace(/\b(?:64|128|256|512|1024|2048)\s*gb\b/ig,' ')
-  .replace(/\b(?:4g|5g|lte|wifi|wi-fi)\b/ig,' ')
+ if(color==='grey')color='gray';
+ raw=raw.replace(/\bpantone\b/ig,' ');
+ for(const c of colors.slice().sort((a,b)=>b.length-a.length)){
+  raw=raw.replace(new RegExp('\\b'+c.replace(/ /g,'\\s+')+'\\b','ig'),' ');
+ }
+ raw=raw.replace(/\b(?:4g|5g|lte|wifi|wi-fi)\b/ig,' ')
   .replace(/\b(?:apple|samsung|galaxy|motorola|moto|honor|oppo|realme|xiaomi|redmi|poco|google|pixel)\b/ig,' ')
-  .replace(/\b(?:black titanium|natural titanium|white titanium|black olive|stellar black|twilight black|midnight black|space black|cloud white|cosmic orange|deep blue|jet black|sky blue|light gold|night sky|mist blue|graphite|midnight|starlight|natural|titanium|beige|cream|lavender|mint|orange|teal|burgundy|corsair|olive|sage|black|white|blue|green|red|purple|pink|yellow|silver|gold|gray|grey|twilight)\b/ig,' ')
-  .replace(/[^a-z0-9]+/g,' ').trim();
- raw=raw.replace(/\bz\s*(flip|fold)\s*(\d+)/g,'z$1 $2').replace(/\bpro\s*max\b/g,'promax').replace(/\s+/g,' ').trim();
+  .replace(/\bh600\b/ig,'600')
+  .replace(/\bz\s*(flip|fold)\s*(\d+)/ig,'z$1 $2')
+  .replace(/\bpro\s*max\b/ig,'promax')
+  .replace(/\breno\s+(\d+)\s+f\b/ig,'reno $1f')
+  .replace(/[^a-z0-9]+/g,' ').trim()
+  .replace(/\s+/g,' ');
  return {tokens:raw.split(' ').filter(Boolean),storage,color};
 }
 function suggestImportedCatalogMatch(description){
  const query=importedTextParts(description);
  if(!query.tokens.length)return {index:-1,status:'none',candidates:[]};
- const optionalVariantWords=new Set(['pro','promax','max','plus','ultra','fe','lite','smart','edge','air','duo','flip','fold']);
+ const wanted=query.tokens.join(' ');
  const candidates=[];
  catalog.forEach((p,i)=>{
   const item=importedTextParts(p.name);
   if(!item.tokens.length)return;
+  const model=item.tokens.join(' ');
+  // Per queste famiglie il gestionale può omettere Plus/Ultra: non scegliere una variante alla cieca.
+  const sameModel=model===wanted ||
+   (wanted==='s26'&&/^s26(?: plus| ultra)?$/.test(model)) ||
+   (wanted==='zfold 8'&&/^zfold 8(?: ultra)?$/.test(model));
+  if(!sameModel)return;
   if(query.storage&&item.storage!==query.storage)return;
-  if(!query.storage&&item.storage)return;
-  if(query.color&&item.color!==query.color)return;
-  const full=item.tokens.join(' '),wanted=query.tokens.join(' ');
-  const reduced=item.tokens.filter(t=>!optionalVariantWords.has(t)).join(' ');
-  if(full===wanted||reduced===wanted)candidates.push(i);
+  if(query.color&&item.color&&query.color!==item.color)return;
+  candidates.push(i);
  });
- if(candidates.length===1)return {index:candidates[0],status:'auto',candidates};
+ if(candidates.length===1){
+  const item=importedTextParts(catalog[candidates[0]].name);
+  // Se manca la memoria nella descrizione ma la variante catalogo la specifica, serve conferma manuale.
+  if(!query.storage&&item.storage)return {index:-1,status:'ambiguous',candidates};
+  return {index:candidates[0],status:'auto',candidates};
+ }
  return {index:-1,status:candidates.length?'ambiguous':'none',candidates:candidates.slice(0,12)};
 }
 function renderShopCatalogImportPreview(){
