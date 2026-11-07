@@ -1231,9 +1231,12 @@ function scopedStock(){
  const shopId=currentUserProfile?.role==='seller'?(selectedShopFilter||currentUserProfile.shopId):currentShopId;
  return stock.filter(s=>(!shopId||s.shopId===shopId||(!s.shopId&&String(s.shop||'').startsWith(shopId)))&&String(s.warehouse||'').toLowerCase()==='vendibile'&&available(s)>0);
 }
-function changeShopFilter(){
+async function changeShopFilter(){
  const sel=document.getElementById('shopFilter');
  selectedShopFilter=String(sel?.value||'__all__').trim();
+ if(currentUserProfile?.role==='admin'&&selectedShopFilter!=='__all__'){
+  try{await loadShopCatalog(selectedShopFilter);}catch(e){alert('Impossibile caricare il catalogo del negozio: '+e.message);return;}
+ }else if(currentUserProfile?.role==='admin'){enabledDeviceIds=[];shopCatalogLoaded=false;}
  renderCatalog();
 }
 function setupShopFilter(){
@@ -1260,8 +1263,8 @@ function storeAvailabilityFor(index){
 function renderCatalog(){
  const searchInput=document.getElementById('catalogSearch'),brandInput=document.getElementById('brandFilter');
  const q=norm(searchInput?.value||''),b=norm(brandInput?.value||'');
- const role=currentUserProfile?.role,isScoped=role==='seller'||role==='client';
- const source=isScoped?productsForShop():catalog.map((p,i)=>({p,i}));
+ const role=currentUserProfile?.role,isClient=role==='client';
+ const source=isClient?productsForShop():catalog.map((p,i)=>({p,i}));
  const canStock=role==='admin'||(role==='seller'&&currentUserProfile?.canViewStock===true);
  const rows=source.filter(({p})=>{
   const searchable=norm([p.name,p.brand,p.model,p.sku].filter(Boolean).join(' '));
@@ -1270,9 +1273,9 @@ function renderCatalog(){
  });
  const target=document.getElementById('catalogRows');if(!target)return;
  target.innerHTML=rows.length?rows.map(({p,i})=>{
-  const enabled=isScoped||enabledDeviceIds.includes(catalogDocId(p));
+  const enabled=role==='client'||enabledDeviceIds.includes(catalogDocId(p));
   const stores=canStock?storeAvailabilityFor(i):[];
-  const availability=canStock?stores.map(st=>esc(st.name)+': '+st.qty).join(' · '):(isScoped?(enabled?'Attivo nel catalogo':'Non attivo'):'—');
+  const availability=canStock?stores.map(st=>esc(st.name)+': '+st.qty).join(' · '):((role==='seller'||role==='client')?(enabled?'Attivo nel catalogo':'Non attivo'):'—');
   const toggle=role==='admin'||role==='seller'?'<button class="rowbtn" onclick="setShopDeviceEnabled('+i+','+(!enabled)+').catch(e=>alert(e.message))">'+(enabled?'Disattiva':'Attiva')+'</button>':'';
   return `<tr><td>${esc(p.name)}</td><td>${esc(p.band||'—')}</td><td>${money(p.vendorPrice)}</td><td>${(p.offers||[]).length}</td><td>${availability}</td><td><button class="rowbtn" onclick="showDetail(${i})">Dettaglio</button> ${toggle}</td></tr>`;
  }).join(''):'<tr><td colspan="6" class="muted">Nessuno smartphone trovato con i filtri correnti.</td></tr>';
@@ -1393,7 +1396,7 @@ function productsForShop(){
 }
 async function setShopDeviceEnabled(index,enabled){
  if(!['admin','seller'].includes(currentUserProfile?.role))throw new Error('Operazione non autorizzata.');
- const shopId=currentUserProfile.role==='seller'?currentUserProfile.shopId:currentShopId;
+ const shopId=currentUserProfile.role==='seller'?currentUserProfile.shopId:String(selectedShopFilter||currentShopId||'').trim();
  if(!shopId)throw new Error('Negozio non selezionato.');
  const p=catalog[index];if(!p)throw new Error('Dispositivo non valido.');
  const api=window.firebaseApi,ref=api.doc(api.db,'shopCatalog',shopId),next=new Set(enabledDeviceIds);
