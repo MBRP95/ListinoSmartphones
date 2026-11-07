@@ -92,8 +92,7 @@ function sellerOwnsShop(shopId) {
     }
 
     match /shopCatalog/{shopId} {
-      allow get, list: if isAdmin() ||
-        sellerOwnsShop(shopId) ||
+      allow get, list: if isAdmin() || isSeller() ||
         (isClient() && clientShopId() == shopId);
       allow create, update: if isAdmin() || sellerOwnsShop(shopId);
       allow delete: if isAdmin();
