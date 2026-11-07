@@ -583,7 +583,24 @@ let stockUpdatedAt=null;
 function formatUpdateDate(value){if(!value)return 'Non disponibile';let date=null;try{date=typeof value.toDate==='function'?value.toDate():value instanceof Date?value:new Date(value)}catch(_){}if(!date||Number.isNaN(date.getTime()))return 'Non disponibile';return new Intl.DateTimeFormat('it-IT',{dateStyle:'short',timeStyle:'short'}).format(date)}
 function renderDataFreshness(){['adminView','storeView'].forEach(viewId=>{const view=document.getElementById(viewId);if(!view)return;let box=view.querySelector('.data-freshness');if(!box){box=document.createElement('div');box.className='data-freshness';const hero=view.querySelector('.hero');if(hero)hero.insertAdjacentElement('afterend',box);else view.insertAdjacentElement('afterbegin',box)}box.innerHTML='<span><b>Ultimo aggiornamento promozioni</b>'+formatUpdateDate(catalogUpdatedAt)+'</span><span><b>Ultimo aggiornamento magazzino</b>'+formatUpdateDate(stockUpdatedAt)+'</span>'})}
 function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/iphone\s*promax/g,'iphone pro max').replace(/samsung\s+galaxy/g,'galaxy').replace(/[^a-z0-9]+/g,' ').trim()}
-function brandOf(s){let n=norm(s);return ['apple','samsung','motorola','honor','oppo','realme','xiaomi','google'].find(b=>n.includes(b))||''}
+function brandOf(s,explicitBrand=''){
+ const aliases=[
+  ['apple',['apple','iphone']],
+  ['samsung',['samsung','galaxy']],
+  ['motorola',['motorola','moto']],
+  ['honor',['honor']],
+  ['oppo',['oppo']],
+  ['realme',['realme']],
+  ['xiaomi',['xiaomi','redmi','poco']],
+  ['google',['google','pixel']]
+ ];
+ const clean=v=>String(v||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+ const explicit=clean(explicitBrand);
+ for(const [brand,terms] of aliases){if(terms.some(term=>explicit.split(' ').includes(term)))return brand;}
+ const words=clean(s).split(' ');
+ for(const [brand,terms] of aliases){if(terms.some(term=>words.includes(term)))return brand;}
+ return '';
+}
 function available(s){return Math.max(0,(Number(s.stock)||0)-(Number(s.reserved)||0))}
 function mapped(s){if(Number.isInteger(mappings[s.sku]))return mappings[s.sku];if(s.catalogName){const i=catalog.findIndex(p=>norm(p.name)===norm(s.catalogName));if(i>=0)return i}return -1}
 function matchScore(a,b){
@@ -1439,7 +1456,7 @@ function renderCatalog(){
  const canStock=role==='admin';
  const rows=source.filter(({p})=>{
   const searchable=norm([p.name,p.brand,p.model,p.sku].filter(Boolean).join(' '));
-  const brand=norm(brandOf(p.name)||p.brand||'');
+  const brand=brandOf(p.name,p.brand);
   const active=enabledDeviceIds.includes(catalogDocId(p));
   return (!q||searchable.includes(q))&&(!b||brand===b)&&(role!=='seller'||status==='all'||(status==='enabled'&&active)||(status==='disabled'&&!active));
  });
@@ -1477,7 +1494,7 @@ function showDetail(index){
 function sellerPrepareProposal(index){const p=catalog[index];if(!p)return;selectedDeviceIndex=index;selectedOfferIndex=0;const skuItem=stock.find(x=>mapped(x)===index);selectedDeviceSku=skuItem?.sku||'CATALOGO';const offers=p.offers||[];if(!offers.length){alert('Questo modello non ha promozioni configurate.');return}const choices=offers.map((o,i)=>'<button class="device choice offer-choice '+(i===0?'selected':'')+'" onclick="sellerChooseOffer('+i+')"><b>'+esc(o.plan)+'</b><small>'+esc(o.method||'')+'</small><strong>'+(o.amounts||[]).map(money).join(' · ')+'</strong></button>').join('');document.getElementById('detailBox').insertAdjacentHTML('beforeend','<h3 style="margin-top:18px">Scegli la promozione</h3><div class="cards offer-grid" id="sellerOfferChoices">'+choices+'</div><div class="actions"><button class="primary" onclick="generateProposalPdf()">Conferma</button></div>')}
 function sellerChooseOffer(i){const p=catalog[selectedDeviceIndex];if(!p?.offers?.[i])return;selectedOfferIndex=i;document.querySelectorAll('#sellerOfferChoices button').forEach((b,n)=>b.classList.toggle('selected',n===i))}
 function closeDetail(){document.getElementById('detailPanel').classList.add('hidden');document.getElementById('detailBox').innerHTML=''}
-function renderAll(){const count=document.getElementById('catalogCount');if(count)count.textContent=catalog.length;setupShopFilter();refreshShopQrTarget();let brands=[...new Set(catalog.map(p=>brandOf(p.name)).filter(Boolean))].sort();let sel=document.getElementById('brandFilter');if(sel){let old=sel.value;sel.innerHTML='<option value="">Tutte</option>'+brands.map(b=>`<option value="${b}">${b[0].toUpperCase()+b.slice(1)}</option>`).join('');sel.value=old;}renderStock();renderCatalog()}
+function renderAll(){const count=document.getElementById('catalogCount');if(count)count.textContent=catalog.length;setupShopFilter();refreshShopQrTarget();let brands=[...new Set(catalog.map(p=>brandOf(p.name,p.brand)).filter(Boolean))].sort();let sel=document.getElementById('brandFilter');if(sel){let old=sel.value;sel.innerHTML='<option value="">Tutte</option>'+brands.map(b=>`<option value="${b}">${b[0].toUpperCase()+b.slice(1)}</option>`).join('');sel.value=old;}renderStock();renderCatalog()}
 
 let pendingShopCatalogImport=null;
 let lastCreatedStoreCredentials=[];
