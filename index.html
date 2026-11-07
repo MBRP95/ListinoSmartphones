@@ -620,7 +620,7 @@ async function changeStorePassword(){
  try{await callUserAdminApi('/password/change',{newPassword:next});msg.textContent='Password aggiornata. Comunicala al personale autorizzato.';}
  catch(e){msg.textContent='Cambio password non riuscito: '+e.message;}
 }
-function goHome(){
+async function goHome(){
  if(clientExpiryTimer){clearTimeout(clientExpiryTimer);clientExpiryTimer=null;}
  if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}
  clearClientSessionState();
