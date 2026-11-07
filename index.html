@@ -1055,8 +1055,9 @@ async function resetSelectedStorePasswords(){
  try{
   const response=await callUserAdminApi('/users/reset-store-passwords',{shopIds:selected});
   lastResetStoreCredentials=response.credentials||[];
-  result.innerHTML='<h4>Password temporanee generate: '+lastResetStoreCredentials.length+'</h4><div class="tablewrap"><table><thead><tr><th>Negozio</th><th>Username</th><th>Nuova password temporanea</th></tr></thead><tbody>'+lastResetStoreCredentials.map(x=>'<tr><td>'+esc(x.shopId)+'</td><td><code>'+esc(x.username)+'</code></td><td><code>'+esc(x.tempPassword)+'</code></td></tr>').join('')+'</tbody></table></div><button type="button" class="secondary" onclick="downloadResetStoreCredentials()">Scarica credenziali (.txt)</button><p class="hint">Le password precedenti non sono più valide. Consegna le nuove credenziali in modo riservato; al primo accesso sarà richiesto il cambio password.</p>';
-  msg.textContent='Operazione completata. Account aggiornati: '+lastResetStoreCredentials.length+'.';
+  const failed=response.failed||[];
+  result.innerHTML=(lastResetStoreCredentials.length?'<h4>Password temporanee generate: '+lastResetStoreCredentials.length+'</h4><div class="tablewrap"><table><thead><tr><th>Negozio</th><th>Username</th><th>Nuova password temporanea</th></tr></thead><tbody>'+lastResetStoreCredentials.map(x=>'<tr><td>'+esc(x.shopId)+'</td><td><code>'+esc(x.username)+'</code></td><td><code>'+esc(x.tempPassword)+'</code></td></tr>').join('')+'</tbody></table></div><button type="button" class="secondary" onclick="downloadResetStoreCredentials()">Scarica credenziali (.txt)</button><p class="hint">Le password precedenti non sono più valide. Consegna le nuove credenziali in modo riservato; al primo accesso sarà richiesto il cambio password.</p>':'<p>Nessuna password aggiornata.</p>')+(failed.length?'<div class="notice">Non aggiornati: '+failed.map(x=>esc(x.shopId)+' ('+esc(x.error)+')').join(', ')+'. La richiesta di cambio password al prossimo accesso è stata comunque impostata.</div>':'');
+  msg.textContent=failed.length?'Operazione parziale. Password aggiornate: '+lastResetStoreCredentials.length+'. Da verificare: '+failed.length+'.':'Operazione completata. Account aggiornati: '+lastResetStoreCredentials.length+'.';
  }catch(e){msg.textContent='Rigenerazione non completata: '+e.message}
  finally{btn.disabled=false}
 }
