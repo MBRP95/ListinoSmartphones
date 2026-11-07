@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:rules": "firebase emulators:exec --only firestore --project demo-listino-smartphones \"mocha --timeout 10000 tests/firestore.rules.test.js\""
+    "test:rules": "firebase emulators:exec --only firestore --project demo-listino-smartphones \"mocha --timeout 10000 tests/firestore.rules.test.js\"",
+    "test:frontend": "node --test tests/frontend-smoke.test.cjs",
+    "test": "npm run test:frontend && npm run test:rules"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
