@@ -428,15 +428,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 #clientView .client-answer.selected .answer-radio:after{background:#ffbd4a!important}
 #clientView .answer-arrow{color:#c6b49b!important}
 #clientView .client-answer.selected .answer-arrow{color:#ffbd4a!important}
-@media print {
- body * { visibility: hidden !important; }
- #shopQrPrintCard, #shopQrPrintCard * { visibility: visible !important; }
- #shopQrPrintCard { position: absolute; left: 0; top: 0; width: 100%; padding: 24mm 12mm; box-sizing: border-box; color: #111; background: #fff; text-align: center; }
- #shopQrPrintCard h2 { font-size: 24pt; margin-bottom: 8mm; }
- #shopQrCanvas { display: inline-block !important; padding: 8mm !important; border: 0 !important; }
- #shopQrUrl, #shopQrPrintCard .hint { display: none !important; }
- @page { size: A5 portrait; margin: 10mm; }
-}
+
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head><body>
