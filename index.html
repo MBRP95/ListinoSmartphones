@@ -660,6 +660,7 @@ function requestUnifiedAccess(){
 function enterClient(){requestUnifiedAccess()}
 async function startSellerMode(){
  const msg=document.getElementById('sellerShopMsg');
+ let phase='inizializzazione sessione dipendente';
  try{
   const api=window.firebaseApi;
   if(!api?.db||!api.auth?.currentUser)throw new Error('Sessione Firebase non valida.');
@@ -667,13 +668,15 @@ async function startSellerMode(){
   if(!shopId)throw new Error('Questo account Seller non è associato a un negozio. Assegna il negozio dal profilo Admin.');
   currentShopId=shopId;selectedShopFilter=shopId;
   msg.textContent='Caricamento catalogo commerciale di '+shopId+'…';
+  phase='lettura shopCatalog/'+shopId+' (controllo associazione account/negozio)';
   await loadShopCatalog(shopId);
   stock=[];mappings={};stockUpdatedAt=null;
+  phase='apertura interfaccia negozio';
   document.getElementById('sellerShopView').classList.add('hidden');
   document.getElementById('storeView').classList.remove('hidden');
   document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
   renderDataFreshness();renderAll();
- }catch(e){msg.textContent='Impossibile aprire il negozio associato: '+e.message;console.error('startSellerMode:',e);throw e;}
+ }catch(e){msg.textContent='Impossibile aprire il negozio associato ('+phase+'): '+e.message;console.error('startSellerMode:',phase,e);throw e;}
 }
 async function confirmSellerShop(){
  const id=document.getElementById('sellerShopSelect').value;
@@ -1014,12 +1017,14 @@ async function verifySellerPassword(){
  const username=document.getElementById('sellerUsername').value.trim().toLowerCase();
  const pw=document.getElementById('sellerPassword').value;
  const msg=document.getElementById('sellerAuthMsg');
+ let phase='autenticazione Firebase';
  if(!username||!pw){msg.textContent='Inserisci username e password.';return}
  try{
   if(!window.firebaseApi)throw new Error('Firebase non è ancora pronto. Riprova.');
   const email=username.includes('@')?username:username+'@deviceproposer.invalid';
   const {auth,signInWithEmailAndPassword,doc,getDoc}=window.firebaseApi;
   const credential=await signInWithEmailAndPassword(auth,email,pw);
+  phase='lettura profilo users/'+credential.user.uid;
   const profileSnap=await getDoc(doc(window.firebaseApi.db,'users',credential.user.uid));
   if(!profileSnap.exists())throw new Error('Profilo utente non configurato in Firestore.');
   const profile=profileSnap.data();
@@ -1032,8 +1037,8 @@ async function verifySellerPassword(){
   requestedAccessRole='staff';
   currentUserProfile={...profile,uid:credential.user.uid};
   selectedShopFilter='';
-  if(profile.role==='admin') await loadAuthenticatedData({loadStock:true});
-  else { await loadCatalogFromFirestore(); stock=[]; mappings={}; }
+  if(profile.role==='admin'){phase='caricamento dati amministratore';await loadAuthenticatedData({loadStock:true});}
+  else {phase='caricamento catalogo generale del dipendente';await loadCatalogFromFirestore(); stock=[]; mappings={}; }
   document.getElementById('sellerAuthView').classList.add('hidden');
   document.getElementById('sellerPassword').value='';
   document.getElementById('sellerUsername').value='';
@@ -1049,11 +1054,12 @@ async function verifySellerPassword(){
    document.getElementById('sellerShopView').classList.add('hidden');
    document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
    selectedShopFilter=profile.shopId||'';currentShopId=profile.shopId||'';
+   phase='apertura negozio assegnato al dipendente';
    await startSellerMode();
   }
  }catch(e){
   clientLoginVerified=false;
-  msg.textContent=e.code==='auth/invalid-credential'?'Username o password non corretti.':e.message;
+  msg.textContent=e.code==='auth/invalid-credential'?'Username o password non corretti.':'Errore durante '+phase+': '+e.message;
   currentUserProfile=null;
   try{if(window.firebaseApi)await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(_){}
   ['sellerShopView','storeView','adminView','clientView'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
