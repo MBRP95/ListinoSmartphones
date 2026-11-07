@@ -1521,21 +1521,21 @@ function downloadStoreCredentials(){
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function importedTextParts(value){
- let raw=String(value||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
- raw=raw.split('+')[0].replace(/\\b(?:moto\\s+buds|earbuds|buds|active)\\b.*$/i,' ');
- const storageMatch=raw.match(/\\b(?:64|128|256|512|1024|2048)\\s*gb\\b/i);
+ let raw=String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ raw=raw.split('+')[0].replace(/\b(?:moto\s+buds|earbuds|buds|active)\b.*$/i,' ');
+ const storageMatch=raw.match(/\b(?:64|128|256|512|1024|2048)\s*gb\b/i);
  const storage=storageMatch?Number(storageMatch[0].replace(/[^0-9]/g,'')):0;
  const colors=['black titanium','natural titanium','white titanium','black olive','stellar black','twilight black','midnight black','space black','cloud white','cosmic orange','deep blue','jet black','sky blue','light gold','night sky','mist blue','graphite','midnight','starlight','natural','titanium','beige','cream','lavender','mint','orange','teal','burgundy','corsair','olive','sage','black','white','blue','green','red','purple','pink','yellow','silver','gold','gray','grey','twilight'];
- let color=colors.find(c=>new RegExp('\\\\b'+c.replace(/ /g,'\\\\s+')+'\\\\b','i').test(raw))||'';
+ let color=colors.find(c=>new RegExp('\\b'+c.replace(/ /g,'\\s+')+'\\b','i').test(raw))||'';
  if(color==='twilight')color='twilight black';
- raw=raw.replace(/\\b\\d{1,2}\\s*[\\/-]\\s*\\d{2,4}\\s*gb\\b/ig,' ')
-  .replace(/\\b\\d{1,2}\\s*gb\\b/ig,' ')
-  .replace(/\\b(?:64|128|256|512|1024|2048)\\s*gb\\b/ig,' ')
-  .replace(/\\b(?:4g|5g|lte|wifi|wi-fi)\\b/ig,' ')
-  .replace(/\\b(?:apple|samsung|galaxy|motorola|moto|honor|oppo|realme|xiaomi|redmi|poco|google|pixel)\\b/ig,' ')
-  .replace(/\\b(?:black titanium|natural titanium|white titanium|black olive|stellar black|twilight black|midnight black|space black|cloud white|cosmic orange|deep blue|jet black|sky blue|light gold|night sky|mist blue|graphite|midnight|starlight|natural|titanium|beige|cream|lavender|mint|orange|teal|burgundy|corsair|olive|sage|black|white|blue|green|red|purple|pink|yellow|silver|gold|gray|grey|twilight)\\b/ig,' ')
+ raw=raw.replace(/\b\d{1,2}\s*[\/-]\s*\d{2,4}\s*gb\b/ig,' ')
+  .replace(/\b\d{1,2}\s*gb\b/ig,' ')
+  .replace(/\b(?:64|128|256|512|1024|2048)\s*gb\b/ig,' ')
+  .replace(/\b(?:4g|5g|lte|wifi|wi-fi)\b/ig,' ')
+  .replace(/\b(?:apple|samsung|galaxy|motorola|moto|honor|oppo|realme|xiaomi|redmi|poco|google|pixel)\b/ig,' ')
+  .replace(/\b(?:black titanium|natural titanium|white titanium|black olive|stellar black|twilight black|midnight black|space black|cloud white|cosmic orange|deep blue|jet black|sky blue|light gold|night sky|mist blue|graphite|midnight|starlight|natural|titanium|beige|cream|lavender|mint|orange|teal|burgundy|corsair|olive|sage|black|white|blue|green|red|purple|pink|yellow|silver|gold|gray|grey|twilight)\b/ig,' ')
   .replace(/[^a-z0-9]+/g,' ').trim();
- raw=raw.replace(/\\bz\\s*(flip|fold)\\s*(\\d+)/g,'z$1 $2').replace(/\\bpro\\s*max\\b/g,'promax').replace(/\\s+/g,' ').trim();
+ raw=raw.replace(/\bz\s*(flip|fold)\s*(\d+)/g,'z$1 $2').replace(/\bpro\s*max\b/g,'promax').replace(/\s+/g,' ').trim();
  return {tokens:raw.split(' ').filter(Boolean),storage,color};
 }
 function suggestImportedCatalogMatch(description){
