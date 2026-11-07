@@ -1266,7 +1266,7 @@ function renderCatalog(){
  const q=norm(searchInput?.value||''),b=norm(brandInput?.value||''),status=document.getElementById('catalogStatusFilter')?.value||'all';
  const role=currentUserProfile?.role,isClient=role==='client';
  const source=isClient?productsForShop():catalog.map((p,i)=>({p,i}));
- const canStock=role==='admin'||(role==='seller'&&currentUserProfile?.canViewStock===true);
+ const canStock=role==='admin';
  const rows=source.filter(({p})=>{
   const searchable=norm([p.name,p.brand,p.model,p.sku].filter(Boolean).join(' '));
   const brand=norm(brandOf(p.name)||p.brand||'');
@@ -1293,7 +1293,7 @@ function sellerGenerateOffer(deviceIndex,offerIndex){
 }
 function showDetail(index){
  const p=catalog[index];if(!p)return;
- const role=currentUserProfile?.role,canStock=role==='admin'||(role==='seller'&&currentUserProfile?.canViewStock===true);
+ const role=currentUserProfile?.role,canStock=role==='admin';
  const stores=canStock?storeAvailabilityFor(index):[];
  const availability=stores.length?stores.map(s=>`<tr><td>${esc(s.name)} (${esc(s.id)})</td><td>${s.qty}</td></tr>`).join(''):'<tr><td colspan="2">Nessun dato magazzino disponibile.</td></tr>';
  const specs=getDeviceSpecs(p);
