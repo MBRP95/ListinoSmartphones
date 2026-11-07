@@ -821,7 +821,7 @@ async function signClientCustomToken(uid, shopId, sid, env) {
     claims: { role: 'client', shopId, sid }
   })));
   const unsigned = header + '.' + payload;
-  const pem = sa.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\\s/g, '');
+    const pem = sa.private_key.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g, '');
   const key = await crypto.subtle.importKey(
     'pkcs8',
     Uint8Array.from(atob(pem), c => c.charCodeAt(0)),
