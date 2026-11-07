@@ -1438,6 +1438,7 @@ async function importGlobalStock(){
  finally{btn.disabled=false}
 }
 function assignImportedSku(sku,indexValue){
+ if(indexValue==='')return;
  const index=Number(indexValue);
  if(!Number.isInteger(index)||index<0||!catalog[index])return;
  pendingShopCatalogImport?.rows.filter(x=>x.sku===sku).forEach(x=>x.catalogIndex=index);
@@ -1484,7 +1485,7 @@ async function confirmShopCatalogImport(){
   const names=new Map(data.shops);
   for(const shopId of selected){
    const shopRef=api.doc(db,'shops',shopId);
-   batch.set(shopRef,{name:names.get(shopId)||shopId,active:true,source:'excel-import',updatedAt:api.serverTimestamp()},{merge:true});
+   batch.set(shopRef,{name:names.get(shopId)||shopId,source:'excel-import',updatedAt:api.serverTimestamp()},{merge:true});
   }
   for(const x of updates)batch.set(x.ref,{shopId:x.shopId,enabledDeviceIds:x.enabledDeviceIds,updatedAt:api.serverTimestamp(),updatedBy:currentUserProfile.uid,source:'excel-import',sourceFile:data.fileName},{merge:true});
   await batch.commit();
