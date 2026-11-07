@@ -460,7 +460,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <div id="clientStartPanel" class="panel hidden"><div class="eyebrow">Come preferisci procedere?</div><h1>Ti guidiamo nella scelta?</h1><p class="hint">Puoi rispondere a poche domande oppure scegliere direttamente il modello che hai già in mente.</p><div class="actions"><button class="primary" onclick="beginGuidedChoice()">Sì, guidami nella scelta</button><button class="secondary" onclick="beginDirectChoice()">No, so già cosa cerco</button></div></div>
 <div id="clientDirectPanel" class="panel hidden"><div class="eyebrow">Catalogo disponibile</div><h2>Scegli uno smartphone</h2><input id="clientDeviceSearch" placeholder="Cerca marca o modello" oninput="renderClientDeviceList()"><div id="clientDeviceList" class="cards" style="margin-top:14px"></div></div>
 <div class="hero"><div class="eyebrow">Consulenza guidata</div><h1>Troviamo lo smartphone giusto.</h1><p class="sub">Il cliente sceglie le proprie priorità; il sistema propone esclusivamente le varianti effettivamente disponibili nel negozio selezionato.</p></div>
-<div class="panel"><div class="stephead"><span id="stepLabel">PASSAGGIO 1 DI 3</span><span id="stepName">Budget</span></div><div class="progress"><span id="bar"></span></div><div id="wizard"></div><div class="actions"><button class="secondary" id="back" onclick="move(-1)" disabled>Indietro</button><button class="primary" id="next" onclick="move(1)">Continua</button></div></div>
+<div id="clientWizardPanel" class="panel hidden"><div class="stephead"><span id="stepLabel">PASSAGGIO 1 DI 3</span><span id="stepName">Budget</span></div><div class="progress"><span id="bar"></span></div><div id="wizard"></div><div class="actions"><button class="secondary" id="back" onclick="move(-1)" disabled>Indietro</button><button class="primary" id="next" onclick="move(1)">Continua</button></div></div>
 <div id="results" class="panel hidden"><div class="eyebrow">Proposta</div><h2>Smartphone disponibili e compatibili</h2><div id="resultSummary" class="chips"></div><div id="cards" class="cards"></div><div id="selectedDevicePanel" class="panel hidden" style="margin-top:18px"><div id="selectedDeviceContent"></div></div></div>
 </section>
 <section id="sellerShopView" class="hidden">
@@ -604,7 +604,7 @@ function clearClientSessionState(){
  currentUserProfile=null;requestedAccessRole='';clientLoginVerified=false;
  currentShopId='';catalog=[];enabledDeviceIds=[];shopCatalogLoaded=false;stock=[];mappings={};
  selectedDeviceIndex=-1;selectedDeviceSku='';selectedOfferIndex=0;window.currentModelSpecs={};
- ['clientStartPanel','clientDirectPanel','clientShopPanel','selectedDevicePanel','results'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden')});
+ ['clientStartPanel','clientDirectPanel','clientShopPanel','clientWizardPanel','selectedDevicePanel','results'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden')});
  const input=document.getElementById('clientPinInput');if(input)input.value='';
  const pinMsg=document.getElementById('clientPinMsg');if(pinMsg)pinMsg.textContent='';
 }
@@ -631,7 +631,7 @@ function goBack(){
   const results=document.getElementById('results');
   if(results&&!results.classList.contains('hidden')){results.classList.add('hidden');document.getElementById('clientStartPanel').classList.remove('hidden');document.querySelector('#clientView .hero').classList.add('hidden');return;}
   const start=document.getElementById('clientStartPanel');
-  if(start&&!start.classList.contains('hidden')){start.classList.add('hidden');document.getElementById('clientShopPanel').classList.remove('hidden');return;}
+  if(start&&!start.classList.contains('hidden')){if(qrShopFromUrl()){start.classList.add('hidden');document.getElementById('clientPinPanel').classList.remove('hidden');document.getElementById('clientPinInput').value='';document.getElementById('clientPinMsg').textContent='';return;}start.classList.add('hidden');document.getElementById('clientShopPanel').classList.remove('hidden');return;}
   return;
  }
  if(currentUserProfile?.role==='seller'){
@@ -814,8 +814,8 @@ async function confirmClientShop(){
   document.getElementById('clientStartPanel').classList.remove('hidden');
  }catch(e){alert('Errore caricamento catalogo: '+e.message)}
 }
-function beginGuidedChoice(){document.getElementById('clientStartPanel').classList.add('hidden');document.getElementById('clientDirectPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.remove('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel):not(#clientStartPanel):not(#clientDirectPanel)').classList.remove('hidden');startClientWizard()}
-function beginDirectChoice(){document.getElementById('clientStartPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.add('hidden');document.querySelector('#clientView > .panel:not(#clientShopPanel):not(#clientStartPanel):not(#clientDirectPanel)').classList.add('hidden');document.getElementById('clientDirectPanel').classList.remove('hidden');document.getElementById('clientDeviceSearch').value='';renderClientDeviceList()}
+function beginGuidedChoice(){document.getElementById('clientStartPanel').classList.add('hidden');document.getElementById('clientDirectPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.remove('hidden');document.getElementById('clientWizardPanel').classList.remove('hidden');startClientWizard()}
+function beginDirectChoice(){document.getElementById('clientStartPanel').classList.add('hidden');document.getElementById('clientWizardPanel').classList.add('hidden');document.querySelector('#clientView .hero').classList.add('hidden');document.getElementById('clientDirectPanel').classList.remove('hidden');document.getElementById('clientDeviceSearch').value='';renderClientDeviceList()}
 function renderClientDeviceList(){
  const q=norm(document.getElementById('clientDeviceSearch').value);
  const rows=productsForShop().filter(({p})=>!q||norm(p.name).includes(q));
