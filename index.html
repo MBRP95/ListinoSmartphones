@@ -695,12 +695,53 @@ async function changeStorePassword(){
   msg.textContent='Cambio password non riuscito: '+detail;
  }
 }
+async function logoutStaff(){
+ if(!confirm('Vuoi uscire da Device Proposer?'))return;
+ try{if(window.firebaseApi?.auth?.currentUser)await window.firebaseApi.signOut(window.firebaseApi.auth);}catch(e){console.error('Logout error:',e);}
+ currentUserProfile=null;requestedAccessRole='auto';clientLoginVerified=false;
+ if(clientExpiryTimer){clearTimeout(clientExpiryTimer);clientExpiryTimer=null;}
+ ['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
+ document.getElementById('homeView')?.classList.remove('hidden');
+ document.getElementById('homeBtn').style.display='none';
+ document.getElementById('logoutBtn').style.display='none';
+ document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';
+}
+async function restoreStaffSession(){
+ const api=window.firebaseApi;
+ if(api?.auth?.authStateReady)await api.auth.authStateReady();
+ const user=api?.auth?.currentUser;
+ if(!user)return false;
+ const profileSnap=await api.getDoc(api.doc(api.db,'users',user.uid));
+ if(!profileSnap.exists())throw new Error('Profilo utente non trovato.');
+ const profile={...profileSnap.data(),uid:user.uid};
+ if(profile.active!==true||!['admin','seller'].includes(profile.role)||profile.mustChangePassword===true){
+  await api.signOut(api.auth);return false;
+ }
+ currentUserProfile=profile;requestedAccessRole='staff';selectedShopFilter='';
+ if(profile.role==='admin'){
+  await loadAuthenticatedData({loadStock:true});
+  await loadShopDirectory();setupEditor();
+  document.getElementById('adminView').classList.remove('hidden');
+  document.querySelectorAll('.admin-only').forEach(el=>el.classList.remove('hidden'));
+  renderDataFreshness();
+ }else{
+  await loadCatalogFromFirestore();stock=[];mappings={};
+  document.querySelectorAll('.admin-only').forEach(el=>el.classList.add('hidden'));
+  selectedShopFilter=profile.shopId||'';currentShopId=profile.shopId||'';
+  await startSellerMode();
+ }
+ document.getElementById('homeView').classList.add('hidden');
+ document.getElementById('sellerAuthView').classList.add('hidden');
+ document.getElementById('homeBtn').style.display='inline-block';
+ document.getElementById('logoutBtn').style.display='inline-block';
+ return true;
+}
 async function goHome(){
  if(clientExpiryTimer){clearTimeout(clientExpiryTimer);clientExpiryTimer=null;}
  if(window.firebaseApi&&window.firebaseApi.auth.currentUser){try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(e){}}
  clearClientSessionState();
  ['sellerAuthView','sellerShopView','clientView','adminView','storeView'].forEach(id=>document.getElementById(id).classList.add('hidden'));
- document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';
+ document.getElementById('homeView').classList.remove('hidden');document.getElementById('homeBtn').style.display='none';document.getElementById('logoutBtn').style.display='none';
  document.getElementById('sellerPassword').value='';document.getElementById('sellerUsername').value='';document.getElementById('sellerAuthMsg').textContent='';
 }
 function goBack(){
@@ -736,6 +777,7 @@ function requestUnifiedAccess(){
  ['clientView','sellerShopView','storeView','adminView'].forEach(id=>document.getElementById(id).classList.add('hidden'));
  document.getElementById('sellerAuthView').classList.remove('hidden');
  document.getElementById('homeBtn').style.display='none';
+ document.getElementById('logoutBtn').style.display='none';
  document.querySelector('#sellerAuthView .eyebrow').textContent='Accesso piattaforma';
  document.querySelector('#sellerAuthView h1').textContent='Benvenuto.';
  document.querySelector('#sellerAuthView .sub').textContent='Inserisci username e password: ti porteremo automaticamente nella tua area.';
@@ -1171,6 +1213,7 @@ async function verifySellerPassword(){
   document.getElementById('sellerPassword').value='';
   document.getElementById('sellerUsername').value='';
   document.getElementById('homeBtn').style.display='inline-block';
+  document.getElementById('logoutBtn').style.display='inline-block';
   if(profile.role==='admin'){
    await loadShopDirectory();
    setupEditor();
@@ -2034,6 +2077,50 @@ function technicalModelLabel(name){
  label=label.replace(/\s+\b\d+\s?(?:GB|TB)\b/ig,'').replace(/\s+\b(?:64|128|256|512|1024|2048)\b$/,'').trim();
  return label;
 }
+function toggleNewDeviceForm(show){
+ const panel=document.getElementById('newDeviceForm');
+ if(!panel)return;
+ const open=show===undefined?panel.classList.contains('hidden'):!!show;
+ panel.classList.toggle('hidden',!open);
+ if(open)document.getElementById('newDeviceName')?.focus();
+}
+async function createCatalogDevice(){
+ const msg=document.getElementById('newDeviceMsg'),btn=document.getElementById('saveNewDeviceBtn');
+ const name=document.getElementById('newDeviceName').value.trim();
+ const ram=document.getElementById('newDeviceRam').value.trim();
+ const storage=document.getElementById('newDeviceStorage').value.trim();
+ const band=document.getElementById('newDeviceBand').value;
+ const rawPrice=document.getElementById('newDevicePrice').value.trim();
+ if(currentUserProfile?.role!=='admin'){msg.textContent='Operazione consentita soltanto all’amministratore.';return}
+ if(name.length<3){msg.textContent='Inserisci il nome completo del dispositivo/variante.';return}
+ if(catalog.some(p=>norm(p.name)===norm(name))){msg.textContent='Questa variante è già presente nel catalogo.';return}
+ if(ram&&(!/^\d{1,2}$/.test(ram)||Number(ram)<1)){msg.textContent='La RAM deve essere espressa in GB.';return}
+ if(storage&&!/^\d{1,4}\s*(GB|TB)$/i.test(storage)){msg.textContent='Indica la memoria nel formato 128 GB oppure 1 TB.';return}
+ const id=catalogDocId({name});
+ if(!id){msg.textContent='Non riesco a generare un identificativo valido.';return}
+ const api=window.firebaseApi,modelId=modelDocumentId(name);
+ const price=rawPrice===''?null:Number(rawPrice);
+ if(rawPrice!==''&&(!Number.isFinite(price)||price<0)){msg.textContent='Prezzo non valido.';return}
+ const record={name,brand:brandOf(name),model:technicalModelLabel(name),modelId,ram:ram?ram+' GB':'',storage:storage||'',band:band||'',vendorPrice:price,offers:[],addedManually:true,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+ btn.disabled=true;msg.textContent='Aggiunta al catalogo Firebase…';
+ try{
+  const ref=api.doc(api.db,'devices',id),existing=await api.getDoc(ref);
+  if(existing.exists())throw new Error('Esiste già un dispositivo con questo identificativo.');
+  const batch=api.writeBatch(api.db);
+  batch.set(ref,record);
+  batch.set(api.doc(api.db,'deviceModels',modelId),{modelId,displayName:technicalModelLabel(name),verification:'unverified',description:'',updatedAt:new Date().toISOString()},{merge:true});
+  await batch.commit();
+  catalog.push(record);catalog.sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+  setupEditor();renderCatalog();
+  document.getElementById('newDeviceName').value='';
+  document.getElementById('newDeviceRam').value='';
+  document.getElementById('newDeviceStorage').value='';
+  document.getElementById('newDeviceBand').value='';
+  document.getElementById('newDevicePrice').value='';
+  msg.textContent='Dispositivo aggiunto al catalogo generale. Non è associato a nessun magazzino né abilitato automaticamente nei negozi.';
+ }catch(e){msg.textContent='Aggiunta non riuscita: '+(e.code||e.message||e)}
+ finally{btn.disabled=false}
+}
 function setupEditor(){
  const groups=new Map();
  catalog.forEach((p,i)=>{if(!isTechnicalSmartphone(p.name))return;const key=technicalModelKey(p.name);if(key&&!groups.has(key))groups.set(key,{p,i});});
@@ -2156,7 +2243,10 @@ async function init(){
  try{
   while(!window.firebaseApi){await new Promise(resolve=>window.addEventListener('firebase-ready',resolve,{once:true}))}
   if(qrShopFromUrl()){await startQrClientEntry();return}
-  // Nessun dato operativo viene caricato prima dell'autenticazione.
+  // Firebase conserva la sessione sul dispositivo: dopo un refresh riapriamo
+  // l'area Admin o Negozio senza richiedere nuovamente le credenziali.
+  try{if(await restoreStaffSession())return;}
+  catch(e){console.error('Ripristino sessione non riuscito:',e);try{await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(_){}}
   document.getElementById('homeView').classList.remove('hidden');
  }catch(e){console.error('Device Proposer startup error:',e)}
 }
