@@ -589,7 +589,7 @@ body.client-kiosk #clientFullscreenBtn:hover,body.client-kiosk #clientFullscreen
 <details class="panel seller-only manual-shop-device-details" id="manualShopDevicePanel"><summary><span><b>Aggiungi dispositivo al negozio</b><small>Apri per cercare e abilitare un dispositivo già presente nel catalogo generale.</small></span><span class="details-chevron">＋</span></summary><div class="manual-shop-device-body"><p class="hint">Questa operazione abilita il dispositivo per il tuo punto vendita. </p><div class="field"><label for="manualShopDeviceSearch">Cerca dispositivo</label><input id="manualShopDeviceSearch" placeholder="Es. iPhone 17, Galaxy A56..." oninput="renderManualShopDevicePicker()"></div><div id="manualShopDeviceList" class="grid" style="margin-top:12px"></div><div id="manualShopDeviceMsg" class="muted" role="status"></div></div></details>
 <div class="panel"><h2>Catalogo e promozioni disponibili</h2><p class="hint"> </p><div class="toolbar catalog-filters"><div class="field"><label>Cerca modello / marca</label><input id="catalogSearch" placeholder="Es. iPhone 17, Galaxy S26..." oninput="renderCatalog()"></div><div class="field"><label>Marca</label><select id="brandFilter" onchange="renderCatalog()"><option value="">Tutte</option></select></div><div class="field"><label>Stato catalogo</label><select id="catalogStatusFilter" onchange="renderCatalog()"><option value="all">Tutti</option><option value="enabled" selected>Attivi</option><option value="disabled">Disattivati</option></select></div></div>
 <div class="tablewrap"><table><thead><tr><th>Modello / variante</th><th>Fascia</th><th>Prezzo vendor</th><th>Offerte</th><th>Stato nel tuo negozio</th><th></th></tr></thead><tbody id="catalogRows"></tbody></table></div></div>
-<div class="panel" id="otherStoresSearchPanel"><h2>Cerca in altri store</h2><p class="hint">Cerca un modello per sapere in quali altri negozi è abilitato.  </p><div class="toolbar" style="align-items:flex-start"><div class="field" style="flex:1;position:relative"><label for="otherStoresFilter">Modello o marca</label><input id="otherStoresFilter" autocomplete="off" placeholder="Scrivi per cercare un dispositivo..." oninput="updateOtherStoreOptions()" onfocus="updateOtherStoreOptions()"><div id="otherStoresSuggestions" class="other-store-suggestions hidden"></div><input type="hidden" id="otherStoresQuery"></div><button class="primary" onclick="searchOtherStores()">Cerca</button></div><div id="otherStoresResults" class="muted" role="status" style="margin-top:12px"></div></div>
+<div class="panel" id="otherStoresSearchPanel"><h2>Cerca in altri store</h2><p class="hint">Cerca un modello per sapere in quali altri negozi è abilitato.  </p><div class="toolbar" style="align-items:flex-start"><div class="field" style="flex:1;position:relative"><label for="otherStoresFilter">Modello o marca</label><input id="otherStoresFilter" autocomplete="off" placeholder="Scrivi per cercare un dispositivo..." oninput="updateOtherStoreOptions()" onfocus="updateOtherStoreOptions()"><div id="otherStoresSuggestions" class="other-store-suggestions hidden"></div><input type="hidden" id="otherStoresQuery"></div><button class="primary" style="align-self:flex-end;margin-top:24px" onclick="searchOtherStores()">Cerca</button></div><div id="otherStoresResults" class="muted" role="status" style="margin-top:12px"></div></div>
 <div id="detailPanel" class="panel hidden"><div class="toolbar" style="justify-content:space-between;align-items:center"><h2>Dettaglio variante e condizioni</h2><button class="secondary" onclick="closeDetail()">Chiudi</button></div><div id="detailBox"></div></div>
 </section>
 </main>
@@ -1610,16 +1610,20 @@ function storeAvailabilityFor(index){
  function setupOtherStorePicker(){}
  async function searchOtherStores(){
  const host=document.getElementById('otherStoresResults');
- const input=document.getElementById('otherStoresQuery');
- if(!host||!input)return;
+ const visibleInput=document.getElementById('otherStoresFilter');
+ if(!host||!visibleInput)return;
  if(currentUserProfile?.role!=='seller'){host.textContent='Funzione riservata allo Shop Assistant.';return;}
-  const selectedName=input.value;
-  if(!selectedName){host.textContent='Seleziona prima un dispositivo dal menu.';return;}
-  const matches=catalog.map((p,i)=>({p,i})).filter(x=>x.p.name===selectedName);
- if(!matches.length){host.textContent='Nessun modello corrispondente nel catalogo globale.';return;}
+ const term=norm(visibleInput.value||'');
+ if(!term){host.textContent='Scrivi marca o modello da cercare.';return;}
+ const allMatches=catalog.map(p=>({p})).filter(x=>norm(x.p.name||'').includes(term));
+ if(!allMatches.length){host.textContent='Nessun modello corrispondente nel catalogo globale.';return;}
+ const exact=allMatches.filter(x=>norm(x.p.name||'')===term);
+ const matches=exact.length?exact:allMatches.slice(0,25);
  host.textContent='Ricerca in corso…';
+ document.getElementById('otherStoresSuggestions')?.classList.add('hidden');
  try{
   const api=window.firebaseApi;
+  if(!api?.db)throw new Error('Connessione al database non disponibile. Ricarica la pagina.');
   const shopId=String(currentUserProfile.shopId||'');
   const otherShops=new Map();
   const shopSnap=await api.getDocs(api.collection(api.db,'shops'));
@@ -1633,7 +1637,7 @@ function storeAvailabilityFor(index){
    const names=snap.docs.filter(d=>d.id!==shopId&&otherShops.has(d.id)).map(d=>otherShops.get(d.id)).sort((a,b)=>a.localeCompare(b,'it'));
    if(names.length)results.push({name:item.p.name,names});
   }
-  host.innerHTML=results.length?results.map(x=>'<div class="panel" style="margin:8px 0;padding:12px"><strong>'+esc(x.name)+'</strong><div style="margin-top:6px">'+x.names.map(esc).join(' · ')+'</div></div>').join(''):'Nessun altro negozio ha abilitato i modelli trovati.';
+  host.innerHTML=results.length?results.map(x=>'<div class="panel" style="margin:8px 0;padding:12px"><strong>'+esc(x.name)+'</strong><div style="margin-top:6px">'+x.names.map(esc).join(' · ')+'</div></div>').join(''):'Nessun altro negozio ha abilitato i modelli cercati.';
  }catch(e){host.textContent='Ricerca non riuscita: '+e.message;}
 }
 
