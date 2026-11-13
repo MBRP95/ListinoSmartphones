@@ -1,0 +1,226 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function userExists() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function userData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function activeUser() {
+      return userExists() && userData().active == true;
+    }
+    function isAdmin() {
+      return activeUser() && userData().role == 'admin';
+    }
+    function isSeller() {
+      return activeUser() && userData().role == 'seller';
+    }
+function sellerOwnsShop(shopId) {
+      return isSeller() && userData().shopId == shopId;
+    }
+    function clientShopId() {
+      return signedIn() && request.auth.token.role == 'client'
+        ? request.auth.token.shopId
+        : null;
+    }
+    function isClient() {
+      return signedIn() &&
+        request.auth.token.role == 'client' &&
+        request.auth.token.sid != null &&
+        clientShopId() != null &&
+        exists(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)) &&
+        exists(/databases/$(database)/documents/shopAccess/$(clientShopId())) &&
+        get(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)).data.active == true &&
+        get(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)).data.shopId == clientShopId() &&
+        request.time < get(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)).data.expiresAt &&
+        get(/databases/$(database)/documents/shopAccess/$(clientShopId())).data.active == true &&
+        get(/databases/$(database)/documents/clientSessions/$(request.auth.token.sid)).data.sessionVersion ==
+          get(/databases/$(database)/documents/shopAccess/$(clientShopId())).data.sessionVersion;
+    }
+    function canReadCatalog() {
+      return isAdmin() || isSeller() || isClient();
+    }
+
+    match /users/{userId} {
+      // Ogni utente autenticato può leggere esclusivamente il proprio profilo.
+      // L'applicazione controlla active e role dopo la lettura.
+      allow get: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      // Il dipendente può soltanto completare il cambio password obbligatorio.
+      // Ruolo, negozio, stato e ogni altro campo restano non modificabili dal client.
+      allow update: if signedIn() &&
+        request.auth.uid == userId &&
+        resource.data.role == 'seller' &&
+        resource.data.active == true &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['mustChangePassword', 'updatedAt']) &&
+        request.resource.data.mustChangePassword == false;
+      // L'amministratore può solo riattivare il cambio password o disattivare l'account.
+      allow update: if isAdmin() &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['mustChangePassword', 'updatedAt', 'active']);
+      allow create: if isAdmin() &&
+        request.resource.data.keys().hasOnly([
+          'username', 'displayName', 'role', 'shopId', 'shopName',
+          'active', 'mustChangePassword', 'createdAt', 'updatedAt'
+        ]) &&
+        request.resource.data.username is string &&
+        request.resource.data.username.matches('^[a-z0-9._-]{3,40}$') &&
+        request.resource.data.displayName is string &&
+        request.resource.data.displayName.size() <= 120 &&
+        request.resource.data.role in ['seller', 'admin'] &&
+        request.resource.data.active == true &&
+        request.resource.data.mustChangePassword == true &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.updatedAt == request.time &&
+        (
+          (request.resource.data.role == 'admin' &&
+            request.resource.data.shopId == null &&
+            request.resource.data.shopName == null) ||
+          (request.resource.data.role == 'seller' &&
+            request.resource.data.shopId is string &&
+            request.resource.data.shopId.matches('^[A-Z]{2}[0-9]{3}$') &&
+            request.resource.data.shopName is string &&
+            request.resource.data.shopName.size() > 0 &&
+            request.resource.data.shopName.size() <= 100 &&
+            exists(/databases/$(database)/documents/shops/$(request.resource.data.shopId)))
+        );
+      allow delete: if isAdmin() &&
+        request.auth.uid != userId &&
+        resource.data.role in ['seller', 'admin'] &&
+        resource.data.username != 'admin';
+    }
+
+    // La chiave è l'impronta di username e password. Senza l'impronta esatta il documento non si legge.
+    // Dentro c'è solo la password tecnica di Firebase, così il cambio dal profilo admin resta su Google.
+    match /loginKeys/{keyId} {
+      function validLoginKey() {
+        return keyId.matches('^[0-9a-f]{64}$') &&
+          request.resource.data.keys().hasOnly(['uid', 'username', 'authSecret']) &&
+          request.resource.data.uid is string &&
+          request.resource.data.uid.size() > 0 &&
+          request.resource.data.uid.size() < 200 &&
+          request.resource.data.username is string &&
+          request.resource.data.username.matches('^[a-z0-9._-]{3,40}$') &&
+          request.resource.data.authSecret is string &&
+          request.resource.data.authSecret.size() >= 8 &&
+          request.resource.data.authSecret.size() <= 128 &&
+          exists(/databases/$(database)/documents/users/$(request.resource.data.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.resource.data.uid)).data.username ==
+            request.resource.data.username &&
+          get(/databases/$(database)/documents/users/$(request.resource.data.uid)).data.active == true;
+      }
+      allow get: if keyId.matches('^[0-9a-f]{64}$');
+      allow list: if false;
+      allow create: if validLoginKey() && (
+        isAdmin() ||
+        (isSeller() && request.auth.uid == request.resource.data.uid)
+      );
+      allow update: if keyId.matches('^[0-9a-f]{64}$') &&
+        resource.data.uid == request.resource.data.uid &&
+        resource.data.username == request.resource.data.username &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['authSecret']) &&
+        request.resource.data.authSecret is string &&
+        request.resource.data.authSecret.size() >= 8 &&
+        request.resource.data.authSecret.size() <= 128 &&
+        (
+          isAdmin() ||
+          (isSeller() && request.auth.uid == resource.data.uid)
+        );
+      allow delete: if keyId.matches('^[0-9a-f]{64}$') && (
+        isAdmin() ||
+        (isSeller() && resource.data.uid == request.auth.uid)
+      );
+    }
+
+    match /staffSecrets/{userId} {
+      function validStaffSecret() {
+        return request.resource.data.keys().hasOnly([
+            'authSecret', 'keyId', 'username', 'mustChangePassword', 'updatedAt'
+          ]) &&
+          request.resource.data.authSecret is string &&
+          request.resource.data.authSecret.size() >= 8 &&
+          request.resource.data.authSecret.size() <= 128 &&
+          request.resource.data.keyId is string &&
+          request.resource.data.keyId.matches('^[0-9a-f]{64}$') &&
+          request.resource.data.username is string &&
+          request.resource.data.username.matches('^[a-z0-9._-]{3,40}$') &&
+          request.resource.data.mustChangePassword is bool &&
+          request.resource.data.updatedAt is timestamp;
+      }
+      allow get: if isAdmin() || (signedIn() && request.auth.uid == userId);
+      allow list: if false;
+      allow create, update: if validStaffSecret() && (
+        isAdmin() ||
+        (isSeller() && request.auth.uid == userId)
+      );
+      allow delete: if isAdmin() || (isSeller() && request.auth.uid == userId);
+    }
+
+    match /shops/{shopId} {
+      // Il cliente QR può leggere soltanto il negozio associato al proprio token.
+      allow get: if isAdmin() || isSeller() ||
+        (isClient() && clientShopId() == shopId);
+      allow list: if isAdmin() || isSeller();
+      allow write: if isAdmin();
+    }
+
+    function clientCanReadDevice(deviceId) {
+      return isClient() &&
+        clientShopId() != null &&
+        exists(/databases/$(database)/documents/shopCatalog/$(clientShopId())) &&
+        deviceId in get(/databases/$(database)/documents/shopCatalog/$(clientShopId())).data.enabledDeviceIds;
+    }
+
+    match /devices/{deviceId} {
+      allow get: if isAdmin() || isSeller() || clientCanReadDevice(deviceId);
+      allow list: if isAdmin() || isSeller();
+      allow write: if isAdmin();
+    }
+
+    // Le schede tecniche non contengono quantità di magazzino né offerte commerciali.
+    // Il catalogo delle varianti resta comunque filtrato da clientCanReadDevice.
+    match /deviceModels/{modelId} {
+      allow read: if canReadCatalog();
+      allow write: if isAdmin();
+    }
+
+    match /shopCatalog/{shopId} {
+      allow get, list: if isAdmin() || isSeller() ||
+        (isClient() && clientShopId() == shopId);
+      allow create, update: if isAdmin() || sellerOwnsShop(shopId);
+      allow delete: if isAdmin();
+    }
+
+    // Admin: gestione di qualsiasi negozio. Seller: soltanto il proprio negozio.
+    // I client QR non possono leggere pinSalt o pinHash.
+    match /shopAccess/{shopId} {
+      allow read, write: if isAdmin() || sellerOwnsShop(shopId);
+    }
+
+    match /stock/{stockId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow get: if isAdmin() || (settingId == 'catalog' && canReadCatalog());
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /stockVersions/{versionId}/items/{stockId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
