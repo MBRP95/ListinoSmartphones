@@ -620,9 +620,9 @@ html{
 <section id="sellerAuthView" class="hidden">
 <div class="hero"><div class="eyebrow">Accesso riservato</div><h1>Area riservata</h1><p class="sub">Inserisci le credenziali previste per la modalità scelta.</p></div>
 <div class="panel" style="max-width:460px">
-<div class="field"><label for="sellerUsername">Username</label><input id="sellerUsername" autocomplete="username" placeholder="" onkeydown="if(event.key==='Enter')document.getElementById('sellerPassword').focus()"></div><div class="field"><label for="sellerPassword">Password</label><input id="sellerPassword" type="password" autocomplete="current-password" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter')verifySellerPassword()"></div>
+<div class="field"><label for="sellerUsername">Username</label><input id="sellerUsername" autocomplete="username" placeholder="" onkeydown="if(event.key==='Enter')document.getElementById('sellerPassword').focus()"></div><div class="field"><label for="sellerPassword">Password</label><input id="sellerPassword" type="password" autocomplete="current-password" placeholder="Inserisci la password" onkeydown="if(event.key==='Enter'&&!event.repeat)verifySellerPassword()"></div>
 <div id="sellerAuthMsg" class="muted" style="margin-bottom:12px"></div>
-<div class="actions"><button class="secondary" onclick="goHome()">Indietro</button><button class="primary" onclick="verifySellerPassword()">Accedi</button></div>
+<div class="actions"><button class="secondary" type="button" onclick="goHome()">Indietro</button><button class="primary" type="button" id="sellerLoginBtn" onclick="verifySellerPassword()">Accedi</button></div>
 </div></section>
 
 <section id="homeView" class="home-dashboard hidden">
@@ -1732,12 +1732,54 @@ async function changeOwnSellerPassword(){
    : 'Cambio password non riuscito: '+(e.message||'errore imprevisto');
  }finally{btn.disabled=false}
 }
+let sellerLoginBusy=false;
+function sellerAuthStorageGet(key){
+ try{return sessionStorage.getItem(key)}catch(e){return null}
+}
+function sellerAuthStorageSet(key,value){
+ try{sessionStorage.setItem(key,value)}catch(e){}
+}
+function sellerAuthLockRemaining(){
+ return Math.max(0, Number(sellerAuthStorageGet('sellerAuthLockUntil')||0)-Date.now());
+}
+function lockSellerAuth(ms){
+ sellerAuthStorageSet('sellerAuthLockUntil', String(Date.now()+ms));
+}
+function sellerAuthWaitMessage(ms){
+ const minutes=Math.max(1, Math.ceil(ms/60000));
+ return 'Firebase ha bloccato per qualche minuto gli accessi da questo dispositivo, dopo troppi tentativi ravvicinati. Attendi circa '+minutes+(minutes===1?' minuto':' minuti')+' senza premere Accedi: il blocco si toglie da solo. Un nuovo tentativo adesso lo prolunga.';
+}
+function failedSellerPasswordKey(username){
+ return 'sellerAuthFailed:'+staffUsername(username);
+}
+async function sellerPasswordAlreadyFailed(username,password){
+ const id=await staffLoginKeyId(username,password);
+ let list=[];
+ try{list=JSON.parse(sellerAuthStorageGet(failedSellerPasswordKey(username))||'[]')}catch(e){}
+ return Array.isArray(list)&&list.includes(id);
+}
+async function rememberFailedSellerPassword(username,password){
+ const id=await staffLoginKeyId(username,password);
+ const key=failedSellerPasswordKey(username);
+ let list=[];
+ try{list=JSON.parse(sellerAuthStorageGet(key)||'[]')}catch(e){}
+ if(!Array.isArray(list))list=[];
+ if(!list.includes(id))list.push(id);
+ sellerAuthStorageSet(key, JSON.stringify(list.slice(-8)));
+}
 async function verifySellerPassword(){
  const username=document.getElementById('sellerUsername').value.trim().toLowerCase();
  const pw=document.getElementById('sellerPassword').value;
  const msg=document.getElementById('sellerAuthMsg');
- let phase='autenticazione Firebase';
+ const button=document.getElementById('sellerLoginBtn');
+ if(sellerLoginBusy)return;
+ const lockedFor=sellerAuthLockRemaining();
+ if(lockedFor>0){msg.textContent=sellerAuthWaitMessage(lockedFor);return}
  if(!username||!pw){msg.textContent='Inserisci username e password.';return}
+ sellerLoginBusy=true;
+ if(button)button.disabled=true;
+ msg.textContent='Accesso in corso…';
+ let phase='autenticazione Firebase';
  try{
   if(!window.firebaseApi)throw new Error('Firebase non è ancora pronto. Riprova.');
   const api=window.firebaseApi;
@@ -1754,8 +1796,14 @@ async function verifySellerPassword(){
   }catch(keyError){
    if(keyError?.code!=='permission-denied')throw keyError;
   }
+  if(!usedKey&&await sellerPasswordAlreadyFailed(normalized,pw)){
+   msg.textContent='Username o password non corretti.';
+   return;
+  }
   const {auth,signInWithEmailAndPassword}=api;
   const credential=await signInWithEmailAndPassword(auth,email,firebasePassword);
+  sellerAuthStorageSet('sellerAuthLockUntil','0');
+  sellerAuthStorageSet(failedSellerPasswordKey(normalized),'[]');
   phase='lettura profilo Firestore';
   const profileSnap=await api.getDoc(api.doc(api.db,'users',credential.user.uid));
   if(!profileSnap.exists())throw new Error('Profilo utente non configurato in Firestore.');
@@ -1813,17 +1861,26 @@ async function verifySellerPassword(){
   }
  }catch(e){
   clientLoginVerified=false;
-  const plain=e.code==='auth/invalid-credential'
+  const code=e?.code||'';
+  const plain=code==='auth/too-many-requests'
+   ?sellerAuthWaitMessage(10*60*1000)
+   :code==='auth/invalid-credential'||code==='auth/wrong-password'||code==='auth/invalid-login-credentials'||code==='auth/user-not-found'
    ?'Username o password non corretti.'
    :['Devi cambiare la password per poter accedere.','La nuova password deve contenere 8–128 caratteri. Accedi nuovamente per riprovare.','Le password non coincidono. Accedi nuovamente per riprovare.','Username o password non corretti.'].includes(e.message)
     ?e.message
     :'Errore durante '+phase+': '+e.message;
+  if(code==='auth/too-many-requests')lockSellerAuth(10*60*1000);
+  if(code==='auth/invalid-credential'||code==='auth/wrong-password'||code==='auth/invalid-login-credentials'||code==='auth/user-not-found'){
+   try{await rememberFailedSellerPassword(username,pw)}catch(_){}
+  }
   msg.textContent=plain;
   currentUserProfile=null;
   try{if(window.firebaseApi)await window.firebaseApi.signOut(window.firebaseApi.auth)}catch(_){}
   ['sellerShopView','storeView','adminView','clientView'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
   document.getElementById('sellerAuthView').classList.remove('hidden');
-  
+ }finally{
+  sellerLoginBusy=false;
+  if(button)button.disabled=false;
  }
 }
 function applyStockMappings(){
