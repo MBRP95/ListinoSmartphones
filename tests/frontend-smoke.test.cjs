@@ -80,6 +80,7 @@ test('QR print stylesheet isolates the printable card from admin controls', () =
 test('admin can rename device and variant names with role checks', () => {
   assert.match(html, /id="renameDevicePanel"/);
   assert.match(html, /id="renameDeviceBtn"[^>]*onclick="openRenameDevicePanel\(\)"/);
+  assert.match(html, /id="renameSelectedDeviceToolbarBtn"[^>]*onclick="openRenameDevicePanel\(\)"/);
   assert.match(html, /async function saveDeviceRename\(\)/);
   assert.match(html, /async function renameCatalogVariant\(index\)/);
   assert.match(html, /async function migrateRenamedDeviceDocs\(renames\)/);
@@ -87,5 +88,6 @@ test('admin can rename device and variant names with role checks', () => {
   assert.match(html, /if\(currentUserProfile\?\.role!=='admin'\)\{if\(msg\)msg\.textContent='Operazione consentita soltanto all’amministratore\.';return;\}/);
   assert.match(html, /displayName:newLabel/);
   assert.match(html, /enabledDeviceIds:unique/);
-  assert.match(html, /onclick="renameCatalogVariant\('\+index\+'\)"/);
+  assert.match(html, /onclick="renameCatalogVariant\('\+index\+'\)"[^>]*>Rinomina</);
+  assert.match(html, /Azioni[\s\S]*variantRows/);
 });
