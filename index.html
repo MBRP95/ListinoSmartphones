@@ -646,7 +646,7 @@ html{
 <div class="panel" style="max-width:560px"><div class="field"><label for="sellerShopSelect">Negozio</label><select id="sellerShopSelect"></select></div><div id="sellerShopMsg" class="muted"></div><div class="actions"><button class="secondary" onclick="goHome()">Esci</button><button class="primary" onclick="confirmSellerShop()">Entra nel gestionale</button></div></div>
 </section>
 <section id="adminView" class="hidden"><div class="hero"><div class="eyebrow">Area amministratore</div><h1>Gestisci catalogo e abilitazioni.</h1></div><div class="actions" style="justify-content:flex-start;margin:0 0 16px"><button class="primary" id="adminCatalogTab" onclick="switchAdminTab('catalog')">Catalogo e abilitazioni</button><button class="secondary" id="adminUsersTab" onclick="switchAdminTab('users')">Gestione utenze</button></div>
-<div class="actions" style="justify-content:flex-start;margin:0 0 16px"><button type="button" class="secondary" id="exportPriceListsBtn" onclick="exportPriceListsPdf()">📄 Esporta listini (PDF)</button><span id="priceListsExportMsg" class="muted" role="status"></span></div><div id="adminUsersSection" class="hidden"><div class="panel" id="individualUsersPanel"><h2>Account negozi e utenze</h2><div class="panel" style="margin:14px 0"><h3>Nuovo negozio</h3><div class="grid"><div class="field"><label for="newShopCode">Codice negozio</label><input id="newShopCode" maxlength="5" placeholder="Es. MB021" autocomplete="off"></div><div class="field"><label for="newShopName">Nome negozio</label><input id="newShopName" maxlength="100" placeholder="Es. Modena Centro"></div></div><div class="actions"><button type="button" class="secondary" id="createShopBtn" onclick="createNewShop()">Crea negozio</button></div><div id="newShopMsg" class="muted" role="status"></div><div id="newAccountCredentials" class="notice hidden" role="status" style="margin-top:12px"></div></div><div class="panel" style="margin:14px 0"><h3>Nuovo profilo amministratore</h3><p class="hint">Gli account dei negozi vengono creati automaticamente insieme al negozio. Qui puoi creare soltanto un altro amministratore.</p><div class="field"><label for="newSellerUsername">Username amministratore</label><input id="newSellerUsername" autocomplete="off" placeholder="Es. admin.modena" maxlength="40"></div><div class="actions"><button class="primary" id="createSellerBtn" onclick="createIndividualSeller()">Crea profilo admin</button><button class="secondary" onclick="loadIndividualSellers()">Aggiorna elenco</button></div></div><div id="individualUsersMsg" class="muted" role="status" style="margin-top:10px"></div><div id="individualUsersList" class="tablewrap" style="margin-top:14px"></div></div></div><div id="adminCatalogSection"><details class="panel excel-import-menu"><summary><span>Carica tramite Excel</span><span class="excel-import-arrow" aria-hidden="true">⌄</span></summary><div class="excel-import-content"><p class="hint">Carica l’esportazione Excel del gestionale. Il sistema usa Codice Prodotto, Descrizione e Negozio per determinare quali dispositivi rendere visibili in ciascun punto vendita. Le quantità di magazzino non vengono importate. I negozi rilevati saranno selezionati automaticamente; puoi scegliere su quali applicare la sincronizzazione.</p><div class="toolbar"><div class="field"><label>File Excel (.xlsx / .xls)</label><input id="globalStockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importGlobalStock()">Analizza Excel</button></div><div id="globalStockMsg" class="muted" style="margin-top:10px"></div><div id="shopSyncPreview" class="hidden" style="margin-top:16px"></div></div></details><div class="panel" id="deviceManagementPanel"><div class="toolbar" style="justify-content:space-between;align-items:center"><div><h2>Gestione dispositivo</h2><p class="hint">Cerca e seleziona una variante: qui puoi gestire insieme scheda tecnica e promozioni.</p></div><button type="button" class="primary" onclick="toggleNewDeviceForm()">＋ Aggiungi nuovo device</button></div><div id="newDeviceForm" class="notice hidden" style="margin:14px 0"><h3 style="margin-top:0">Nuovo dispositivo nel listino</h3><p class="hint">La fascia viene definita qui una sola volta per il modello e sarà condivisa da tutte le varianti. Colore, RAM e memoria si aggiungono successivamente.</p><div class="grid"><div class="field"><label for="newDeviceName">Nome modello</label><input id="newDeviceName" placeholder="Es. Samsung Galaxy A57 5G" maxlength="180"></div><div class="field"><label for="newDeviceBand">Fascia del modello</label><select id="newDeviceBand" required><option value="">Seleziona la fascia</option></select></div></div><div class="actions"><button type="button" class="secondary" onclick="toggleNewDeviceForm(false)">Annulla</button><button type="button" class="primary" id="saveNewDeviceBtn" onclick="createCatalogDevice()">Aggiungi al listino</button></div><div id="newDeviceMsg" class="muted" role="status"></div></div><div id="addVariantPanel" class="notice hidden" style="margin:14px 0"><h3 style="margin-top:0">Aggiungi variante</h3><p class="hint">Modello selezionato: <strong id="variantBaseModelLabel"></strong>. Il nome della variante verrà composto automaticamente usando il modello e i dati inseriti.</p><div class="grid"><div class="field"><label for="variantColor">Nome variante / colore</label><input id="variantColor" placeholder="Es. Nero, Blu, Titanium"></div><div class="field"><label for="variantRam">RAM (GB, facoltativa)</label><input id="variantRam" type="number" min="1" max="64" placeholder="Es. 8"></div><div class="field"><label for="variantStorage">Memoria (facoltativa)</label><div style="display:grid;grid-template-columns:minmax(0,1fr) 100px;gap:8px"><input id="variantStorage" type="number" min="1" max="9999" step="1" placeholder="Es. 256"><select id="variantStorageUnit" aria-label="Unità memoria"><option value="GB">GB</option><option value="TB">TB</option></select></div></div></div><div class="actions"><button type="button" class="secondary" onclick="toggleAddVariantPanel(false)">Annulla</button><button type="button" class="primary" id="saveVariantBtn" onclick="saveSelectedModelVariant()">Aggiungi variante</button></div><div id="variantMsg" class="muted" role="status"></div></div><div class="grid"><div class="field"><label for="adminDeviceSearch">Cerca dispositivo</label><input id="adminDeviceSearch" type="search" placeholder="Scrivi marca, modello, RAM, memoria..." oninput="filterAdminDevices()"></div><div class="field"><label for="adminDeviceSelect">Dispositivo selezionato</label><select id="adminDeviceSelect" onchange="selectAdminDevice()"></select><button type="button" class="secondary" style="margin-top:8px;width:100%" onclick="openAddVariantPanel()">+ Aggiungi variante</button><button type="button" class="secondary" style="margin-top:8px;width:100%" onclick="openSelectedDeviceShopAccess()">Negozi abilitati</button><div id="deviceShopAccessButtonMsg" class="muted" role="status" style="margin-top:6px"></div></div></div><select id="editDevice" onchange="loadEditor()" hidden aria-hidden="true" tabindex="-1"></select><p class="hint">Seleziona un modello per visualizzare tutte le sue varianti e i relativi colori. Le caratteristiche comuni vengono salvate una volta per modello; RAM e memoria restano proprietà della singola variante.</p>
+<div class="actions" style="justify-content:flex-start;margin:0 0 16px"><button type="button" class="secondary" id="exportPriceListsBtn" onclick="exportPriceListsPdf()">📄 Esporta listini (PDF)</button><span id="priceListsExportMsg" class="muted" role="status"></span></div><div id="adminUsersSection" class="hidden"><div class="panel" id="individualUsersPanel"><h2>Account negozi e utenze</h2><div class="panel" style="margin:14px 0"><h3>Nuovo negozio</h3><div class="grid"><div class="field"><label for="newShopCode">Codice negozio</label><input id="newShopCode" maxlength="5" placeholder="Es. MB021" autocomplete="off"></div><div class="field"><label for="newShopName">Nome negozio</label><input id="newShopName" maxlength="100" placeholder="Es. Modena Centro"></div></div><div class="actions"><button type="button" class="secondary" id="createShopBtn" onclick="createNewShop()">Crea negozio</button></div><div id="newShopMsg" class="muted" role="status"></div><div id="newAccountCredentials" class="notice hidden" role="status" style="margin-top:12px"></div></div><div class="panel" style="margin:14px 0"><h3>Nuovo profilo amministratore</h3><p class="hint">Gli account dei negozi vengono creati automaticamente insieme al negozio. Qui puoi creare soltanto un altro amministratore.</p><div class="field"><label for="newSellerUsername">Username amministratore</label><input id="newSellerUsername" autocomplete="off" placeholder="Es. admin.modena" maxlength="40"></div><div class="actions"><button class="primary" id="createSellerBtn" onclick="createIndividualSeller()">Crea profilo admin</button><button class="secondary" onclick="loadIndividualSellers()">Aggiorna elenco</button></div></div><div id="individualUsersMsg" class="muted" role="status" style="margin-top:10px"></div><div id="individualUsersList" class="tablewrap" style="margin-top:14px"></div></div></div><div id="adminCatalogSection"><details class="panel excel-import-menu"><summary><span>Carica tramite Excel</span><span class="excel-import-arrow" aria-hidden="true">⌄</span></summary><div class="excel-import-content"><p class="hint">Carica l’esportazione Excel del gestionale. Il sistema usa Codice Prodotto, Descrizione e Negozio per determinare quali dispositivi rendere visibili in ciascun punto vendita. Le quantità di magazzino non vengono importate. I negozi rilevati saranno selezionati automaticamente; puoi scegliere su quali applicare la sincronizzazione.</p><div class="toolbar"><div class="field"><label>File Excel (.xlsx / .xls)</label><input id="globalStockFile" type="file" accept=".xlsx,.xls"></div><button class="primary" onclick="importGlobalStock()">Analizza Excel</button></div><div id="globalStockMsg" class="muted" style="margin-top:10px"></div><div id="shopSyncPreview" class="hidden" style="margin-top:16px"></div></div></details><div class="panel" id="deviceManagementPanel"><div class="toolbar" style="justify-content:space-between;align-items:center"><div><h2>Gestione dispositivo</h2><p class="hint">Cerca e seleziona una variante: qui puoi gestire insieme scheda tecnica e promozioni.</p></div><button type="button" class="primary" onclick="toggleNewDeviceForm()">＋ Aggiungi nuovo device</button></div><div id="newDeviceForm" class="notice hidden" style="margin:14px 0"><h3 style="margin-top:0">Nuovo dispositivo nel listino</h3><p class="hint">La fascia viene definita qui una sola volta per il modello e sarà condivisa da tutte le varianti. Colore, RAM e memoria si aggiungono successivamente.</p><div class="grid"><div class="field"><label for="newDeviceName">Nome modello</label><input id="newDeviceName" placeholder="Es. Samsung Galaxy A57 5G" maxlength="180"></div><div class="field"><label for="newDeviceBand">Fascia del modello</label><select id="newDeviceBand" required><option value="">Seleziona la fascia</option></select></div></div><div class="actions"><button type="button" class="secondary" onclick="toggleNewDeviceForm(false)">Annulla</button><button type="button" class="primary" id="saveNewDeviceBtn" onclick="createCatalogDevice()">Aggiungi al listino</button></div><div id="newDeviceMsg" class="muted" role="status"></div></div><div id="renameDevicePanel" class="notice hidden" style="margin:14px 0"><h3 style="margin-top:0">Rinomina dispositivo</h3><p class="hint">Modifica il nome mostrato del modello. Tutte le varianti collegate aggiornano il prefisso del nome e restano associate agli stessi negozi.</p><div class="field"><label for="renameDeviceName">Nome dispositivo</label><input id="renameDeviceName" maxlength="180" placeholder="Es. Samsung Galaxy A57 5G"></div><div class="actions"><button type="button" class="secondary" onclick="toggleRenameDevicePanel(false)">Annulla</button><button type="button" class="primary" id="saveRenameDeviceBtn" onclick="saveDeviceRename()">Salva nuovo nome</button></div><div id="renameDeviceMsg" class="muted" role="status"></div></div><div id="addVariantPanel" class="notice hidden" style="margin:14px 0"><h3 style="margin-top:0">Aggiungi variante</h3><p class="hint">Modello selezionato: <strong id="variantBaseModelLabel"></strong>. Il nome della variante verrà composto automaticamente usando il modello e i dati inseriti.</p><div class="grid"><div class="field"><label for="variantColor">Nome variante / colore</label><input id="variantColor" placeholder="Es. Nero, Blu, Titanium"></div><div class="field"><label for="variantRam">RAM (GB, facoltativa)</label><input id="variantRam" type="number" min="1" max="64" placeholder="Es. 8"></div><div class="field"><label for="variantStorage">Memoria (facoltativa)</label><div style="display:grid;grid-template-columns:minmax(0,1fr) 100px;gap:8px"><input id="variantStorage" type="number" min="1" max="9999" step="1" placeholder="Es. 256"><select id="variantStorageUnit" aria-label="Unità memoria"><option value="GB">GB</option><option value="TB">TB</option></select></div></div></div><div class="actions"><button type="button" class="secondary" onclick="toggleAddVariantPanel(false)">Annulla</button><button type="button" class="primary" id="saveVariantBtn" onclick="saveSelectedModelVariant()">Aggiungi variante</button></div><div id="variantMsg" class="muted" role="status"></div></div><div class="grid"><div class="field"><label for="adminDeviceSearch">Cerca dispositivo</label><input id="adminDeviceSearch" type="search" placeholder="Scrivi marca, modello, RAM, memoria..." oninput="filterAdminDevices()"></div><div class="field"><label for="adminDeviceSelect">Dispositivo selezionato</label><select id="adminDeviceSelect" onchange="selectAdminDevice()"></select><button type="button" class="secondary" style="margin-top:8px;width:100%" onclick="openAddVariantPanel()">+ Aggiungi variante</button><button type="button" class="secondary" style="margin-top:8px;width:100%" onclick="openSelectedDeviceShopAccess()">Negozi abilitati</button><button type="button" class="secondary" style="margin-top:8px;width:100%" id="renameDeviceBtn" onclick="openRenameDevicePanel()">Rinomina dispositivo</button><div id="deviceShopAccessButtonMsg" class="muted" role="status" style="margin-top:6px"></div></div></div><select id="editDevice" onchange="loadEditor()" hidden aria-hidden="true" tabindex="-1"></select><p class="hint">Seleziona un modello per visualizzare tutte le sue varianti e i relativi colori. Le caratteristiche comuni vengono salvate una volta per modello; RAM e memoria restano proprietà della singola variante.</p>
 <div class="toolbar" style="justify-content:space-between;align-items:center"><h3 style="margin:0">Varianti</h3><button type="button" class="secondary" style="border-color:#a33;color:#f2aaaa" onclick="deleteAllModelVariants()">🗑 Cancella device</button></div><div class="tablewrap"><table><thead><tr><th>Variante</th><th>RAM</th><th>Memoria</th><th>Azioni</th></tr></thead><tbody id="variantRows"></tbody></table></div>
 <h3 style="margin-top:18px">Specifiche condivise</h3><div class="grid">
 <div class="field"><label>RAM comune (GB)</label><input id="fSharedRam" placeholder="Es. 8"></div><div class="field"><label>Tecnologia display</label><input id="fDisplayTech" placeholder="AMOLED, OLED, LCD"></div>
@@ -2922,7 +2922,7 @@ function loadEditor(){
  const rows=document.getElementById('variantRows');
  if(rows)rows.innerHTML=variants.map(v=>{
   const index=catalog.indexOf(v);
-  return '<tr><td><button type="button" class="catalog-device-name" onclick="openVariantOffers('+index+')" aria-label="Modifica prezzi e promozioni per '+esc(v.name)+'">'+esc(v.name)+'</button></td><td>'+esc(variantRamLabel(v))+'</td><td>'+esc(variantMemoryLabel(v))+'</td><td><button type="button" class="secondary" style="padding:5px 9px;min-width:0" onclick="deleteCatalogVariant('+index+')" title="Cancella questa variante" aria-label="Cancella '+esc(v.name)+'">🗑</button></td></tr>';
+  return '<tr><td><button type="button" class="catalog-device-name" onclick="openVariantOffers('+index+')" aria-label="Modifica prezzi e promozioni per '+esc(v.name)+'">'+esc(v.name)+'</button></td><td>'+esc(variantRamLabel(v))+'</td><td>'+esc(variantMemoryLabel(v))+'</td><td style="white-space:nowrap"><button type="button" class="secondary" style="padding:5px 9px;min-width:0" onclick="renameCatalogVariant('+index+')" title="Rinomina questa variante" aria-label="Rinomina '+esc(v.name)+'">✎</button> <button type="button" class="secondary" style="padding:5px 9px;min-width:0" onclick="deleteCatalogVariant('+index+')" title="Cancella questa variante" aria-label="Cancella '+esc(v.name)+'">🗑</button></td></tr>';
  }).join('');
  const msg=document.getElementById('editorMsg');
  if(msg)msg.textContent=!selected?'Seleziona un modello.':variants.length?'':'Questo modello non ha ancora varianti. Usa “Aggiungi variante”.';
@@ -3132,6 +3132,211 @@ async function createCatalogDevice(){
   msg.textContent='Modello creato e selezionato. Ora scegli “Aggiungi variante” sotto il menu del dispositivo.';
  }catch(e){msg.textContent='Creazione non riuscita: '+(e.code||e.message||e);}
  finally{btn.disabled=false;}
+}
+
+function toggleRenameDevicePanel(show){
+ const panel=document.getElementById('renameDevicePanel');if(!panel)return;
+ panel.classList.toggle('hidden',!show);
+ if(show)document.getElementById('renameDeviceName')?.focus();
+}
+function openRenameDevicePanel(){
+ const msg=document.getElementById('renameDeviceMsg');
+ if(currentUserProfile?.role!=='admin'){if(msg)msg.textContent='Operazione consentita soltanto all’amministratore.';return;}
+ const raw=document.getElementById('adminDeviceSelect')?.value;
+ const selected=raw==null||raw===''?null:catalog[Number(raw)];
+ if(!selected){if(msg)msg.textContent='Seleziona prima un dispositivo dal menu.';return;}
+ const input=document.getElementById('renameDeviceName');
+ if(input)input.value=catalogModelLabel(selected);
+ if(msg)msg.textContent='';
+ toggleAddVariantPanel(false);toggleNewDeviceForm(false);toggleRenameDevicePanel(true);
+}
+function applyModelRenameToVariantName(variantName,oldLabel,newLabel){
+ const name=String(variantName||'');
+ if(!oldLabel)return newLabel||name;
+ if(norm(name)===norm(oldLabel))return newLabel;
+ const escaped=String(oldLabel).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+ const re=new RegExp('^'+escaped+'(?=\\s|$)','i');
+ if(re.test(name))return name.replace(re,newLabel);
+ const tech=technicalModelLabel(name);
+ if(norm(tech)===norm(oldLabel)){
+  const suffix=name.slice(tech.length).replace(/^\s*/,'');
+  return suffix?newLabel+' '+suffix:newLabel;
+ }
+ return name;
+}
+function deviceRecordForPersistence(record){
+ const payload={...record,updatedAt:new Date().toISOString()};
+ delete payload.isModelPlaceholder;
+ return payload;
+}
+async function migrateRenamedDeviceDocs(renames){
+ const api=window.firebaseApi,db=api.db;
+ if(!renames.length)return;
+ const idMap=new Map(renames.filter(x=>x.oldId!==x.newId).map(x=>[x.oldId,x.newId]));
+ const shopSnap=await api.getDocs(api.collection(db,'shopCatalog'));
+ let batch=api.writeBatch(db),ops=0;
+ const flush=async()=>{if(!ops)return;await batch.commit();batch=api.writeBatch(db);ops=0;};
+ const write=async(fn)=>{fn(batch);ops++;if(ops>=420)await flush();};
+ for(const item of renames){
+  const payload=deviceRecordForPersistence({...item.record,name:item.newName});
+  if(item.oldId===item.newId){
+   await write(b=>b.set(api.doc(db,'devices',item.newId),payload,{merge:true}));
+  }else{
+   const existing=await api.getDoc(api.doc(db,'devices',item.newId));
+   if(existing.exists())throw new Error('Esiste già un dispositivo con l’identificativo generato dal nuovo nome: '+item.newName);
+   await write(b=>b.set(api.doc(db,'devices',item.newId),payload));
+   await write(b=>b.delete(api.doc(db,'devices',item.oldId)));
+  }
+ }
+ if(idMap.size){
+  for(const d of shopSnap.docs){
+   const data=d.data()||{};
+   const ids=Array.isArray(data.enabledDeviceIds)?data.enabledDeviceIds.map(String):[];
+   let changed=false;
+   const nextIds=ids.map(id=>{if(!idMap.has(id))return id;changed=true;return idMap.get(id);});
+   const unique=[...new Set(nextIds)];
+   let promo=data.visiblePromoPlans&&typeof data.visiblePromoPlans==='object'?{...data.visiblePromoPlans}:null;
+   if(promo){
+    for(const [oldId,newId] of idMap){
+     if(Object.prototype.hasOwnProperty.call(promo,oldId)){
+      if(!Object.prototype.hasOwnProperty.call(promo,newId))promo[newId]=promo[oldId];
+      delete promo[oldId];
+      changed=true;
+     }
+    }
+   }
+   if(changed){
+    const patch={enabledDeviceIds:unique,updatedAt:api.serverTimestamp(),updatedBy:currentUserProfile?.uid||api.auth.currentUser?.uid||''};
+    if(promo)patch.visiblePromoPlans=promo;
+    await write(b=>b.set(d.ref,patch,{merge:true}));
+   }
+  }
+ }
+ const setting=await api.getDoc(api.doc(db,'settings','stock'));
+ if(setting.exists()&&setting.data().activeVersion){
+  const version=setting.data().activeVersion;
+  const snap=await api.getDocs(api.collection(db,'stockVersions',version,'items'));
+  const nameMap=new Map(renames.map(x=>[norm(x.oldName),x.newName]));
+  for(const d of snap.docs){
+   const item=d.data()||{};
+   const next=nameMap.get(norm(item.catalogName||''));
+   if(!next)continue;
+   await write(b=>b.set(d.ref,{catalogName:next,updatedAt:api.serverTimestamp()},{merge:true}));
+   if(Array.isArray(stock)){
+    const local=stock.find(s=>s.sku===item.sku&&norm(s.catalogName||'')===norm(item.catalogName||''));
+    if(local)local.catalogName=next;
+   }
+  }
+ }
+ await write(b=>b.set(api.doc(db,'settings','catalog'),{updatedAt:api.serverTimestamp(),deviceCount:catalog.filter(p=>!p.isModelPlaceholder).length,updatedBy:api.auth.currentUser?.uid||''},{merge:true}));
+ await flush();
+ if(Array.isArray(enabledDeviceIds)&&enabledDeviceIds.length){
+  enabledDeviceIds=enabledDeviceIds.map(id=>idMap.get(String(id))||id);
+ }
+}
+async function saveDeviceRename(){
+ const msg=document.getElementById('renameDeviceMsg'),btn=document.getElementById('saveRenameDeviceBtn');
+ if(currentUserProfile?.role!=='admin'){if(msg)msg.textContent='Operazione consentita soltanto all’amministratore.';return;}
+ const raw=document.getElementById('adminDeviceSelect')?.value;
+ const selected=raw==null||raw===''?null:catalog[Number(raw)];
+ if(!selected){if(msg)msg.textContent='Seleziona prima un dispositivo.';return;}
+ const newLabel=document.getElementById('renameDeviceName')?.value.trim()||'';
+ if(newLabel.length<2){if(msg)msg.textContent='Inserisci un nome dispositivo valido (almeno 2 caratteri).';return;}
+ const oldLabel=catalogModelLabel(selected);
+ if(norm(oldLabel)===norm(newLabel)&&oldLabel===newLabel){if(msg)msg.textContent='Il nome è già aggiornato.';return;}
+ const modelId=selected.modelId||modelDocumentId(technicalModelLabel(selected.name));
+ const related=catalog.filter(p=>(p.modelId||modelDocumentId(technicalModelLabel(p.name)))===modelId);
+ const placeholders=related.filter(p=>p.isModelPlaceholder);
+ const variants=related.filter(p=>!p.isModelPlaceholder);
+ const renames=[];
+ for(const p of variants){
+  const oldName=p.name;
+  const newName=applyModelRenameToVariantName(oldName,oldLabel,newLabel);
+  if(!String(newName||'').trim()){if(msg)msg.textContent='Il nuovo nome genererebbe una variante vuota.';return;}
+  const oldId=catalogDocId({name:oldName});
+  const newId=catalogDocId({name:newName});
+  if(!oldId||!newId){if(msg)msg.textContent='Impossibile generare un identificativo valido dal nuovo nome.';return;}
+  renames.push({p,oldName,newName,oldId,newId,record:{...p,name:newName,model:newLabel,modelId,brand:brandOf(newName,p.brand)}});
+ }
+ const collision=renames.find(item=>catalog.some(other=>{
+  if(related.includes(other))return false;
+  return catalogDocId(other)===item.newId||norm(other.name)===norm(item.newName);
+ }));
+ if(collision){if(msg)msg.textContent='Esiste già un altro dispositivo con un nome o identificativo conflittuale: '+collision.newName;return;}
+ const dupInside=renames.some((item,i)=>renames.some((other,j)=>i!==j&&(item.newId===other.newId||norm(item.newName)===norm(other.newName))));
+ if(dupInside){if(msg)msg.textContent='Il nuovo nome produce conflitti tra le varianti dello stesso modello.';return;}
+ if(btn)btn.disabled=true;if(msg)msg.textContent='Rinomina in corso…';
+ try{
+  const api=window.firebaseApi;
+  const modelRef=api.doc(api.db,'deviceModels',modelId);
+  const modelSnap=await api.getDoc(modelRef);
+  const modelPayload={modelId,displayName:newLabel,updatedAt:new Date().toISOString()};
+  if(modelSnap.exists()){
+   const prev=modelSnap.data()||{};
+   if(prev.band)modelPayload.band=prev.band;
+  }else if(selected.band){modelPayload.band=selected.band;}
+  await api.setDoc(modelRef,modelPayload,{merge:true});
+  if(renames.length)await migrateRenamedDeviceDocs(renames.map(x=>({oldId:x.oldId,newId:x.newId,oldName:x.oldName,newName:x.newName,record:x.record})));
+  else await api.setDoc(api.doc(api.db,'settings','catalog'),{updatedAt:api.serverTimestamp(),deviceCount:catalog.filter(p=>!p.isModelPlaceholder).length,updatedBy:api.auth.currentUser?.uid||''},{merge:true});
+  renames.forEach(item=>{
+   Object.assign(item.p,{name:item.newName,model:newLabel,modelId,brand:brandOf(item.newName,item.p.brand),updatedAt:new Date().toISOString()});
+   if(item.p.modelSpecs&&typeof item.p.modelSpecs==='object')item.p.modelSpecs={...item.p.modelSpecs,displayName:newLabel,modelId};
+  });
+  placeholders.forEach(p=>{
+   Object.assign(p,{name:newLabel,model:newLabel,modelId,brand:brandOf(newLabel,p.brand),updatedAt:new Date().toISOString()});
+   if(p.modelSpecs&&typeof p.modelSpecs==='object')p.modelSpecs={...p.modelSpecs,displayName:newLabel,modelId};
+  });
+  window.currentModelSpecs=window.currentModelSpecs||{};
+  window.currentModelSpecs[modelId]={...(window.currentModelSpecs[modelId]||{}),...modelPayload};
+  catalog.sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+  setupEditor();
+  const adminSelect=document.getElementById('adminDeviceSelect');
+  if(adminSelect){
+   const option=[...adminSelect.options].find(o=>{
+    const p=catalog[Number(o.value)];
+    return p&&(p.modelId||modelDocumentId(technicalModelLabel(p.name)))===modelId;
+   });
+   if(option){adminSelect.value=option.value;selectAdminDevice(false);}
+  }
+  renderCatalog();
+  toggleRenameDevicePanel(false);
+  if(msg)msg.textContent='Nome aggiornato: '+newLabel+'.';
+ }catch(e){if(msg)msg.textContent='Rinomina non riuscita: '+(e.code||e.message||e);}
+ finally{if(btn)btn.disabled=false;}
+}
+async function renameCatalogVariant(index){
+ const p=catalog[index],msg=document.getElementById('editorMsg');
+ if(currentUserProfile?.role!=='admin'){if(msg)msg.textContent='Operazione consentita soltanto all’amministratore.';return;}
+ if(!p||p.isModelPlaceholder){if(msg)msg.textContent='Seleziona una variante valida.';return;}
+ const next=prompt('Nuovo nome della variante:',p.name);
+ if(next===null)return;
+ const newName=String(next).trim();
+ if(newName.length<2){if(msg)msg.textContent='Il nome della variante deve contenere almeno 2 caratteri.';return;}
+ if(norm(newName)===norm(p.name)&&newName===p.name){if(msg)msg.textContent='Il nome è già aggiornato.';return;}
+ const oldId=catalogDocId(p),newId=catalogDocId({name:newName});
+ if(!newId){if(msg)msg.textContent='Impossibile generare un identificativo valido dal nuovo nome.';return;}
+ if(catalog.some((other,i)=>i!==index&&(catalogDocId(other)===newId||norm(other.name)===norm(newName)))){
+  if(msg)msg.textContent='Esiste già una variante con questo nome o identificativo.';return;
+ }
+ if(msg)msg.textContent='Rinomina variante in corso…';
+ try{
+  const modelId=p.modelId||modelDocumentId(technicalModelLabel(p.name));
+  const record=deviceRecordForPersistence({...p,name:newName,brand:brandOf(newName,p.brand),model:technicalModelLabel(newName)||p.model||'',modelId});
+  await migrateRenamedDeviceDocs([{oldId,newId,oldName:p.name,newName,record}]);
+  Object.assign(p,record);
+  catalog.sort((a,b)=>String(a.name).localeCompare(String(b.name),'it'));
+  setupEditor();
+  const adminSelect=document.getElementById('adminDeviceSelect');
+  if(adminSelect){
+   const option=[...adminSelect.options].find(o=>{
+    const device=catalog[Number(o.value)];
+    return device&&(device.modelId||modelDocumentId(technicalModelLabel(device.name)))===modelId;
+   });
+   if(option){adminSelect.value=option.value;selectAdminDevice(false);}
+  }
+  renderCatalog();
+  if(msg)msg.textContent='Variante rinominata in “'+newName+'”.';
+ }catch(e){if(msg)msg.textContent='Rinomina non riuscita: '+(e.code||e.message||e);}
 }
 async function deleteAllModelVariants(){
  const msg=document.getElementById('editorMsg');
